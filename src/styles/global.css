@@ -1,0 +1,183 @@
+/* Oscilla, SynthWorld's own UI font (built in the framework's repo: assets/oscilla). */
+@font-face {
+  font-family: 'Oscilla';
+  src: url('../assets/fonts/Oscilla-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Oscilla';
+  src: url('../assets/fonts/Oscilla-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-display: swap;
+}
+
+/* The palette of SynthWorld's default skin (synthworld_gui/skin/Skin.h). */
+:root {
+  --background: #232125;
+  --recess: #171619;
+  --surface: #9a98a0;
+  --foreground: #f7f6fa;
+  --accent: #a57edb;
+  --highlight: #fff287;
+  --warning: #cc3336;
+
+  --font-display: 'Oscilla', system-ui, sans-serif;
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --width: 68rem;
+  --gutter: clamp(1rem, 4vw, 2rem);
+  --radius: 0.5rem;
+
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+  line-height: 1.6;
+}
+
+main {
+  flex: 1;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: clamp(2.25rem, 6vw, 4rem);
+  margin: 0 0 1rem;
+}
+
+h2 {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  margin: 0 0 1rem;
+}
+
+h3 {
+  font-size: 1.125rem;
+  margin: 0 0 0.5rem;
+}
+
+p {
+  margin: 0 0 1rem;
+}
+
+a {
+  color: var(--accent);
+}
+
+a:hover {
+  color: var(--highlight);
+}
+
+:focus-visible {
+  outline: 2px solid var(--highlight);
+  outline-offset: 2px;
+}
+
+code,
+pre {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+pre {
+  margin: 0 0 1rem;
+  padding: 1rem;
+  overflow-x: auto;
+  background: var(--recess);
+  border-radius: var(--radius);
+}
+
+.wrap {
+  width: 100%;
+  max-width: var(--width);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.section {
+  padding-block: clamp(2.5rem, 7vw, 5rem);
+}
+
+.lead {
+  max-width: 44rem;
+  font-size: 1.2rem;
+  color: var(--surface);
+}
+
+.muted {
+  color: var(--surface);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.card {
+  padding: 1.25rem;
+  background: var(--recess);
+  border-radius: var(--radius);
+}
+
+.card p:last-child {
+  margin-bottom: 0;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0;
+  margin: 0 0 1rem;
+  list-style: none;
+}
+
+.tags li {
+  padding: 0.1rem 0.6rem;
+  border: 1px solid var(--surface);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  color: var(--surface);
+}
+
+.button {
+  display: inline-block;
+  padding: 0.6rem 1.2rem;
+  background: var(--accent);
+  border-radius: var(--radius);
+  color: var(--recess);
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.button:hover {
+  background: var(--highlight);
+  color: var(--recess);
+}

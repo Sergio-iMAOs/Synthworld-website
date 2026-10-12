@@ -1,0 +1,27 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '@/layouts/Base.astro';
+
+const synths = (await getCollection('synths')).sort((a, b) => a.data.order - b.data.order);
+---
+
+<Base title="Synths" description="The synthesizers made with SynthWorld.">
+  <section class="section">
+    <div class="wrap">
+      <h1>Synths</h1>
+      <p class="lead">The synthesizers made with SynthWorld.</p>
+      <ul class="grid">
+        {
+          synths.map(({ id, data }) => (
+            <li class="card">
+              <h2>
+                <a href={`/synths/${id}/`}>{data.name}</a>
+              </h2>
+              <p class="muted">{data.summary}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+</Base>

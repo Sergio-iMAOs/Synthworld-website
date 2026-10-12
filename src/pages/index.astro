@@ -1,0 +1,60 @@
+---
+import Base from '@/layouts/Base.astro';
+import { site } from '@/site';
+
+// From the notes in the framework's README: rewrite with it.
+const features = [
+  {
+    title: 'Just write your processors',
+    text: 'Make self-contained DSP processors, each with its own GUI. SynthWorld makes them a synth: polyphony, voice management, communication with the GUI, and much more.',
+  },
+  {
+    title: 'Anything modulates anything',
+    text: 'Any processor can modulate any parameter. Nested modulations, feedback modulations, modulations of another modulation’s amount.',
+  },
+  {
+    title: 'Free routing',
+    text: 'Route any processor into any other: any directed acyclic graph is supported.',
+  },
+  {
+    title: 'No clicks',
+    text: 'Everything is smoothed, so you can forget about clicks and artifacts.',
+  },
+  {
+    title: 'Oversampling',
+    text: 'Built in, for the whole synth.',
+  },
+  {
+    title: 'Stands on its own',
+    text: 'A native CLAP plugin, also built as VST3 and AU, with its own GUI toolkit. No JUCE or other plugin framework.',
+  },
+];
+---
+
+<Base>
+  <section class="section">
+    <div class="wrap">
+      <h1>{site.tagline}</h1>
+      <p class="lead">
+        Write your DSP processors. SynthWorld makes them a fully flexible, deep polyphonic synthesizer.
+      </p>
+      <a class="button" href="/synths/">See the synths</a>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <h2>What it gives you</h2>
+      <ul class="grid">
+        {
+          features.map(({ title, text }) => (
+            <li class="card">
+              <h3>{title}</h3>
+              <p class="muted">{text}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+</Base>

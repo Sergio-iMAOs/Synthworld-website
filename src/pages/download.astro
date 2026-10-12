@@ -1,0 +1,33 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '@/layouts/Base.astro';
+import SynthGet from '@/components/SynthGet.astro';
+
+const synths = (await getCollection('synths')).sort((a, b) => a.data.order - b.data.order);
+const released = synths.filter(({ data }) => data.downloads.length > 0 || data.paid?.buyUrl);
+---
+
+<Base title="Download" description="Get SynthWorld's synths.">
+  <section class="section">
+    <div class="wrap">
+      <h1>Download</h1>
+      {
+        released.length === 0 ? (
+          <p class="lead">Nothing has been released yet.</p>
+        ) : (
+          <ul class="grid">
+            {released.map((synth) => (
+              <li class="card">
+                <h2>
+                  <a href={`/synths/${synth.id}/`}>{synth.data.name}</a>{' '}
+                  <span class="muted">v{synth.data.version}</span>
+                </h2>
+                <SynthGet synth={synth} />
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </div>
+  </section>
+</Base>
