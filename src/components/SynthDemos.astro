@@ -1,0 +1,64 @@
+---
+import { langOf, textsOf } from '@/i18n';
+import type { Synth } from '@/synths';
+
+interface Props {
+  synth: Synth;
+}
+
+const { audio, videos } = Astro.props.synth.data;
+const t = textsOf(langOf(Astro.url)).synths;
+---
+
+{
+  audio.length > 0 && (
+    <section>
+      <h2>{t.listen}</h2>
+      <ul class="grid">
+        {audio.map(({ title, src }) => (
+          <li class="card">
+            <h3>{title}</h3>
+            <audio controls preload="none" src={src} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+{
+  videos.length > 0 && (
+    <section>
+      <h2>{t.watch}</h2>
+      <ul class="grid">
+        {videos.map(({ title, youtube }) => (
+          <li>
+            <iframe
+              src={`https://www.youtube-nocookie.com/embed/${youtube}`}
+              title={title}
+              loading="lazy"
+              allow="encrypted-media; picture-in-picture"
+              allowfullscreen
+            />
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+<style>
+  section {
+    margin-block: 2rem;
+  }
+
+  audio {
+    width: 100%;
+  }
+
+  iframe {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 0;
+    border-radius: var(--radius);
+  }
+</style>

@@ -1,6 +1,5 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 
-// Set `site` (and `base`, if the site isn't served from the domain's root) once the hosting is decided:
-// canonical URLs and the sitemap need it.
+// Set `site` to the domain once there is one: canonical and alternate-language URLs need it to be absolute.
 export default defineConfig({});

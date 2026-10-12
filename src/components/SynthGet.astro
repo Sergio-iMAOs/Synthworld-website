@@ -1,18 +1,20 @@
 ---
-import type { CollectionEntry } from 'astro:content';
+import { langOf, textsOf } from '@/i18n';
+import type { Synth } from '@/synths';
 
 interface Props {
-  synth: CollectionEntry<'synths'>;
+  synth: Synth;
 }
 
 const { downloads, paid } = Astro.props.synth.data;
+const t = textsOf(langOf(Astro.url)).get;
 ---
 
 {
   paid?.buyUrl && (
     <p>
       <a class="button" href={paid.buyUrl}>
-        Buy for {paid.price}
+        {t.buy} {paid.price}
       </a>
     </p>
   )
@@ -20,7 +22,7 @@ const { downloads, paid } = Astro.props.synth.data;
 {
   downloads.length > 0 && (
     <>
-      {paid && <p class="muted">Demo:</p>}
+      {paid && <p class="muted">{t.demo}</p>}
       <ul class="tags">
         {downloads.map(({ label, url }) => (
           <li>
@@ -31,4 +33,4 @@ const { downloads, paid } = Astro.props.synth.data;
     </>
   )
 }
-{!paid?.buyUrl && downloads.length === 0 && <p class="muted">Not available yet.</p>}
+{!paid?.buyUrl && downloads.length === 0 && <p class="muted">{t.unavailable}</p>}

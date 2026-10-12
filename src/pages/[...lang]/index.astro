@@ -1,0 +1,47 @@
+---
+import Base from '@/layouts/Base.astro';
+import SynthCard from '@/components/SynthCard.astro';
+import { langOf, langPaths, pathIn, textsOf } from '@/i18n';
+import { getSynths } from '@/synths';
+
+export const getStaticPaths = langPaths;
+
+const lang = langOf(Astro.url);
+const t = textsOf(lang);
+const synths = await getSynths(lang);
+---
+
+<Base>
+  <section class="section">
+    <div class="wrap">
+      <h1>{t.tagline}</h1>
+      <p class="lead">{t.home.lead}</p>
+      <a class="button" href={pathIn(lang, '/synths/')}>{t.home.cta}</a>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <h2>{t.home.synths}</h2>
+      <ul class="grid">
+        {synths.map((synth) => <SynthCard synth={synth} />)}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <h2>{t.home.engine}</h2>
+      <ul class="grid">
+        {
+          t.home.features.map(({ title, text }) => (
+            <li class="card">
+              <h3>{title}</h3>
+              <p class="muted">{text}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+</Base>

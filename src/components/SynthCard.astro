@@ -1,0 +1,17 @@
+---
+import { langOf, pathIn } from '@/i18n';
+import type { Synth } from '@/synths';
+
+interface Props {
+  synth: Synth;
+}
+
+const { id, data, text } = Astro.props.synth;
+---
+
+<li class="card">
+  <h2>
+    <a href={pathIn(langOf(Astro.url), `/synths/${id}/`)}>{data.name}</a>
+  </h2>
+  <p class="muted">{text.data.summary}</p>
+</li>

@@ -1,25 +1,29 @@
 ---
-import { getCollection } from 'astro:content';
 import Base from '@/layouts/Base.astro';
 import SynthGet from '@/components/SynthGet.astro';
+import { langOf, langPaths, pathIn, textsOf } from '@/i18n';
+import { getSynths } from '@/synths';
 
-const synths = (await getCollection('synths')).sort((a, b) => a.data.order - b.data.order);
-const released = synths.filter(({ data }) => data.downloads.length > 0 || data.paid?.buyUrl);
+export const getStaticPaths = langPaths;
+
+const lang = langOf(Astro.url);
+const t = textsOf(lang).download;
+const released = (await getSynths(lang)).filter(({ data }) => data.downloads.length > 0 || data.paid?.buyUrl);
 ---
 
-<Base title="Download" description="Get SynthWorld's synths.">
+<Base title={t.title} description={t.description}>
   <section class="section">
     <div class="wrap">
-      <h1>Download</h1>
+      <h1>{t.title}</h1>
       {
         released.length === 0 ? (
-          <p class="lead">Nothing has been released yet.</p>
+          <p class="lead">{t.nothing}</p>
         ) : (
           <ul class="grid">
             {released.map((synth) => (
               <li class="card">
                 <h2>
-                  <a href={`/synths/${synth.id}/`}>{synth.data.name}</a>{' '}
+                  <a href={pathIn(lang, `/synths/${synth.id}/`)}>{synth.data.name}</a>{' '}
                   <span class="muted">v{synth.data.version}</span>
                 </h2>
                 <SynthGet synth={synth} />

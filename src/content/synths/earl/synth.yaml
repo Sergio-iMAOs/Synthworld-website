@@ -1,0 +1,8 @@
+name: EARL
+version: 0.1.0
+formats: [CLAP, VST3, Standalone]
+platforms: [Linux]
+order: 1
+downloads: []
+audio: []
+videos: []

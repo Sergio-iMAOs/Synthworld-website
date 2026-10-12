@@ -1,19 +1,28 @@
 ---
+import { langOf, languages, pathIn, pathWithoutLang, textsOf, type Lang } from '@/i18n';
 import { site } from '@/site';
 
-const path = Astro.url.pathname;
-const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
+const lang = langOf(Astro.url);
+const t = textsOf(lang);
+const path = pathWithoutLang(Astro.url);
+
+const nav = [
+  { href: pathIn(lang, '/synths/'), label: t.nav.synths, current: path.startsWith('/synths/') },
+  { href: pathIn(lang, '/download/'), label: t.nav.download, current: path.startsWith('/download/') },
+  { href: site.manual, label: t.nav.manual, current: false },
+  { href: pathIn(lang, '/about/'), label: t.nav.about, current: path.startsWith('/about/') },
+];
 ---
 
 <header>
   <div class="wrap bar">
-    <a class="name" href="/">{site.name}</a>
+    <a class="name" href={pathIn(lang, '/')}>{site.name}</a>
     <nav aria-label="Main">
       <ul>
         {
-          site.nav.map(({ href, label }) => (
+          nav.map(({ href, label, current }) => (
             <li>
-              <a href={href} aria-current={isCurrent(href) ? 'page' : undefined}>
+              <a href={href} aria-current={current ? 'page' : undefined}>
                 {label}
               </a>
             </li>
@@ -21,6 +30,17 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
         }
       </ul>
     </nav>
+    <ul class="languages">
+      {
+        (Object.keys(languages) as Lang[]).map((code) => (
+          <li>
+            <a href={pathIn(code, path)} lang={code} hreflang={code} aria-current={code === lang ? 'true' : undefined}>
+              {languages[code]}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
   </div>
 </header>
 
@@ -33,12 +53,12 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
     gap: 0.5rem 2rem;
     padding-block: 1rem;
   }
 
   .name {
+    margin-right: auto;
     font-family: var(--font-display);
     font-size: 1.25rem;
     font-weight: 700;
@@ -48,24 +68,30 @@ const isCurrent = (href: string) => (href === '/' ? path === '/' : path.startsWi
 
   ul {
     display: flex;
-    gap: 1.5rem;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.5rem;
     padding: 0;
     margin: 0;
     list-style: none;
   }
 
-  nav a {
+  .languages {
+    gap: 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  li a {
     color: var(--surface);
     font-family: var(--font-display);
     text-decoration: none;
   }
 
-  nav a:hover,
-  nav a[aria-current='page'] {
+  li a:hover,
+  li a[aria-current] {
     color: var(--foreground);
   }
 
-  nav a[aria-current='page'] {
+  nav a[aria-current] {
     border-bottom: 2px solid var(--accent);
   }
 </style>

@@ -1,0 +1,24 @@
+---
+import Base from '@/layouts/Base.astro';
+import SynthCard from '@/components/SynthCard.astro';
+import { langOf, langPaths, textsOf } from '@/i18n';
+import { getSynths } from '@/synths';
+
+export const getStaticPaths = langPaths;
+
+const lang = langOf(Astro.url);
+const t = textsOf(lang).synths;
+const synths = await getSynths(lang);
+---
+
+<Base title={t.title} description={t.lead}>
+  <section class="section">
+    <div class="wrap">
+      <h1>{t.title}</h1>
+      <p class="lead">{t.lead}</p>
+      <ul class="grid">
+        {synths.map((synth) => <SynthCard synth={synth} />)}
+      </ul>
+    </div>
+  </section>
+</Base>

@@ -1,3 +1,5 @@
+@import './palette.css';
+
 /* Oscilla, SynthWorld's own UI font (built in the framework's repo: assets/oscilla). */
 @font-face {
   font-family: 'Oscilla';
@@ -13,16 +15,7 @@
   font-display: swap;
 }
 
-/* The palette of SynthWorld's default skin (synthworld_gui/skin/Skin.h). */
 :root {
-  --background: #232125;
-  --recess: #171619;
-  --surface: #9a98a0;
-  --foreground: #f7f6fa;
-  --accent: #a57edb;
-  --highlight: #fff287;
-  --warning: #cc3336;
-
   --font-display: 'Oscilla', system-ui, sans-serif;
   --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;

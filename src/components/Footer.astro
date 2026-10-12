@@ -1,10 +1,12 @@
 ---
-import { site } from '@/site';
+import { langOf, textsOf } from '@/i18n';
+
+const t = textsOf(langOf(Astro.url));
 ---
 
 <footer>
   <div class="wrap">
-    <p class="muted">{site.name} is a work in progress.</p>
+    <p class="muted">{t.footer}</p>
   </div>
 </footer>
 

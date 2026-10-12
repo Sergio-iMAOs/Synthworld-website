@@ -1,0 +1,37 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '@/layouts/Base.astro';
+import SynthDemos from '@/components/SynthDemos.astro';
+import SynthGet from '@/components/SynthGet.astro';
+import { langOf, langPaths, textsOf } from '@/i18n';
+import { getSynths } from '@/synths';
+
+export async function getStaticPaths() {
+  const synths = await getCollection('synths');
+  return langPaths().flatMap(({ params }) => synths.map(({ id }) => ({ params: { ...params, id } })));
+}
+
+const lang = langOf(Astro.url);
+const t = textsOf(lang).synths;
+const synth = (await getSynths(lang)).find(({ id }) => id === Astro.params.id)!;
+const { data, text } = synth;
+const { Content } = await render(text);
+---
+
+<Base title={data.name} description={text.data.summary}>
+  <section class="section">
+    <div class="wrap">
+      <h1>{data.name}</h1>
+      <p class="lead">{text.data.summary}</p>
+      <ul class="tags">
+        <li>v{data.version}</li>
+        <li>{data.paid ? data.paid.price : t.free}</li>
+        {data.formats.map((format) => <li>{format}</li>)}
+        {data.platforms.map((platform) => <li>{platform}</li>)}
+      </ul>
+      <Content />
+      <SynthDemos synth={synth} />
+      <SynthGet synth={synth} />
+    </div>
+  </section>
+</Base>
