@@ -1,0 +1,24 @@
+name: SoundSystem
+from: 2023
+to: 2024
+order: 6
+cover: ./cover.jpg
+media:
+  - image: ./1.jpg
+    alt: { en: A full-range cabinet with its grille on, es: Una caja de rango completo con su rejilla puesta }
+  - image: ./2.jpg
+    alt: { en: A subwoofer with its grille on, es: Un subwoofer con su rejilla puesta }
+  - image: ./3.jpg
+    alt: { en: 'The same cabinet without its grille: a horn over two woofers', es: 'La misma caja sin la rejilla: una bocina sobre dos woofers' }
+  - image: ./4.jpg
+    alt: { en: The subwoofer without its grille, es: El subwoofer sin la rejilla }
+  - image: ./5.jpg
+    alt: { en: A cabinet being built, its panels routed and glued, es: 'Una caja en construcción, con sus paneles fresados y encolados' }
+  - image: ./6.jpg
+    alt: { en: 'A cabinet varnished, before its speakers are mounted', es: 'Una caja barnizada, antes de montar sus altavoces' }
+  - image: ./7.jpg
+    alt: { en: A subwoofer's bare plywood box, es: La caja de contrachapado de un subwoofer sin acabar }
+  - image: ./8.jpg
+    alt: { en: The two subwoofer boxes varnished, es: Las dos cajas de subwoofer barnizadas }
+  - image: ./9.jpg
+    alt: { en: 'The rack: a speaker processor and the amplifiers', es: 'El rack: un procesador de altavoces y los amplificadores' }

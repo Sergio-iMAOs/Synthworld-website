@@ -1,0 +1,17 @@
+name: Nebula
+from: 2019
+order: 7
+cover: ./cover.jpg
+media:
+  - image: ./cover.jpg
+    alt: { en: 'The body of the bass: ash with a walnut top', es: 'El cuerpo del bajo: fresno con tapa de nogal' }
+  - image: ./2.jpg
+    alt: { en: 'The headstock, with "Nebula" engraved', es: 'La pala, con «Nebula» grabado' }
+  - image: ./3.jpg
+    alt: { en: The whole bass from the front, es: El bajo entero de frente }
+  - image: ./4.jpg
+    alt: { en: The back of the body, es: La parte trasera del cuerpo }
+  - image: ./5.jpg
+    alt: { en: The body being cut out with a jigsaw, es: El cuerpo mientras se recorta con una sierra de calar }
+  - image: ./6.jpg
+    alt: { en: The cut ash body next to the walnut for its top, es: El cuerpo de fresno recortado junto al nogal de su tapa }

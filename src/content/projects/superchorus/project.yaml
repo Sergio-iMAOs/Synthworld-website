@@ -1,0 +1,11 @@
+name: SuperChorus
+from: 2026
+order: 3
+cover: ./cover.png
+media:
+  - video: /portfolio/superchorus/superchorus.mp4
+    width: 598
+    height: 478
+    alt:
+      en: SuperChorus's interface, its voices moving across a stereo field as the controls are turned
+      es: La interfaz de SuperChorus, con sus voces moviéndose por el campo estéreo al girar los controles

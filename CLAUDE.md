@@ -26,13 +26,14 @@ There are no tests or linter: `npm run build` is the check to run before finishi
 
 A static Astro site (no UI framework, no client-side JavaScript so far), in TypeScript (`astro/tsconfigs/strict`). `@/` is `src/`.
 
-- `src/site.ts`: what doesn't depend on the language (the name, the manual's address, the contact address and the portfolio's URL, both unset for now).
+- `src/site.ts`: what doesn't depend on the language (the name, the manual's address, the portfolio's path, the contact address, unset for now) and the portfolio's `author`.
 - `src/i18n/`: the languages (`index.ts`) and the site's own texts in each (`ui.ts`).
 - `src/content/synths/<synth>/`: a synth. `synth.yaml` has its facts (version, formats, platforms, price, downloads, audio and video demos), `en.md` and `es.md` its texts. They are two content collections (`synths`, `synthTexts`; fields in `src/content.config.ts`) that `getSynths(lang)` in `src/synths.ts` joins: pages use it, not the collections. Adding a synth is adding a folder.
 - `src/pages/[...lang]/`: the pages, each built once per language.
-- `src/layouts/Base.astro`: the page every page is in (`title` and `description` props).
-- `src/components/`: `SynthCard` (a synth in a list), `SynthGet` (its buy button and downloads), `SynthDemos` (its audio and videos), `Header`, `Footer`.
-- `src/styles/global.css`: the only global stylesheet. What's only one component's goes in its own `<style>`.
+- `src/layouts/Base.astro`: the page every page of the synths' site is in (`title` and `description` props).
+- `src/layouts/Portfolio.astro`: the same for the portfolio's pages (see below).
+- `src/components/`: `SynthCard` (a synth in a list), `ProjectCard` (a project of the portfolio in a list), `SynthGet` (its buy button and downloads), `SynthDemos` (its audio and videos), `Header`, `Footer`.
+- `src/styles/global.css`: the synths' site's only global stylesheet. What's only one component's goes in its own `<style>`.
 - `public/demos/<synth>/`: the audio demos' files.
 
 ## Languages
@@ -43,6 +44,20 @@ English and Spanish. English is at the root (`/synths/`), Spanish under `/es/` (
 - A page gets its language from its URL (`langOf(Astro.url)`) and its texts with `textsOf(lang)`. Links between pages go through `pathIn(lang, '/synths/')`, never a bare path.
 - A new page goes in `src/pages/[...lang]/` with `export const getStaticPaths = langPaths`.
 - The manual is the exception: only in English, one address for both.
+
+## The portfolio
+
+The author's portfolio (Sergio iMAOs: music, projects, about, contact) is in this site, at `/Sergio-iMAOs/` (`/es/Sergio-iMAOs/`): the pages in `src/pages/[...lang]/Sergio-iMAOs/`. It is about the author, not the synths, and is a site of its own inside this one:
+
+- Its pages are in `Portfolio.astro`, not `Base.astro`: its own header and footer, without the synths' navigation. The synths' About page links to it, and its footer links back.
+- Its look is `src/styles/portfolio.css` only: its own colours and fonts, nothing of `global.css`, the synths' palette or Oscilla.
+- The rules on languages are the same, but its texts are in `src/i18n/portfolio.ts` (`portfolioTextsOf(lang)`), not `ui.ts`.
+- `src/content/projects/<project>/`: a project, like a synth: `project.yaml` (years, cover, its page's pictures and their descriptions in both languages), `en.md` and `es.md`, and its images next to them. The collections are `projects` and `projectTexts`, joined by `getProjects(lang)` in `src/projects.ts`. `page: false` leaves a project in the list without a page.
+- `src/music.ts`: the works of the music page, played from SoundCloud and YouTube.
+- `src/assets/portfolio/`: the other pages' photos. `public/portfolio/<project>/`: the projects' video loops (silent MP4s, instead of GIFs).
+- `author` in `src/site.ts`: the name, the email and the profiles.
+
+Its content came from the author's previous portfolio (sergioimaos.myportfolio.com): the texts and images, not the design. Its Synthworld project describes the framework as the author's work, which the synths' pages don't; it still doesn't link to the framework's repository.
 
 ## From the framework
 
@@ -70,5 +85,5 @@ The author's own server: `dist/` is uploaded to it. The files to download (free 
 - The domain (not bought): `site` is unset in `astro.config.mjs`. The site is served from the domain's root, so paths start at `/`.
 - How the site is uploaded (no deploy script yet).
 - Which service sells the paid synths, and whether they need licence keys.
-- The contact address and the portfolio's URL (`src/site.ts`).
+- The contact address (`src/site.ts`).
 - Where videos are hosted: `SynthDemos` assumes YouTube.

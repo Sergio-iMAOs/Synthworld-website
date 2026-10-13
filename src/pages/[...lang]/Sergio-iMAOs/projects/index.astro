@@ -1,0 +1,41 @@
+---
+import ProjectCard from '@/components/ProjectCard.astro';
+import Portfolio from '@/layouts/Portfolio.astro';
+import { langOf, langPaths } from '@/i18n';
+import { portfolioTextsOf } from '@/i18n/portfolio';
+import { getProjects } from '@/projects';
+
+export const getStaticPaths = langPaths;
+
+const lang = langOf(Astro.url);
+const t = portfolioTextsOf(lang).projects;
+const projects = await getProjects(lang);
+---
+
+<Portfolio title={t.title} description={t.lead}>
+  <section class="section">
+    <div class="wrap">
+      <h1>{t.title}</h1>
+      <p class="lead">{t.lead}</p>
+    </div>
+  </section>
+  <div class="wrap">
+    <ul class="list">
+      {
+        projects.map((project) => (
+          <li>
+            <ProjectCard project={project} />
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</Portfolio>
+
+<style>
+  ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+    gap: 3rem 2rem;
+  }
+</style>

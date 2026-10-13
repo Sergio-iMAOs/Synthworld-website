@@ -22,8 +22,12 @@ npm run sync       # Copies the font, the manual and the palette from the framew
 src/site.ts              What doesn't depend on the language: the name, the contact address, the portfolio
 src/i18n/                The languages (index.ts) and the site's texts in each (ui.ts)
 src/content/synths/      One folder per synth: synth.yaml (its facts), en.md and es.md (its texts)
-src/pages/[...lang]/     The pages, each built in every language: home, synths, download, about
+src/pages/[...lang]/     The pages, each built in every language: home, synths, download, about, and the portfolio (Sergio-iMAOs/)
 src/layouts/Base.astro   The page every page is in: head, header, footer
+src/layouts/Portfolio.astro   The same for the portfolio, which has a look of its own (src/styles/portfolio.css)
+src/i18n/portfolio.ts    The portfolio's texts in each language
+src/content/projects/    One folder per project of the portfolio: project.yaml, en.md, es.md and its images
+src/music.ts             The works of the portfolio's music page
 src/components/          Header, Footer, and a synth's card, demos, buy button and downloads
 src/styles/              global.css, and palette.css (synced from the framework)
 src/assets/fonts/        Oscilla, SynthWorld's UI font (synced from the framework)

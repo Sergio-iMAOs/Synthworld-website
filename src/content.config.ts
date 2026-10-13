@@ -39,4 +39,56 @@ const synthTexts = defineCollection({
   }),
 });
 
-export const collections = { synths, synthTexts };
+// A project of the portfolio is a folder in src/content/projects, like a synth: its project.yaml, en.md and es.md,
+// and its images next to them.
+
+/** A text in every language (what a project.yaml has of them: its images' descriptions). */
+const inEveryLanguage = z.object({ en: z.string(), es: z.string() });
+
+/** A project's facts. Its id is its folder's name, and its page's address. */
+const projects = defineCollection({
+  loader: glob({
+    pattern: '*/project.yaml',
+    base: './src/content/projects',
+    generateId: ({ entry }) => entry.split('/')[0],
+  }),
+  schema: ({ image }) =>
+    z.object({
+      name: z.string(),
+      /** The years it was made in. Without `to`, only one. */
+      from: z.number(),
+      to: z.union([z.number(), z.literal('today')]).optional(),
+      /** Where it's shown in the list of projects (lowest first). */
+      order: z.number().default(0),
+      /** Its picture in the lists, a path from its folder ("./cover.jpg"). */
+      cover: image(),
+      /** False for a project that is only in the list, without a page of its own. */
+      page: z.boolean().default(true),
+      /** A video, by its YouTube id. */
+      youtube: z.string().optional(),
+      /** Its page's pictures, in order: images from its folder, or silent video loops (in public/portfolio/<project>/). */
+      media: z
+        .array(
+          z.union([
+            z.object({ image: image(), alt: inEveryLanguage }),
+            z.object({ video: z.string(), width: z.number(), height: z.number(), alt: inEveryLanguage }),
+          ]),
+        )
+        .default([]),
+    }),
+});
+
+/** A project's texts in one language: "<project>/<language>". */
+const projectTexts = defineCollection({
+  loader: glob({ pattern: '*/*.md', base: './src/content/projects' }),
+  schema: z.object({
+    /** One sentence: under its name, in the lists and for search engines. */
+    summary: z.string(),
+    /** A second sentence, only for the list of projects. */
+    blurb: z.string().optional(),
+    /** A link at the end of its page: a path of this site or a URL. */
+    link: z.object({ label: z.string(), url: z.string() }).optional(),
+  }),
+});
+
+export const collections = { synths, synthTexts, projects, projectTexts };

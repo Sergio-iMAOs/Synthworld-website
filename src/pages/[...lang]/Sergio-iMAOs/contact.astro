@@ -1,0 +1,55 @@
+---
+import Portfolio from '@/layouts/Portfolio.astro';
+import { langOf, langPaths } from '@/i18n';
+import { portfolioTextsOf } from '@/i18n/portfolio';
+import { author } from '@/site';
+
+export const getStaticPaths = langPaths;
+
+const t = portfolioTextsOf(langOf(Astro.url)).contact;
+---
+
+<Portfolio title={t.title} description={t.lead}>
+  <section class="section">
+    <div class="wrap">
+      <h1>{t.title}</h1>
+      <p class="lead">{t.lead}</p>
+      <ul class="list">
+        <li>
+          <span class="label">{t.email}</span>
+          <a href={`mailto:${author.email}`}>{author.email}</a>
+        </li>
+        <li>
+          <span class="label">Instagram</span>
+          <a href={author.instagram.url}>{author.instagram.handle}</a>
+        </li>
+        <li>
+          <span class="label">SoundCloud</span>
+          <a href={author.soundcloud}>{author.name}</a>
+        </li>
+      </ul>
+    </div>
+  </section>
+</Portfolio>
+
+<style>
+  ul {
+    max-width: 40rem;
+    margin-top: 2.5rem;
+    border-top: 1px solid var(--ink);
+  }
+
+  li {
+    display: grid;
+    grid-template-columns: 8rem 1fr;
+    gap: 1rem;
+    align-items: baseline;
+    padding-block: 1rem;
+    border-bottom: 1px solid var(--panel);
+    font-size: 1.25rem;
+  }
+
+  .label {
+    margin: 0;
+  }
+</style>

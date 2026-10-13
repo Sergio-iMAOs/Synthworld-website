@@ -1,0 +1,11 @@
+name: Waveshaper
+from: 2026
+order: 4
+cover: ./cover.jpg
+media:
+  - video: /portfolio/waveshaper/waveshaper.mp4
+    width: 998
+    height: 550
+    alt:
+      en: Waveshaper's interface, the points of its curve being dragged and then moving at random
+      es: La interfaz de Waveshaper, con los puntos de su curva arrastrados y después moviéndose al azar

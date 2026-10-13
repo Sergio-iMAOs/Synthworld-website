@@ -1,0 +1,118 @@
+---
+import { Image } from 'astro:assets';
+import Portfolio from '@/layouts/Portfolio.astro';
+import { langOf, langPaths } from '@/i18n';
+import { portfolioTextsOf } from '@/i18n/portfolio';
+import live from '@/assets/portfolio/live-2015.jpg';
+import laOnda from '@/assets/portfolio/la-onda.jpg';
+import lab from '@/assets/portfolio/aalto-lab.jpg';
+import keyboard from '@/assets/portfolio/keyboard.jpg';
+
+export const getStaticPaths = langPaths;
+
+const all = portfolioTextsOf(langOf(Astro.url));
+const t = all.about;
+
+// The bio's parts, each with the photo of its time
+const chapters = [
+  { text: t.early, image: live, photo: t.photos.live },
+  { text: t.sevilla, image: laOnda, photo: t.photos.laOnda },
+  { text: t.abroad, image: lab, photo: t.photos.lab },
+];
+---
+
+<Portfolio title={t.title} description={t.lead}>
+  <section class="section">
+    <div class="wrap">
+      <h1>{t.title}</h1>
+      <p class="lead">{all.intro}</p>
+    </div>
+  </section>
+  <div class="wrap">
+    <h2 class="rule">{t.bio}</h2>
+    {
+      chapters.map(({ text, image, photo }) => (
+        <div class="chapter">
+          <div class="prose">
+            {text.map((paragraph) => (
+              <p>{paragraph}</p>
+            ))}
+          </div>
+          <figure>
+            <Image class="frame" src={image} alt={photo.alt} widths={[480, 960]} sizes="(min-width: 48rem) 22rem, 100vw" />
+            <figcaption>{photo.caption}</figcaption>
+          </figure>
+        </div>
+      ))
+    }
+    <div class="chapter">
+      <div>
+        {
+          [t.studies, t.work].map(({ title, items }) => (
+            <section class="record">
+              <h2 class="rule">{title}</h2>
+              <ul class="list">
+                {items.map(({ years, what, where }) => (
+                  <li>
+                    <span class="label">{years}</span>
+                    <span>
+                      <strong>{what}</strong>
+                      <span class="quiet">{where}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))
+        }
+      </div>
+      <Image class="frame tall" src={keyboard} alt={t.photos.keyboard.alt} widths={[480, 960]} sizes="(min-width: 48rem) 22rem, 100vw" />
+    </div>
+  </div>
+</Portfolio>
+
+<style>
+  .chapter {
+    display: grid;
+    gap: 1.5rem 3rem;
+    margin-bottom: 3rem;
+  }
+
+  .chapter img {
+    width: 100%;
+  }
+
+  .tall {
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+  }
+
+  @media (min-width: 48rem) {
+    .chapter {
+      grid-template-columns: 1fr 22rem;
+      align-items: start;
+    }
+  }
+
+  .record + .record {
+    margin-top: 3rem;
+  }
+
+  .record li {
+    display: grid;
+    grid-template-columns: 8rem 1fr;
+    gap: 1rem;
+    align-items: baseline;
+    padding-block: 0.6rem;
+    border-bottom: 1px solid var(--panel);
+  }
+
+  .record .label {
+    margin: 0;
+  }
+
+  .record strong,
+  .record .quiet {
+    display: block;
+  }
+</style>

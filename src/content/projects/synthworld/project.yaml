@@ -1,0 +1,22 @@
+name: Synthworld
+from: 2026
+to: today
+order: 1
+cover: ./cover.png
+media:
+  - video: /portfolio/synthworld/modulation.mp4
+    width: 1200
+    height: 600
+    alt:
+      en: A synthesiser made with Synthworld being played while modulations are added in its matrix
+      es: Un sintetizador hecho con Synthworld sonando mientras se añaden modulaciones en su matriz
+  - video: /portfolio/synthworld/routing.mp4
+    width: 1280
+    height: 720
+    alt:
+      en: The routing graph, with oscillators, gains and a filter being rewired
+      es: El grafo de enrutamiento, con osciladores, ganancias y un filtro que se recablean
+  - image: ./ui.png
+    alt:
+      en: The interface of a synthesiser made with Synthworld, with its oscillator, filter, envelopes, LFOs and modulation matrix
+      es: La interfaz de un sintetizador hecho con Synthworld, con su oscilador, filtro, envolventes, LFO y matriz de modulación

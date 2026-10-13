@@ -1,0 +1,142 @@
+---
+import { Image } from 'astro:assets';
+import Portfolio from '@/layouts/Portfolio.astro';
+import { langOf, langPaths, pathIn } from '@/i18n';
+import { portfolioTextsOf } from '@/i18n/portfolio';
+import { soundcloudPlayer, works, youtubePlayer } from '@/music';
+import { site } from '@/site';
+import temblor from '@/assets/portfolio/temblor-t10.jpg';
+import tlm from '@/assets/portfolio/tlm-102.jpg';
+import hs8 from '@/assets/portfolio/hs8.jpg';
+
+export const getStaticPaths = langPaths;
+
+const lang = langOf(Astro.url);
+const all = portfolioTextsOf(lang);
+const t = all.music;
+
+const groups = [
+  { title: t.selected, works: works.filter((work) => work.selected) },
+  { title: t.all, works: works.filter((work) => !work.selected) },
+];
+
+const studio = [
+  { name: 'PreSonus Temblor T10', image: temblor },
+  { name: 'Neumann TLM 102', image: tlm },
+  { name: 'Yamaha HS8', image: hs8 },
+];
+---
+
+<Portfolio title={t.title} description={t.lead}>
+  <section class="section">
+    <div class="wrap">
+      <h1>{t.title}</h1>
+      <p class="lead">{t.lead}</p>
+    </div>
+  </section>
+  {
+    groups.map((group) => (
+      <section class="wrap group">
+        <h2 class="rule">{group.title}</h2>
+        <ul class="list works">
+          {group.works.map((work) => (
+            <li class:list={{ cover: work.cover }}>
+              {work.cover && <Image class="frame" src={work.cover} alt={`${t.coverOf} ${work.title}`} widths={[480, 960]} sizes="(min-width: 48rem) 20rem, 100vw" />}
+              <div>
+                <p class="label">{[work.kind && t.kinds[work.kind], work.year].filter(Boolean).join(' · ')}</p>
+                <h3>{work.title}</h3>
+                {work.soundcloud && (
+                  <iframe
+                    class:list={['frame', work.playlist ? 'playlist' : 'track']}
+                    title={work.title}
+                    src={soundcloudPlayer(work.soundcloud, work.playlist)}
+                    loading="lazy"
+                    allow="autoplay"
+                  />
+                )}
+                {work.youtube && (
+                  <iframe class="frame wide" title={work.title} src={youtubePlayer(work.youtube)} loading="lazy" allow="autoplay; picture-in-picture" allowfullscreen />
+                )}
+                {work.credit && (
+                  <p class="quiet credit">
+                    {t.credits[work.credit]} <a href="https://instagram.com/desmodusound">Desmodus Sound</a>.
+                  </p>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))
+  }
+  <section class="wrap group">
+    <h2 class="rule">{t.studio}</h2>
+    <ul class="list studio">
+      {
+        studio.map(({ name, image }) => (
+          <li>
+            <figure>
+              <Image class="frame" src={image} alt="" widths={[400, 600]} sizes="(min-width: 48rem) 20rem, 100vw" />
+              <figcaption>{name}</figcaption>
+            </figure>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+  <section class="wrap group">
+    <div class="rule prose">
+      <h2>{t.collaborate.title}</h2>
+      <p>{t.collaborate.text}</p>
+      <p><a class="button" href={pathIn(lang, `${site.portfolio}contact/`)}>{t.collaborate.cta}</a></p>
+    </div>
+  </section>
+</Portfolio>
+
+<style>
+  .group {
+    margin-bottom: clamp(2.5rem, 7vw, 5rem);
+  }
+
+  .works {
+    display: grid;
+    gap: 3rem;
+  }
+
+  h3 {
+    margin-bottom: 1rem;
+    font-size: 1.75rem;
+  }
+
+  .credit {
+    margin: 0.75rem 0 0;
+    font-size: 0.9rem;
+  }
+
+  .studio {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: 1.5rem;
+  }
+
+  .studio img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+  }
+
+  @media (min-width: 48rem) {
+    .cover {
+      display: grid;
+      grid-template-columns: 20rem 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+  }
+
+  @media (max-width: 47.99rem) {
+    .cover img {
+      margin-bottom: 1rem;
+    }
+  }
+</style>

@@ -1,0 +1,146 @@
+---
+import '@/styles/portfolio.css';
+import { defaultLang, langOf, languages, pathIn, pathWithoutLang, type Lang } from '@/i18n';
+import { portfolioTextsOf } from '@/i18n/portfolio';
+import { author, site } from '@/site';
+
+interface Props {
+  /** The page's own title; the author's name is added to it. Without one, the title is the portfolio's. */
+  title?: string;
+  description?: string;
+}
+
+const lang = langOf(Astro.url);
+const t = portfolioTextsOf(lang);
+const { title, description = t.description } = Astro.props;
+const fullTitle = title ? `${title} · ${author.name}` : `${author.name}: ${t.roles}`;
+
+// The same page in every language, for search engines (absolute once `site` is set in astro.config.mjs)
+const path = pathWithoutLang(Astro.url);
+const address = (code: Lang) => (Astro.site ? new URL(pathIn(code, path), Astro.site).href : pathIn(code, path));
+
+const nav = (['music', 'projects', 'about', 'contact'] as const).map((page) => ({
+  href: pathIn(lang, `${site.portfolio}${page}/`),
+  label: t.nav[page],
+  current: path.startsWith(`${site.portfolio}${page}/`),
+}));
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={address(lang)} />
+    {(Object.keys(languages) as Lang[]).map((code) => <link rel="alternate" hreflang={code} href={address(code)} />)}
+    <link rel="alternate" hreflang="x-default" href={address(defaultLang)} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+  </head>
+  <body>
+    <header>
+      <div class="wrap bar">
+        <a class="name" href={pathIn(lang, site.portfolio)}>{author.name}</a>
+        <nav aria-label="Main">
+          <ul>
+            {
+              nav.map(({ href, label, current }) => (
+                <li>
+                  <a href={href} aria-current={current ? 'page' : undefined}>
+                    {label}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+        <ul class="languages">
+          {
+            (Object.keys(languages) as Lang[]).map((code) => (
+              <li>
+                <a href={pathIn(code, path)} lang={code} hreflang={code} aria-current={code === lang ? 'true' : undefined}>
+                  {code.toUpperCase()}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer>
+      <div class="wrap bar">
+        <a class="mail" href={`mailto:${author.email}`}>{author.email}</a>
+        <ul>
+          <li><a href={author.instagram.url}>Instagram</a></li>
+          <li><a href={author.soundcloud}>SoundCloud</a></li>
+          <li><a href={pathIn(lang, '/')}>{t.synthworld}</a></li>
+        </ul>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style>
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem 2rem;
+    padding-block: 1.25rem;
+  }
+
+  .name,
+  .mail {
+    margin-right: auto;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .name {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 600;
+  }
+
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.5rem;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  li a {
+    color: var(--quiet);
+    text-decoration: none;
+  }
+
+  li a:hover,
+  li a[aria-current] {
+    color: var(--ink);
+  }
+
+  nav a[aria-current] {
+    border-bottom: 2px solid var(--mark);
+  }
+
+  .languages {
+    gap: 0.75rem;
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+  }
+
+  footer {
+    margin-top: clamp(2rem, 6vw, 4rem);
+    border-top: 1px solid var(--ink);
+    font-size: 0.9rem;
+  }
+</style>

@@ -1,0 +1,5 @@
+name: SoftWaver
+from: 2025
+order: 5
+cover: ./cover.jpg
+page: false

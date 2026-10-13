@@ -1,11 +1,12 @@
 ---
 import Base from '@/layouts/Base.astro';
-import { langOf, langPaths, textsOf } from '@/i18n';
+import { langOf, langPaths, pathIn, textsOf } from '@/i18n';
 import { site } from '@/site';
 
 export const getStaticPaths = langPaths;
 
-const t = textsOf(langOf(Astro.url)).about;
+const lang = langOf(Astro.url);
+const t = textsOf(lang).about;
 ---
 
 <Base title={t.title} description={t.description}>
@@ -13,13 +14,9 @@ const t = textsOf(langOf(Astro.url)).about;
     <div class="wrap">
       <h1>{t.title}</h1>
       <p class="lead">{t.text}</p>
-      {
-        site.portfolio && (
-          <p>
-            <a href={site.portfolio}>{t.portfolio}</a>
-          </p>
-        )
-      }
+      <p>
+        <a href={pathIn(lang, site.portfolio)}>{t.portfolio}</a>
+      </p>
       <h2>{t.contact}</h2>
       {site.contact ? <p><a href={`mailto:${site.contact}`}>{site.contact}</a></p> : <p class="muted">{t.noContact}</p>}
     </div>

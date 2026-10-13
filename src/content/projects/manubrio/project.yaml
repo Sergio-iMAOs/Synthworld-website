@@ -1,0 +1,15 @@
+name: Manubrio
+from: 2025
+to: 2026
+order: 2
+cover: ./cover.jpg
+youtube: QiVAavdx4kg
+media:
+  - image: ./1.jpg
+    alt:
+      en: Manubrio's handlebar, mounted on a white box at the end of a wooden board
+      es: El manillar de Manubrio, montado en una caja blanca al extremo de una tabla de madera
+  - image: ./2.jpg
+    alt:
+      en: Manubrio being played, held against the body with one hand on its handle
+      es: Manubrio mientras se toca, apoyado en el cuerpo y con una mano en su mango

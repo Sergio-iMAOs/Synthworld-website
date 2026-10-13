@@ -1,0 +1,110 @@
+---
+import { Image } from 'astro:assets';
+import { render } from 'astro:content';
+import ProjectCard from '@/components/ProjectCard.astro';
+import Portfolio from '@/layouts/Portfolio.astro';
+import { defaultLang, langOf, languages, type Lang } from '@/i18n';
+import { portfolioTextsOf } from '@/i18n/portfolio';
+import { youtubePlayer } from '@/music';
+import { getProjects, yearsOf } from '@/projects';
+
+// Every project that has a page, once per language
+export async function getStaticPaths() {
+  const projects = (await getProjects(defaultLang)).filter((project) => project.data.page);
+  return (Object.keys(languages) as Lang[]).flatMap((lang) =>
+    projects.map(({ id }) => ({ params: { lang: lang === defaultLang ? undefined : lang, id } })),
+  );
+}
+
+const lang = langOf(Astro.url);
+const t = portfolioTextsOf(lang);
+const projects = await getProjects(lang);
+const project = projects.find(({ id }) => id === Astro.params.id)!;
+const { data, text } = project;
+const { Content } = await render(text);
+const others = projects.filter(({ id, data }) => id !== project.id && data.page);
+---
+
+<Portfolio title={data.name} description={text.data.summary}>
+  <section class="section">
+    <div class="wrap">
+      <p class="label">{yearsOf(data, t.today)}</p>
+      <h1>{data.name}</h1>
+      <p class="lead">{text.data.summary}</p>
+    </div>
+  </section>
+  <div class="wrap">
+    {data.youtube && <iframe class="frame wide video" title={data.name} src={youtubePlayer(data.youtube)} loading="lazy" allow="autoplay; picture-in-picture" allowfullscreen />}
+    <div class="prose">
+      <Content />
+      {
+        text.data.link && (
+          <p>
+            <a href={text.data.link.url}>{text.data.link.label} →</a>
+          </p>
+        )
+      }
+    </div>
+    <ul class="list media">
+      {
+        data.media.map((item) => (
+          <li>
+            {'image' in item ? (
+              <Image class="frame" src={item.image} alt={item.alt[lang]} widths={[480, 960, 1600]} sizes="(min-width: 48rem) 30rem, 100vw" />
+            ) : (
+              <video class="frame" src={item.video} width={item.width} height={item.height} aria-label={item.alt[lang]} autoplay loop muted playsinline />
+            )}
+          </li>
+        ))
+      }
+    </ul>
+    <section class="rule others">
+      <h2>{t.projects.others}</h2>
+      <ul class="list">
+        {
+          others.map((other) => (
+            <li>
+              <ProjectCard project={other} small />
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+  </div>
+</Portfolio>
+
+<style>
+  .video {
+    margin-bottom: 2.5rem;
+  }
+
+  .media {
+    columns: 2 22rem;
+    column-gap: 1rem;
+    margin-top: 2.5rem;
+  }
+
+  .media li {
+    break-inside: avoid;
+    margin-bottom: 1rem;
+  }
+
+  /* One picture alone takes the whole width */
+  .media li:only-child {
+    column-span: all;
+  }
+
+  .media img {
+    width: 100%;
+  }
+
+  .others {
+    margin-top: clamp(2.5rem, 7vw, 5rem);
+  }
+
+  .others ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: 1.5rem;
+  }
+</style>

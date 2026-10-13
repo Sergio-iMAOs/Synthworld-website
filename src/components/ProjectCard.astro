@@ -1,0 +1,81 @@
+---
+import { Image } from 'astro:assets';
+import { langOf, pathIn } from '@/i18n';
+import { portfolioTextsOf } from '@/i18n/portfolio';
+import { yearsOf, type Project } from '@/projects';
+import { site } from '@/site';
+
+interface Props {
+  project: Project;
+  /** In a row of other projects at the end of a page: only its picture, name and years. */
+  small?: boolean;
+}
+
+const { project, small = false } = Astro.props;
+const { id, data, text } = project;
+const lang = langOf(Astro.url);
+const t = portfolioTextsOf(lang);
+const href = data.page ? pathIn(lang, `${site.portfolio}projects/${id}/`) : undefined;
+const Title = small ? 'h3' : 'h2';
+---
+
+<article class:list={{ small }}>
+  <Image class="frame" src={data.cover} alt="" widths={[480, 960]} sizes={small ? '(min-width: 40rem) 20rem, 50vw' : '(min-width: 48rem) 31rem, 100vw'} />
+  <p class="label">{yearsOf(data, t.today)}</p>
+  <Title>{href ? <a href={href}>{data.name}</a> : data.name}</Title>
+  {
+    !small && (
+      <>
+        <p>{text.data.summary}</p>
+        {text.data.blurb && <p class="quiet">{text.data.blurb}</p>}
+        {href && (
+          <p>
+            <a href={href} aria-hidden="true" tabindex="-1">
+              {t.projects.more} →
+            </a>
+          </p>
+        )}
+      </>
+    )
+  }
+</article>
+
+<style>
+  article {
+    position: relative;
+  }
+
+  img {
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+    margin-bottom: 1rem;
+  }
+
+  h2,
+  h3 {
+    margin-bottom: 0.5rem;
+  }
+
+  h2 a,
+  h3 a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  /* The whole card is its title's link */
+  h2 a::after,
+  h3 a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  article:hover :is(h2, h3) a {
+    color: var(--mark);
+  }
+
+  p {
+    margin-bottom: 0.5rem;
+  }
+</style>

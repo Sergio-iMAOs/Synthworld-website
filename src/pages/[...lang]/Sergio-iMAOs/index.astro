@@ -1,0 +1,96 @@
+---
+import { Image } from 'astro:assets';
+import Portfolio from '@/layouts/Portfolio.astro';
+import { langOf, langPaths, pathIn } from '@/i18n';
+import { portfolioTextsOf } from '@/i18n/portfolio';
+import { author, site } from '@/site';
+import keyboard from '@/assets/portfolio/keyboard.jpg';
+import lab from '@/assets/portfolio/aalto-lab.jpg';
+import manubrio from '@/content/projects/manubrio/2.jpg';
+
+export const getStaticPaths = langPaths;
+
+const lang = langOf(Astro.url);
+const t = portfolioTextsOf(lang);
+
+const doors = [
+  { page: 'music', image: keyboard, text: t.music.lead },
+  { page: 'projects', image: manubrio, text: t.projects.lead },
+  { page: 'about', image: lab, text: t.about.lead },
+] as const;
+---
+
+<Portfolio>
+  <section class="section">
+    <div class="wrap">
+      <p class="label">{t.roles}</p>
+      <h1>{author.name}</h1>
+      <p class="lead">{t.intro}</p>
+    </div>
+  </section>
+  <div class="wrap">
+    <ul class="list doors">
+      {
+        doors.map(({ page, image, text }) => (
+          <li>
+            <Image class="frame" src={image} alt="" widths={[480, 960]} sizes="(min-width: 48rem) 20rem, 100vw" />
+            <h2>
+              <a href={pathIn(lang, `${site.portfolio}${page}/`)}>{t.nav[page]}</a>
+            </h2>
+            <p class="quiet">{text}</p>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="rule contact">
+      <a class="button" href={pathIn(lang, `${site.portfolio}contact/`)}>{t.music.collaborate.cta}</a>
+    </p>
+  </div>
+</Portfolio>
+
+<style>
+  h1 {
+    font-size: clamp(3rem, 12vw, 8rem);
+    letter-spacing: -0.02em;
+  }
+
+  .doors {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 2rem;
+  }
+
+  li {
+    position: relative;
+  }
+
+  img {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    margin-bottom: 1rem;
+  }
+
+  h2 {
+    margin-bottom: 0.25rem;
+  }
+
+  h2 a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  h2 a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  li:hover h2 a {
+    color: var(--mark);
+  }
+
+  .contact {
+    margin-top: 3rem;
+  }
+</style>
