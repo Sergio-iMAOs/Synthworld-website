@@ -87,6 +87,17 @@ const en = {
         { years: '2017 – 2024', what: 'Professional musician', where: 'Ralea Orchestra (Spain), freelancer' },
       ],
     },
+    publications: {
+      title: 'Publications',
+      items: [
+        {
+          year: '2026',
+          title: 'Manubrio: Investigating Musical Instrument Embodiment Through a Feedback-Based New Interface for Musical Expression',
+          where: 'Proceedings of the International Conference on New Interfaces for Musical Expression (NIME 2026), London, United Kingdom',
+          url: 'https://nime.org/proc/nime2026_43/index.html',
+        },
+      ],
+    },
   },
   contact: {
     title: 'Contact',
@@ -179,6 +190,17 @@ const es: typeof en = {
         { years: '2020', what: 'Asistente de investigación en informática', where: 'Universidad de Valladolid (Valladolid, España)' },
         { years: '2018 – 2023', what: 'Profesor de música', where: 'Autónomo' },
         { years: '2017 – 2024', what: 'Músico profesional', where: 'Orquesta Ralea (España), autónomo' },
+      ],
+    },
+    publications: {
+      title: 'Publicaciones',
+      items: [
+        {
+          year: '2026',
+          title: 'Manubrio: Investigating Musical Instrument Embodiment Through a Feedback-Based New Interface for Musical Expression',
+          where: 'Actas de la Conferencia Internacional sobre Nuevas Interfaces para la Expresión Musical (NIME 2026), Londres, Reino Unido',
+          url: 'https://nime.org/proc/nime2026_43/index.html',
+        },
       ],
     },
   },

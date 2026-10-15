@@ -68,6 +68,24 @@ const chapters = [
       </div>
       <Image class="frame tall" src={keyboard} alt={t.photos.keyboard.alt} widths={[480, 960]} sizes="(min-width: 48rem) 22rem, 100vw" />
     </div>
+    <section class="record publications">
+      <h2 class="rule">{t.publications.title}</h2>
+      <ul class="list">
+        {
+          t.publications.items.map(({ year, title, where, url }) => (
+            <li>
+              <span class="label">{year}</span>
+              <span>
+                <strong>
+                  <a href={url}>{title}</a>
+                </strong>
+                <span class="quiet">{where}</span>
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
   </div>
 </Portfolio>
 
@@ -92,6 +110,10 @@ const chapters = [
       grid-template-columns: 1fr 22rem;
       align-items: start;
     }
+  }
+
+  .publications {
+    margin-bottom: 3rem;
   }
 
   .record + .record {
