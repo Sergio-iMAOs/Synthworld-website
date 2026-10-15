@@ -19,7 +19,7 @@ const fullTitle = title ? `${title} · ${author.name}` : `${author.name}: ${t.ro
 const path = pathWithoutLang(Astro.url);
 const address = (code: Lang) => (Astro.site ? new URL(pathIn(code, path), Astro.site).href : pathIn(code, path));
 
-const nav = (['music', 'projects', 'about', 'contact'] as const).map((page) => ({
+const nav = (['music', 'projects', 'books', 'about', 'contact'] as const).map((page) => ({
   href: pathIn(lang, `${site.portfolio}${page}/`),
   label: t.nav[page],
   current: path.startsWith(`${site.portfolio}${page}/`),

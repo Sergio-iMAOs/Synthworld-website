@@ -50,4 +50,6 @@ The Oscilla font, the palette and the user manual come from the framework's repo
 
 ## Deploying
 
-Build and upload `dist/` to the server. The files to download are kept on the server in a folder of their own, served at `/downloads/`, outside `dist/`: an upload that mirrors `dist/` must not delete it.
+For now the site is on GitHub Pages, at synthworldaudio.com: pushing to `main` builds and publishes it (`.github/workflows/deploy.yml`). The domain is in `public/CNAME`, and the repository's Settings → Pages has "GitHub Actions" as its source.
+
+On the author's own server, later: build and upload `dist/`. The files to download are kept on the server in a folder of their own, served at `/downloads/`, outside `dist/`: an upload that mirrors `dist/` must not delete it.

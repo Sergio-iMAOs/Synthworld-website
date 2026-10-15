@@ -78,12 +78,15 @@ EARL is free. Some later synths will be paid (none exists yet), so nothing may a
 
 ## Hosting
 
-The author's own server: `dist/` is uploaded to it. The files to download (free synths, demos) are on the same server at `/downloads/<synth>/<file>`, in a folder outside `dist/` and this repository, so that a deploy doesn't delete them and builds don't carry them.
+The domain is `synthworldaudio.com` (`site` in `astro.config.mjs`); the site is served from its root, so paths start at `/`.
+
+For now the site is on GitHub Pages, from this repository, which is public: `.github/workflows/deploy.yml` builds it and publishes `dist/` on every push to `main`, and `public/CNAME` is the domain. So everything committed here, and everything in `dist/`, is public. GitHub Pages serves only what the build makes: no server configuration, headers or redirects.
+
+It will move to the author's own server, maybe before EARL's release: `dist/` uploaded to it, the DNS pointed at it, and the workflow and `public/CNAME` removed. There, the files to download (free synths, demos) will be at `/downloads/<synth>/<file>`, in a folder outside `dist/` and this repository, so that a deploy doesn't delete them and builds don't carry them. Until then, a free synth's files can be in a GitHub Release, linked from its `downloads`. A closed beta's builds are never put on the site or in the repository.
 
 ## Not decided yet
 
-- The domain (not bought): `site` is unset in `astro.config.mjs`. The site is served from the domain's root, so paths start at `/`.
-- How the site is uploaded (no deploy script yet).
+- How the site will be uploaded to the author's server (no deploy script yet).
 - Which service sells the paid synths, and whether they need licence keys.
 - The contact address (`src/site.ts`).
 - Where videos are hosted: `SynthDemos` assumes YouTube.

@@ -6,7 +6,7 @@ const en = {
   roles: 'Music, sound and the instruments to make them',
   intro:
     "I love art, especially music and sound, and I'm passionate about discovering new ideas. I'm drawn to what’s being created TODAY. Fresh, avant-garde, and experimental works that reflect our current life experience.",
-  nav: { music: 'Music', projects: 'Projects', about: 'About', contact: 'Contact' },
+  nav: { music: 'Music', projects: 'Projects', books: 'Books', about: 'About', contact: 'Contact' },
   today: 'Today',
   synthworld: 'SynthWorld, my synthesisers',
   music: {
@@ -29,6 +29,18 @@ const en = {
     lead: 'Some of my documented personal projects.',
     more: 'See more',
     others: 'Other projects',
+  },
+  books: {
+    title: 'Books',
+    lead: "Books I've read, liked and recommend.",
+    top: 'Top selection',
+    notes: {
+      berklee: 'The book that opened jazz, theory and harmony to me, and got me composing and learning new instruments.',
+      roads: 'My way into sound design, and the book that led me to audio DSP.',
+    },
+    groups: { sound: 'Music and sound', code: 'Programming', people: 'People', mind: 'Mind and consciousness' },
+    editions: { second: 'Second edition', anniversary25: '25th anniversary edition' },
+    coverOf: 'Cover of',
   },
   about: {
     title: 'About',
@@ -88,7 +100,7 @@ const es: typeof en = {
   roles: 'Música, sonido y los instrumentos para hacerlos',
   intro:
     'Me encanta el arte, sobre todo la música y el sonido, y me apasiona descubrir ideas nuevas. Me atrae lo que se está creando HOY: obras frescas, vanguardistas y experimentales que reflejan cómo vivimos ahora.',
-  nav: { music: 'Música', projects: 'Proyectos', about: 'Sobre mí', contact: 'Contacto' },
+  nav: { music: 'Música', projects: 'Proyectos', books: 'Libros', about: 'Sobre mí', contact: 'Contacto' },
   today: 'Hoy',
   synthworld: 'SynthWorld, mis sintetizadores',
   music: {
@@ -111,6 +123,18 @@ const es: typeof en = {
     lead: 'Algunos de mis proyectos personales documentados.',
     more: 'Ver más',
     others: 'Otros proyectos',
+  },
+  books: {
+    title: 'Libros',
+    lead: 'Libros que he leído, me han gustado y recomiendo.',
+    top: 'Selección principal',
+    notes: {
+      berklee: 'El libro que me abrió el jazz, la teoría y la armonía, y que me llevó a componer y a aprender nuevos instrumentos.',
+      roads: 'Mi entrada al diseño de sonido, y el libro que me llevó al DSP de audio.',
+    },
+    groups: { sound: 'Música y sonido', code: 'Programación', people: 'Personas', mind: 'Mente y consciencia' },
+    editions: { second: 'Segunda edición', anniversary25: 'Edición del 25.º aniversario' },
+    coverOf: 'Portada de',
   },
   about: {
     title: 'Sobre mí',

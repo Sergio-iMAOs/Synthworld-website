@@ -1,0 +1,164 @@
+---
+import { Image } from 'astro:assets';
+import Portfolio from '@/layouts/Portfolio.astro';
+import { langOf, langPaths } from '@/i18n';
+import { portfolioTextsOf } from '@/i18n/portfolio';
+import { books, type Book } from '@/books';
+
+export const getStaticPaths = langPaths;
+
+const lang = langOf(Astro.url);
+const t = portfolioTextsOf(lang).books;
+
+const top = books.filter((book) => book.top);
+const groups = (Object.keys(t.groups) as Book['group'][])
+  .map((group) => ({ title: t.groups[group], books: books.filter((book) => book.group === group && !book.top) }))
+  .filter((group) => group.books.length > 0);
+
+/** The edition's line: its publisher, year and which edition it is. */
+const editionOf = (book: Book) => [book.publisher, book.year, book.edition && t.editions[book.edition]].filter(Boolean).join(' · ');
+---
+
+<Portfolio title={t.title} description={t.lead}>
+  <section class="section">
+    <div class="wrap">
+      <h1>{t.title}</h1>
+      <p class="lead">{t.lead}</p>
+    </div>
+  </section>
+  <section class="wrap group">
+    <h2 class="rule">{t.top}</h2>
+    <ul class="list top">
+      {
+        top.map((book) => (
+          <li class="book">
+            <Image class="frame" src={book.cover} alt={`${t.coverOf} ${book.title}`} widths={[240, 480]} sizes="12rem" />
+            <div>
+              <h3>
+                <a href={book.url}>{book.title}</a>
+              </h3>
+              {book.subtitle && <p class="subtitle">{book.subtitle}</p>}
+              <p class="authors">{book.authors.join(', ')}</p>
+              <p class="quiet edition">{editionOf(book)}</p>
+              {book.top && <p class="note">{t.notes[book.top]}</p>}
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+  {
+    groups.map((group) => (
+      <section class="wrap group">
+        <h2 class="rule">{group.title}</h2>
+        <ul class="list shelf">
+          {group.books.map((book) => (
+            <li class="book">
+              <Image class="frame" src={book.cover} alt={`${t.coverOf} ${book.title}`} widths={[240, 480]} sizes="(min-width: 48rem) 11rem, 50vw" />
+              <div>
+                <h3>
+                  <a href={book.url}>{book.title}</a>
+                </h3>
+                {book.subtitle && <p class="subtitle">{book.subtitle}</p>}
+                <p class="authors">{book.authors.join(', ')}</p>
+                <p class="quiet edition">{editionOf(book)}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))
+  }
+</Portfolio>
+
+<style>
+  .group {
+    margin-bottom: clamp(2.5rem, 7vw, 5rem);
+  }
+
+  /* A book is a link as a whole: its title's link covers it. */
+  .book {
+    position: relative;
+  }
+
+  h3 a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  h3 a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  .book:hover h3 a {
+    color: var(--mark);
+  }
+
+  .book img {
+    width: 100%;
+    box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 0.15);
+  }
+
+  .book p {
+    margin: 0 0 0.25rem;
+  }
+
+  .subtitle {
+    font-family: var(--font-display);
+    font-style: italic;
+  }
+
+  .edition {
+    font-size: 0.85rem;
+  }
+
+  .top {
+    display: grid;
+    gap: 3rem;
+  }
+
+  .top .book {
+    display: grid;
+    grid-template-columns: minmax(7rem, 12rem) 1fr;
+    gap: clamp(1rem, 4vw, 2rem);
+    align-items: start;
+  }
+
+  .top h3 {
+    font-size: 1.75rem;
+  }
+
+  .book .note {
+    margin-top: 1rem;
+    padding-left: 1rem;
+    border-left: 2px solid var(--mark);
+    max-width: 32rem;
+  }
+
+  .shelf {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(11rem, 40%), 1fr));
+    gap: 2.5rem 1.5rem;
+  }
+
+  .shelf img {
+    margin-bottom: 1rem;
+  }
+
+  .shelf h3 {
+    font-size: 1.15rem;
+  }
+
+  .shelf .subtitle,
+  .shelf .authors {
+    font-size: 0.9rem;
+  }
+
+  @media (min-width: 48rem) {
+    .top {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+</style>
