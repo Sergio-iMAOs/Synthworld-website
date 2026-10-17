@@ -1,8 +1,66 @@
 name: EARL
-version: 0.1.0
-formats: [CLAP, VST3, Standalone]
+version: 1.0.0
+formats: [CLAP, VST3, LV2, Standalone]
 platforms: [Linux]
 order: 1
 downloads: []
 audio: []
 videos: []
+# Its header: the framework's EarlLogo, the sun and the name standing on the horizon the page draws
+logo: ./logo.png
+# Taken from the framework by `npm run screenshots` (scripts/screenshots.mjs, which says how each one is taken).
+# en.md and es.md place each screenshot with <!-- screenshot: <id> -->.
+cover:
+  image: ./screenshots/synth.png
+  alt:
+    en: "EARL's window on its Synth page: three oscillators, the noise and the sub-oscillator at the top, the filters and the voice's distortions under them, the envelopes and LFOs at the bottom"
+    es: "La ventana de EARL en su página Synth: tres osciladores, el ruido y el suboscilador arriba, los filtros y las distorsiones de la voz debajo, y las envolventes y los LFO abajo"
+screenshots:
+  - id: velvet-noise
+    image: ./screenshots/velvet-noise.png
+    alt:
+      en: "The velvet noise's panel: its pulses drawn as dots over its DENSITY, JITTER, PW, PAN and GAIN knobs and its LEVEL and MONO switches"
+      es: "El panel del ruido velvet: sus pulsos dibujados como puntos sobre sus perillas DENSITY, JITTER, PW, PAN y GAIN y sus interruptores LEVEL y MONO"
+    caption:
+      en: "Its display draws the pulses as the noise plays them."
+      es: "Su pantalla dibuja los pulsos tal como el ruido los toca."
+  - id: graph
+    image: ./screenshots/graph.png
+    alt:
+      en: "EARL's Graph page: the patch's processors as nodes joined by cables, the voice's on the left and the global effects on the right"
+      es: "La página Graph de EARL: los procesadores del patch como nodos unidos por cables, los de la voz a la izquierda y los efectos globales a la derecha"
+    caption:
+      en: "The Graph page: each voice on the left, the effects on the right."
+      es: "La página Graph: cada voz a la izquierda, los efectos a la derecha."
+  - id: mod-matrix
+    image: ./screenshots/mod-matrix.png
+    alt:
+      en: "EARL's Mod Matrix page: a row for each modulation, with its source, its target, its amount and its curve"
+      es: "La página Mod Matrix de EARL: una fila por modulación, con su fuente, su destino, su cantidad y su curva"
+    caption:
+      en: "The Mod Matrix page: each modulation with its amount and its curve."
+      es: "La página Mod Matrix: cada modulación con su cantidad y su curva."
+  - id: global
+    image: ./screenshots/global.png
+    alt:
+      en: "EARL's Global page: eight effect slots in two columns, and the global envelopes, LFOs and audio input under them"
+      es: "La página Global de EARL: ocho ranuras de efectos en dos columnas, y debajo las envolventes, los LFO y la entrada de audio globales"
+    caption:
+      en: "The Global page: the eight effect slots, and the effects' own modulators."
+      es: "La página Global: las ocho ranuras de efectos y los moduladores propios de los efectos."
+  - id: notes
+    image: ./screenshots/notes.png
+    alt:
+      en: "EARL's Notes page: the transposition, the chord maker and the arpeggiator at the top, the voices' and the unison's settings under them"
+      es: "La página Notes de EARL: la transposición, el generador de acordes y el arpegiador arriba, y debajo los ajustes de las voces y del unísono"
+    caption:
+      en: "The Notes page: what changes the notes, and the voices, glide and unison."
+      es: "La página Notes: lo que cambia las notas, y las voces, el glide y el unísono."
+  - id: tuning
+    image: ./screenshots/tuning.png
+    alt:
+      en: "EARL's Tuning page"
+      es: "La página Tuning de EARL"
+    caption:
+      en: "The Tuning page."
+      es: "La página Tuning."

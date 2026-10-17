@@ -1,8 +1,10 @@
 ---
-import { getCollection, render } from 'astro:content';
+import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
 import Base from '@/layouts/Base.astro';
 import SynthDemos from '@/components/SynthDemos.astro';
 import SynthGet from '@/components/SynthGet.astro';
+import SynthScreenshot from '@/components/SynthScreenshot.astro';
 import { langOf, langPaths, textsOf } from '@/i18n';
 import { getSynths } from '@/synths';
 
@@ -15,23 +17,180 @@ const lang = langOf(Astro.url);
 const t = textsOf(lang).synths;
 const synth = (await getSynths(lang)).find(({ id }) => id === Astro.params.id)!;
 const { data, text } = synth;
-const { Content } = await render(text);
+
+// The text, cut where it places a screenshot (<!-- screenshot: <id> -->): its HTML and the screenshots' ids, in turn
+const html = text.rendered?.html;
+if (html === undefined) throw new Error(`The text "${text.id}" isn't rendered`);
+const parts = html.split(/<!--\s*screenshot:\s*([\w-]+)\s*-->/);
+const screenshotOf = (id: string) => {
+  const screenshot = data.screenshots.find((screenshot) => screenshot.id === id);
+  if (!screenshot) throw new Error(`The text "${text.id}" places a screenshot "${id}" that synth.yaml doesn't have`);
+  return screenshot;
+};
+const unplaced = data.screenshots.filter(({ id }) => !parts.some((part, index) => index % 2 === 1 && part === id));
 ---
 
 <Base title={data.name} description={text.data.summary}>
-  <section class="section">
+  <header class={data.logo ? 'hero sunrise' : 'hero'}>
     <div class="wrap">
-      <h1>{data.name}</h1>
-      <p class="lead">{text.data.summary}</p>
-      <ul class="tags">
-        <li>v{data.version}</li>
-        <li>{data.paid ? data.paid.price : t.free}</li>
-        {data.formats.map((format) => <li>{format}</li>)}
-        {data.platforms.map((platform) => <li>{platform}</li>)}
-      </ul>
-      <Content />
-      <SynthDemos synth={synth} />
-      <SynthGet synth={synth} />
+      <h1>{data.logo ? <Image class="logo" src={data.logo} alt={data.name} widths={[600, 1200, 2400]} sizes="(min-width: 68rem) 64rem, 100vw" loading="eager" /> : data.name}</h1>
     </div>
+    {data.logo && <div class="horizon" />}
+  </header>
+
+  <section class="wrap intro">
+    <p class="lead">{text.data.summary}</p>
+    <ul class="tags">
+      <li>v{data.version}</li>
+      <li>{data.paid ? data.paid.price : t.free}</li>
+      {data.formats.map((format) => <li>{format}</li>)}
+      {data.platforms.map((platform) => <li>{platform}</li>)}
+    </ul>
+    <SynthGet synth={synth} />
+    {
+      data.cover && (
+        <Image
+          class="window cover"
+          src={data.cover.image}
+          alt={data.cover.alt[lang]}
+          widths={[800, 1600, 2400]}
+          sizes="(min-width: 68rem) 64rem, 100vw"
+          loading="eager"
+        />
+      )
+    }
   </section>
+
+  <div class="wrap">
+    <div class="prose">
+      {parts.map((part, index) => (index % 2 === 0 ? <Fragment set:html={part} /> : <SynthScreenshot screenshot={screenshotOf(part)} />))}
+      {unplaced.map((screenshot) => <SynthScreenshot screenshot={screenshot} />)}
+    </div>
+
+    <SynthDemos synth={synth} />
+  </div>
 </Base>
+
+<style>
+  /* A picture of the synth's window (here and in SynthScreenshot): framed like a window on the page's colours */
+  :global(.window) {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--recess);
+    border-radius: var(--radius);
+    box-shadow: 0 1.5rem 3rem -1.5rem rgb(0 0 0 / 0.6);
+  }
+
+  /*
+   * Its logo is a sunrise as wide as the page: the sun and the name (the image, the sun's radius high) stand on a
+   * horizon that crosses the whole page, a tenth of the radius under them and a tenth thick, as in the logo's mark.
+   * The sun's radius: as big as fits, the image being 6.04 radii wide.
+   */
+  .hero {
+    --sun: min(10.5rem, (100vw - 2 * var(--gutter)) / 6.04);
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    padding-top: clamp(2.5rem, 8vw, 6rem);
+  }
+
+  .hero h1 {
+    position: relative;
+    margin: 0;
+  }
+
+  .hero:not(.sunrise) h1 {
+    padding-bottom: 1rem;
+  }
+
+  .logo {
+    display: block;
+    width: auto;
+    height: var(--sun);
+  }
+
+  /* The sky lit behind the sun, rising from the horizon */
+  .sunrise h1::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    left: calc(var(--sun) * -2.5);
+    bottom: calc(var(--sun) * -0.2);
+    width: calc(var(--sun) * 7);
+    height: calc(var(--sun) * 2.6);
+    background: radial-gradient(50% 100% at 50% 100%, color-mix(in srgb, var(--accent) 35%, transparent), transparent);
+  }
+
+  .horizon {
+    height: calc(var(--sun) * 0.1);
+    margin-top: calc(var(--sun) * 0.1);
+    background: var(--foreground);
+  }
+
+  .intro {
+    padding-top: clamp(1.5rem, 4vw, 2.5rem);
+  }
+
+  .cover {
+    margin-block: 2rem clamp(2.5rem, 7vw, 5rem);
+  }
+
+  /* The text is a column; its pictures and what it puts in a spotlight are wider */
+  .prose {
+    margin-bottom: clamp(2.5rem, 7vw, 5rem);
+  }
+
+  .prose :global(:is(p, ul, h2)) {
+    max-width: 44rem;
+  }
+
+  .prose :global(h2) {
+    margin-top: clamp(2.5rem, 6vw, 4rem);
+  }
+
+  .prose :global(ul) {
+    padding-left: 1.25rem;
+  }
+
+  .prose :global(li) {
+    margin-bottom: 0.5rem;
+  }
+
+  /* A part of the text that stands out: a panel of its own, its picture beside its text where there's room */
+  .prose :global(.spotlight) {
+    display: flow-root;
+    margin-block: clamp(2.5rem, 6vw, 4rem);
+    padding: clamp(1.5rem, 4vw, 3rem);
+    background: radial-gradient(ellipse at top right, color-mix(in srgb, var(--accent) 22%, transparent), transparent 65%),
+      var(--recess);
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+    border-radius: calc(var(--radius) * 2);
+  }
+
+  .prose :global(.spotlight h2) {
+    margin-top: 0;
+    font-size: clamp(2rem, 5vw, 3.25rem);
+  }
+
+  .prose :global(.spotlight .kicker) {
+    margin-bottom: 0.5rem;
+    color: var(--accent);
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .prose :global(.spotlight > :last-child) {
+    margin-bottom: 0;
+  }
+
+  @media (min-width: 52rem) {
+    .prose :global(.spotlight .screenshot) {
+      float: right;
+      width: 45%;
+      margin: 0 0 1rem 2.5rem;
+    }
+  }
+</style>

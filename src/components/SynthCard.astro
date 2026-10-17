@@ -1,4 +1,5 @@
 ---
+import { Image } from 'astro:assets';
 import { langOf, pathIn } from '@/i18n';
 import type { Synth } from '@/synths';
 
@@ -6,12 +7,24 @@ interface Props {
   synth: Synth;
 }
 
+const lang = langOf(Astro.url);
 const { id, data, text } = Astro.props.synth;
 ---
 
 <li class="card">
+  {data.cover && <Image src={data.cover.image} alt={data.cover.alt[lang]} widths={[480, 960]} sizes="(min-width: 36rem) 22rem, 100vw" />}
   <h2>
-    <a href={pathIn(langOf(Astro.url), `/synths/${id}/`)}>{data.name}</a>
+    <a href={pathIn(lang, `/synths/${id}/`)}>{data.name}</a>
   </h2>
   <p class="muted">{text.data.summary}</p>
 </li>
+
+<style>
+  img {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin-bottom: 1rem;
+    border-radius: calc(var(--radius) / 2);
+  }
+</style>

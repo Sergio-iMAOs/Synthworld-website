@@ -1,0 +1,31 @@
+---
+import { Image } from 'astro:assets';
+import { langOf } from '@/i18n';
+import type { Synth } from '@/synths';
+
+interface Props {
+  screenshot: Synth['data']['screenshots'][number];
+}
+
+const { image, alt, caption } = Astro.props.screenshot;
+const lang = langOf(Astro.url);
+// Shown at most half its pixels wide (scripts/screenshots.mjs): the window at its own size, never blown up
+const width = image.width / 2;
+---
+
+<figure class="screenshot" style={`max-width: ${width}px`}>
+  <Image class="window" src={image} alt={alt[lang]} widths={[width, width * 2].filter((w) => w >= 400)} sizes={`(min-width: ${width}px) ${width}px, 100vw`} />
+  <figcaption>{caption[lang]}</figcaption>
+</figure>
+
+<style>
+  figure {
+    margin: 2rem 0 2.5rem;
+  }
+
+  figcaption {
+    margin-top: 0.75rem;
+    font-size: 0.9rem;
+    color: var(--surface);
+  }
+</style>

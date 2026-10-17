@@ -18,6 +18,7 @@ npm run build      # astro check (types) and then the build, into dist/
 npm run check      # Only the type check
 npm run preview    # Serves dist/
 npm run sync       # Copies the font, the manual and the palette from the framework (see below)
+npm run screenshots  # Takes the synths' screenshots with the framework's snapshot tool (see below)
 ```
 
 There are no tests or linter: `npm run build` is the check to run before finishing a change.
@@ -28,11 +29,11 @@ A static Astro site (no UI framework, no client-side JavaScript so far), in Type
 
 - `src/site.ts`: what doesn't depend on the language (the name, the manual's address, the portfolio's path, the contact address, unset for now) and the portfolio's `author`.
 - `src/i18n/`: the languages (`index.ts`) and the site's own texts in each (`ui.ts`).
-- `src/content/synths/<synth>/`: a synth. `synth.yaml` has its facts (version, formats, platforms, price, downloads, audio and video demos), `en.md` and `es.md` its texts. They are two content collections (`synths`, `synthTexts`; fields in `src/content.config.ts`) that `getSynths(lang)` in `src/synths.ts` joins: pages use it, not the collections. Adding a synth is adding a folder.
+- `src/content/synths/<synth>/`: a synth. `synth.yaml` has its facts (version, formats, platforms, price, downloads, audio and video demos, its `logo`, its `cover` and `screenshots` with their descriptions in both languages), `en.md` and `es.md` its texts, `screenshots/` its pictures. A text places each screenshot with `<!-- screenshot: <id> -->`, and can set a part apart in `<div class="spotlight">` (EARL's velvet noise). They are two content collections (`synths`, `synthTexts`; fields in `src/content.config.ts`) that `getSynths(lang)` in `src/synths.ts` joins: pages use it, not the collections. Adding a synth is adding a folder.
 - `src/pages/[...lang]/`: the pages, each built once per language.
 - `src/layouts/Base.astro`: the page every page of the synths' site is in (`title` and `description` props).
 - `src/layouts/Portfolio.astro`: the same for the portfolio's pages (see below).
-- `src/components/`: `SynthCard` (a synth in a list), `ProjectCard` (a project of the portfolio in a list), `SynthGet` (its buy button and downloads), `SynthDemos` (its audio and videos), `Header`, `Footer`.
+- `src/components/`: `SynthCard` (a synth in a list), `ProjectCard` (a project of the portfolio in a list), `SynthGet` (its buy button and downloads), `SynthScreenshot` (a picture of it in its page), `SynthDemos` (its audio and videos), `Header`, `Footer`.
 - `src/styles/global.css`: the synths' site's only global stylesheet. What's only one component's goes in its own `<style>`.
 - `public/demos/<synth>/`: the audio demos' files.
 
@@ -68,6 +69,8 @@ Its content came from the author's previous portfolio (sergioimaos.myportfolio.c
 - `public/manual/index.html`: the user manual every SynthWorld synth shares (an outline for now), served at `/manual/` as a page of its own, with its own styles.
 
 The site looks like the synths' UI, which is still changing: sync when it does.
+
+`npm run screenshots` (`scripts/screenshots.mjs`) takes the synths' screenshots the same way: the framework's off-screen snapshot tool (`synthworld_earl_snapshot`, built in `../Synthworld/build`, or `SYNTHWORLD_BUILD_DIR`) draws the synth's window, driven by the clicks the script lists for each shot, into `src/content/synths/<synth>/screenshots/`, in the SW Default skin (the site's palette) at twice the window's size, or a part of it (`crop`) at its own `scale`; the page shows each at most half its pixels wide. A synth's `logo` is drawn the same way by a tool of its own (EARL's: `synthworld_earl_header_snapshot`, its mark and name on a transparent background): its page's header, standing on a horizon the page draws across the whole width. They're committed too, and retaken, never edited, when the UI changes. The shots and how each is taken are in the script; what each shows, in `synth.yaml`.
 
 ## Free and paid synths
 
