@@ -8,29 +8,243 @@ interface Props {
 
 const { downloads, paid } = Astro.props.synth.data;
 const t = textsOf(langOf(Astro.url)).get;
+
+// Each system it's made for, by name ("Linux · x64"). The first is shown until the script finds the visitor's
+const systems = downloads.map(({ os, arch, url }) => ({ os, arch, url, name: `${t.systems[os]} · ${t.archs[arch]}` }));
+const [first] = systems;
 ---
 
-{
-  paid?.buyUrl && (
-    <p>
+<div class="get">
+  {
+    paid?.buyUrl && (
       <a class="button" href={paid.buyUrl}>
         {t.buy} {paid.price}
       </a>
-    </p>
-  )
-}
-{
-  downloads.length > 0 && (
-    <>
-      {paid && <p class="muted">{t.demo}</p>}
-      <ul class="tags">
-        {downloads.map(({ label, url }) => (
-          <li>
-            <a href={url}>{label}</a>
-          </li>
-        ))}
-      </ul>
-    </>
-  )
-}
-{!paid?.buyUrl && downloads.length === 0 && <p class="muted">{t.unavailable}</p>}
+    )
+  }
+  {
+    first && (
+      <div class="download" data-download>
+        <a class:list={['main', { unavailable: !first.url }]} href={first.url} data-main>
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8.5M4.5 7.5L8 11l3.5-3.5M3 14h10" /></svg>
+          <span>
+            <strong>{paid ? t.downloadDemo : t.download}</strong>
+            <small>
+              <span data-name>{first.name}</span>
+              <span data-unavailable hidden={!!first.url}> · {t.unavailable}</span>
+            </small>
+          </span>
+        </a>
+        <details>
+          <summary aria-label={t.otherSystems} title={t.otherSystems}>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6l4.5 4.5L12.5 6" /></svg>
+          </summary>
+          <ul>
+            {systems.map(({ os, arch, url, name }, index) => (
+              <li>
+                <button type="button" data-os={os} data-arch={arch} data-url={url ?? ''} data-name={name} aria-current={index === 0 ? 'true' : undefined}>
+                  {name}
+                  {!url && <span>{t.unavailable}</span>}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </details>
+      </div>
+    )
+  }
+</div>
+
+<script>
+  type System = { os: string; arch: string };
+
+  /** The visitor's system, as far as the browser tells: its OS (null for one no synth is made for) and architecture. */
+  async function visitorsSystem(): Promise<System | null> {
+    const agent = navigator.userAgent;
+    const hints = (navigator as Navigator & { userAgentData?: { platform: string; getHighEntropyValues(keys: string[]): Promise<{ architecture?: string }> } }).userAgentData;
+    const platform = `${hints?.platform ?? ''} ${navigator.platform} ${agent}`;
+    if (/Android|iPhone|iPad|iPod/.test(agent)) return null;
+
+    const os = /Win/i.test(platform) ? 'windows' : /Mac/i.test(platform) ? 'macos' : /Linux|X11/i.test(platform) ? 'linux' : null;
+    if (!os) return null;
+
+    let arch = /aarch64|arm64|armv8/i.test(platform) ? 'arm64' : 'x64';
+    try {
+      const { architecture } = (await hints?.getHighEntropyValues(['architecture'])) ?? {};
+      if (architecture) arch = architecture === 'arm' ? 'arm64' : 'x64';
+    } catch {
+      // A browser that won't say: what the user agent said
+    }
+    return { os, arch };
+  }
+
+  /** Shows a system's download on the main button, and marks it in the menu. */
+  function choose(download: HTMLElement, option: HTMLButtonElement) {
+    const main = download.querySelector<HTMLAnchorElement>('[data-main]')!;
+    const { url, name } = option.dataset;
+    if (url) main.href = url;
+    else main.removeAttribute('href');
+    main.classList.toggle('unavailable', !url);
+    main.querySelector('[data-name]')!.textContent = name ?? '';
+    main.querySelector<HTMLElement>('[data-unavailable]')!.hidden = !!url;
+    for (const other of download.querySelectorAll('[data-os]')) other.removeAttribute('aria-current');
+    option.setAttribute('aria-current', 'true');
+  }
+
+  const system = await visitorsSystem();
+  for (const download of document.querySelectorAll<HTMLElement>('[data-download]')) {
+    const menu = download.querySelector('details')!;
+    const options = [...download.querySelectorAll<HTMLButtonElement>('[data-os]')];
+
+    // The visitor's system, or another architecture of it (a universal one)
+    const mine = system && (options.find(({ dataset }) => dataset.os === system.os && dataset.arch === system.arch) ?? options.find(({ dataset }) => dataset.os === system.os));
+    if (mine) choose(download, mine);
+
+    for (const option of options)
+      option.addEventListener('click', () => {
+        choose(download, option);
+        menu.open = false;
+      });
+
+    // The menu closes as a menu does: a click elsewhere, Escape
+    document.addEventListener('click', (event) => {
+      if (!menu.contains(event.target as Node)) menu.open = false;
+    });
+    menu.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && menu.open) {
+        menu.open = false;
+        menu.querySelector('summary')!.focus();
+      }
+    });
+  }
+</script>
+
+<style>
+  .get {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  /* The download and the button of its menu after it, one button split in two */
+  .download {
+    display: flex;
+    align-items: stretch;
+    position: relative;
+  }
+
+  summary {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding-inline: 0.75rem;
+    background: var(--accent);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    border-left: 1px solid color-mix(in srgb, var(--recess) 45%, transparent);
+    color: var(--recess);
+    cursor: pointer;
+    list-style: none;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary:hover,
+  details[open] summary {
+    background: var(--highlight);
+  }
+
+  svg {
+    width: 1.1rem;
+    height: 1.1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  details[open] summary svg {
+    transform: rotate(180deg);
+  }
+
+  .main {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 1.4rem 0.6rem 1rem;
+    background: var(--accent);
+    border-radius: var(--radius) 0 0 var(--radius);
+    color: var(--recess);
+    text-decoration: none;
+    line-height: 1.25;
+  }
+
+  .main:hover {
+    background: var(--highlight);
+    color: var(--recess);
+  }
+
+  .main strong {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+  }
+
+  .main small {
+    display: block;
+    font-size: 0.85rem;
+  }
+
+  /* No file yet: a download that can't be clicked */
+  .main.unavailable,
+  .main.unavailable:hover {
+    background: color-mix(in srgb, var(--accent) 55%, var(--recess));
+    cursor: default;
+  }
+
+  ul {
+    position: absolute;
+    z-index: 10;
+    top: calc(100% + 0.4rem);
+    right: 0;
+    min-width: 100%;
+    margin: 0;
+    padding: 0.4rem;
+    list-style: none;
+    background: var(--recess);
+    border: 1px solid color-mix(in srgb, var(--surface) 35%, transparent);
+    border-radius: var(--radius);
+    box-shadow: 0 1rem 2rem -1rem rgb(0 0 0 / 0.7);
+  }
+
+  ul button {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background: none;
+    border: 0;
+    border-radius: calc(var(--radius) / 2);
+    color: var(--foreground);
+    font: inherit;
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  ul button:hover {
+    background: var(--background);
+  }
+
+  ul button[aria-current] {
+    color: var(--accent);
+  }
+
+  ul button span {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--surface);
+  }
+</style>

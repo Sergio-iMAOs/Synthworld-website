@@ -3,7 +3,12 @@ version: 1.0.0
 formats: [CLAP, VST3, LV2, Standalone]
 platforms: [Linux]
 order: 1
-downloads: []
+# The systems the framework builds for; none has a file yet
+downloads:
+  - { os: windows, arch: x64 }
+  - { os: macos, arch: universal }
+  - { os: linux, arch: x64 }
+  - { os: linux, arch: arm64 }
 audio: []
 videos: []
 # Its header: the framework's EarlLogo, the sun and the name standing on the horizon the page draws
@@ -48,6 +53,14 @@ screenshots:
     caption:
       en: "The Global page: the eight effect slots, and the effects' own modulators."
       es: "La página Global: las ocho ranuras de efectos y los moduladores propios de los efectos."
+  - id: randomiser
+    image: ./screenshots/randomiser.png
+    alt:
+      en: "The randomiser's panel: a DEVIATION slider, switches for values, choices, mod amounts, processors, connections and new modulations, and the RESET and RANDOMISE buttons"
+      es: "El panel del aleatorizador: un deslizador DEVIATION, interruptores para valores, opciones, cantidades de modulación, procesadores, conexiones y modulaciones nuevas, y los botones RESET y RANDOMISE"
+    caption:
+      en: "The randomiser, opened from the die in the header."
+      es: "El aleatorizador, que se abre desde el dado de la cabecera."
   - id: notes
     image: ./screenshots/notes.png
     alt:
@@ -56,6 +69,22 @@ screenshots:
     caption:
       en: "The Notes page: what changes the notes, and the voices, glide and unison."
       es: "La página Notes: lo que cambia las notas, y las voces, el glide y el unísono."
+  - id: oscillator-unison
+    image: ./screenshots/oscillator-unison.png
+    alt:
+      en: "A wavetable oscillator showing its unison: its voices drawn as lines between left and right, over its VOICES, DETUNE, WIDTH, BLEND, WT SPREAD and BIAS knobs"
+      es: "Un oscilador de tablas de ondas mostrando su unísono: sus voces dibujadas como líneas entre izquierda y derecha, sobre sus perillas VOICES, DETUNE, WIDTH, BLEND, WT SPREAD y BIAS"
+    caption:
+      en: "An oscillator's unison."
+      es: "El unísono de un oscilador."
+  - id: voice-unison
+    image: ./screenshots/voice-unison.png
+    alt:
+      en: "The voice's unison on the Notes page: its voices drawn as lines between left and right, over the UNISON menu and its DETUNE, WIDTH, BLEND and BIAS sliders"
+      es: "El unísono de la voz en la página Notes: sus voces dibujadas como líneas entre izquierda y derecha, sobre el menú UNISON y sus deslizadores DETUNE, WIDTH, BLEND y BIAS"
+    caption:
+      en: "The voice's unison, on the Notes page."
+      es: "El unísono de la voz, en la página Notes."
   - id: tuning
     image: ./screenshots/tuning.png
     alt:

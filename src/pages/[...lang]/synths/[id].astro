@@ -1,4 +1,5 @@
 ---
+import type { MarkdownHeading } from 'astro';
 import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
 import Base from '@/layouts/Base.astro';
@@ -28,6 +29,11 @@ const screenshotOf = (id: string) => {
   return screenshot;
 };
 const unplaced = data.screenshots.filter(({ id }) => !parts.some((part, index) => index % 2 === 1 && part === id));
+
+// Its sections, for the menu beside them: the text's headings of the second level (a spotlight's too), without a final stop
+const sections = ((text.rendered?.metadata?.headings ?? []) as MarkdownHeading[])
+  .filter(({ depth }) => depth === 2)
+  .map(({ slug, text }) => ({ slug, text: text.replace(/\.$/, '') }));
 ---
 
 <Base title={data.name} description={text.data.summary}>
@@ -39,14 +45,16 @@ const unplaced = data.screenshots.filter(({ id }) => !parts.some((part, index) =
   </header>
 
   <section class="wrap intro">
-    <p class="lead">{text.data.summary}</p>
+    <div class="summary">
+      <p class="lead">{text.data.summary}</p>
+      <SynthGet synth={synth} />
+    </div>
     <ul class="tags">
       <li>v{data.version}</li>
       <li>{data.paid ? data.paid.price : t.free}</li>
       {data.formats.map((format) => <li>{format}</li>)}
       {data.platforms.map((platform) => <li>{platform}</li>)}
     </ul>
-    <SynthGet synth={synth} />
     {
       data.cover && (
         <Image
@@ -61,17 +69,99 @@ const unplaced = data.screenshots.filter(({ id }) => !parts.some((part, index) =
     }
   </section>
 
-  <div class="wrap">
-    <div class="prose">
-      {parts.map((part, index) => (index % 2 === 0 ? <Fragment set:html={part} /> : <SynthScreenshot screenshot={screenshotOf(part)} />))}
-      {unplaced.map((screenshot) => <SynthScreenshot screenshot={screenshot} />)}
+  <div class="wrap body">
+    <div class="main">
+      <div class="prose">
+        {parts.map((part, index) => (index % 2 === 0 ? <Fragment set:html={part} /> : <SynthScreenshot screenshot={screenshotOf(part)} />))}
+        {unplaced.map((screenshot) => <SynthScreenshot screenshot={screenshot} />)}
+      </div>
+
+      <SynthDemos synth={synth} />
     </div>
 
-    <SynthDemos synth={synth} />
+    {
+      sections.length > 1 && (
+        <nav class="sections" aria-label={t.sections}>
+          <p>{t.sections}</p>
+          <ol>
+            {sections.map(({ slug, text }) => (
+              <li>
+                <a href={`#${slug}`}>{text}</a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )
+    }
   </div>
 </Base>
 
 <style>
+  /* A click in the menu of sections scrolls to its section, unless the visitor asked for less motion */
+  @media (prefers-reduced-motion: no-preference) {
+    :global(html) {
+      scroll-behavior: smooth;
+    }
+  }
+
+  /* The text and, where there's room, the menu of its sections beside it, which stays in view while the page scrolls */
+  .sections {
+    display: none;
+  }
+
+  @media (min-width: 64rem) {
+    .body {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 11rem;
+      gap: 2.5rem;
+    }
+
+    .sections {
+      display: block;
+      position: sticky;
+      top: 2rem;
+      align-self: start;
+      max-height: calc(100vh - 4rem);
+      overflow-y: auto;
+      padding-left: 1.25rem;
+      border-left: 1px solid color-mix(in srgb, var(--surface) 35%, transparent);
+    }
+  }
+
+  .sections p {
+    margin-bottom: 0.75rem;
+    color: var(--surface);
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .sections ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .sections li + li {
+    margin-top: 0.5rem;
+  }
+
+  .sections a {
+    color: var(--foreground);
+    font-size: 0.95rem;
+    text-decoration: none;
+  }
+
+  .sections a:hover {
+    color: var(--highlight);
+  }
+
+  /* A section scrolled to stops a little under the window's top */
+  .prose :global(h2) {
+    scroll-margin-top: 2rem;
+  }
+
   /* A picture of the synth's window (here and in SynthScreenshot): framed like a window on the page's colours */
   :global(.window) {
     display: block;
@@ -132,6 +222,21 @@ const unplaced = data.screenshots.filter(({ id }) => !parts.some((part, index) =
     padding-top: clamp(1.5rem, 4vw, 2.5rem);
   }
 
+  /* What it is and where to get it, side by side */
+  .summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem 3rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .summary .lead {
+    flex: 1 1 26rem;
+    margin: 0;
+  }
+
   .cover {
     margin-block: 2rem clamp(2.5rem, 7vw, 5rem);
   }
@@ -184,6 +289,96 @@ const unplaced = data.screenshots.filter(({ id }) => !parts.some((part, index) =
 
   .prose :global(.spotlight > :last-child) {
     margin-bottom: 0;
+  }
+
+  /* A tool of the synth, small: its picture beside what it does, in a card */
+  .prose :global(.feature) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    align-items: center;
+    gap: 0 clamp(1.5rem, 4vw, 2.5rem);
+    margin-block: clamp(2.5rem, 6vw, 4rem);
+    padding: clamp(1.25rem, 3vw, 2rem);
+    background: var(--recess);
+    border: 1px solid color-mix(in srgb, var(--surface) 30%, transparent);
+    border-radius: calc(var(--radius) * 2);
+  }
+
+  .prose :global(.feature .screenshot) {
+    margin: 0;
+    justify-self: center;
+  }
+
+  .prose :global(.feature h2) {
+    margin-top: 0;
+  }
+
+  .prose :global(.feature .kicker) {
+    margin-bottom: 0.5rem;
+    color: var(--accent);
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .prose :global(.feature > div > :last-child) {
+    margin-bottom: 0;
+  }
+
+  /* Two things side by side, told apart: a card each, then what they make possible */
+  .prose :global(.versus) {
+    margin-block: clamp(2.5rem, 6vw, 4rem);
+    padding-top: clamp(1.5rem, 4vw, 2.5rem);
+    border-top: 2px solid var(--accent);
+  }
+
+  .prose :global(.versus h2) {
+    margin-top: 0;
+  }
+
+  .prose :global(.versus .kicker) {
+    margin-bottom: 0.5rem;
+    color: var(--accent);
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .prose :global(.versus-columns) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+    gap: 1rem;
+    margin-block: 1.5rem;
+  }
+
+  .prose :global(.versus-columns > div) {
+    padding: clamp(1.25rem, 3vw, 1.75rem);
+    background: var(--recess);
+    border-radius: calc(var(--radius) * 2);
+  }
+
+  .prose :global(.versus-columns h3) {
+    color: var(--accent);
+  }
+
+  .prose :global(.versus-columns .screenshot) {
+    margin: 1rem 0;
+  }
+
+  .prose :global(.versus-columns > div > :last-child) {
+    margin-bottom: 0;
+  }
+
+  .prose :global(.versus ul) {
+    padding-left: 0;
+    list-style: none;
+  }
+
+  .prose :global(.versus li) {
+    padding-left: 1.5rem;
+    background: linear-gradient(var(--accent), var(--accent)) 0 0.55em / 0.6rem 0.6rem no-repeat;
   }
 
   @media (min-width: 52rem) {

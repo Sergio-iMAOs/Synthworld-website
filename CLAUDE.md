@@ -25,7 +25,7 @@ There are no tests or linter: `npm run build` is the check to run before finishi
 
 ## Structure
 
-A static Astro site (no UI framework, no client-side JavaScript so far), in TypeScript (`astro/tsconfigs/strict`). `@/` is `src/`.
+A static Astro site (no UI framework; the only client-side JavaScript is `SynthGet`'s, which picks the visitor's system, and the pages work without it), in TypeScript (`astro/tsconfigs/strict`). `@/` is `src/`.
 
 - `src/site.ts`: what doesn't depend on the language (the name, the manual's address, the portfolio's path, the contact address, unset for now) and the portfolio's `author`.
 - `src/i18n/`: the languages (`index.ts`) and the site's own texts in each (`ui.ts`).
@@ -33,7 +33,7 @@ A static Astro site (no UI framework, no client-side JavaScript so far), in Type
 - `src/pages/[...lang]/`: the pages, each built once per language.
 - `src/layouts/Base.astro`: the page every page of the synths' site is in (`title` and `description` props).
 - `src/layouts/Portfolio.astro`: the same for the portfolio's pages (see below).
-- `src/components/`: `SynthCard` (a synth in a list), `ProjectCard` (a project of the portfolio in a list), `SynthGet` (its buy button and downloads), `SynthScreenshot` (a picture of it in its page), `SynthDemos` (its audio and videos), `Header`, `Footer`.
+- `src/components/`: `SynthCard` (a synth in a list), `ProjectCard` (a project of the portfolio in a list), `SynthGet` (its buy button, and its download: a button for the visitor's system with a menu of the others), `SynthScreenshot` (a picture of it in its page), `SynthDemos` (its audio and videos), `Header`, `Footer`.
 - `src/styles/global.css`: the synths' site's only global stylesheet. What's only one component's goes in its own `<style>`.
 - `public/demos/<synth>/`: the audio demos' files.
 
@@ -76,7 +76,7 @@ The site looks like the synths' UI, which is still changing: sync when it does.
 
 EARL is free. Some later synths will be paid (none exists yet), so nothing may assume a synth is free or that its files are public:
 
-- A synth's `paid` field (`price`, `buyUrl`) makes it a paid one; without it, it's free. `downloads` are only the files anyone may have: a free synth itself, a paid synth's demo.
+- A synth's `paid` field (`price`, `buyUrl`) makes it a paid one; without it, it's free. `downloads` are the systems it's made for (`os`, `arch`), each with the file anyone may have for it once there is one (`url`): a free synth itself, a paid synth's demo. A system without a `url` is offered as not available yet.
 - A paid synth's files never go in this repository, in `public/`, or anywhere the web server serves to everyone. The site stays static: selling (payment, licences, delivering the files) is an outside service's, which `buyUrl` links to.
 
 ## Hosting

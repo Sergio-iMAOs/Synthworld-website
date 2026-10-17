@@ -40,6 +40,27 @@ const synths = {
       { file: 'screenshots/synth.png', env: { SYNTHWORLD_SNAPSHOT_AUDIO: '1' }, actions: ['wait=500'] },
       // The velvet noise's panel, turned on (its switch at its top left)
       { file: 'screenshots/velvet-noise.png', scale: 3, crop: [892, 34, 304, 184], actions: ['click=905,47'] },
+      // The two unisons, close up: the first oscillator's (its unison button, 6 voices, some WT SPREAD), and the voice's
+      // on the Notes page (7 voices, from its menu)
+      {
+        file: 'screenshots/oscillator-unison.png',
+        scale: 3,
+        crop: [4, 34, 294, 281],
+        actions: ['click=20,90', 'wheel=55,225,8', 'wheel=110,288,3', 'move=150,330'],
+      },
+      {
+        file: 'screenshots/voice-unison.png',
+        scale: 3,
+        crop: [816, 192, 382, 283],
+        actions: ['click=343,14', 'click=977,323', 'click=960,478'],
+      },
+      // The randomiser's panel, opened from the die in the header, with more than VALUES on
+      {
+        file: 'screenshots/randomiser.png',
+        scale: 3,
+        crop: [412, 41, 339, 316],
+        actions: ['click=1062,14', 'click=561,160', 'click=561,195', 'click=561,301', 'move=700,500'],
+      },
       { file: 'screenshots/graph.png', actions: ['click=297,14'] },
       { file: 'screenshots/mod-matrix.png', actions: ['click=252,14'] },
       { file: 'screenshots/global.png', actions: ['click=180,14'] },

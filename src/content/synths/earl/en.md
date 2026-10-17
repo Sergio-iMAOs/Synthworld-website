@@ -47,14 +47,64 @@ Every processor is a node in a graph you edit. Change the filters' order, split 
 
 <!-- screenshot: global -->
 
+<div class="feature">
+
+<!-- screenshot: randomiser -->
+
+<div>
+
+<p class="kicker">Randomiser</p>
+
+## Roll the dice
+
+Out of ideas? Let EARL make a variation of your patch. **DEVIATION** sets how far it goes, from a nudge to a whole new sound, and you choose what may change: values, choices, modulation amounts, processors, cables, new modulations. What you've locked stays as it is.
+
+Each roll fades in without a click and is one step to undo: roll again until it's the one.
+
+</div>
+</div>
+
 ## Before the notes
 
 A transposition, a **chord maker** that plays a chord from each note, and an **arpeggiator** with grooves to swing it.
 
 <!-- screenshot: notes -->
 
-## Its tunings and presets
+<div class="versus">
 
-Play in scales of any number of notes, from EARL's own tunings or your Scala files. Its presets come in three packages: EARL Factory, EARL Extras, and EARL Microtonal, in tunings of 19, 22 and 31 notes to the octave, the Bohlen-Pierce scale and the harmonic series, with chords made for them. And three skins to choose from: SW Default, SW Light and Deep Sea.
+<p class="kicker">Unison</p>
+
+## Two kinds of unison
+
+<div class="versus-columns">
+<div>
+
+### On an oscillator
+
+<!-- screenshot: oscillator-unison -->
+
+Up to 16 copies of a wavetable oscillator, detuned, spread across the stereo field, each at its own place in the wavetable. Thick and wide, and light on the CPU.
+
+</div>
+<div>
+
+### On the whole voice
+
+<!-- screenshot: voice-unison -->
+
+Up to 8 whole voices for each note, each with its own oscillators, filters, envelopes and LFOs. So they don't have to be copies:
+
+- **Spread anything across them**: a cutoff, a wavetable's position, one oscillator's pitch.
+- **Let each live its own way**: its own random drift, its own granular cloud.
+- **Combine it** with the oscillators' unison.
+
+</div>
+</div>
+
+</div>
+
+## Its tunings
+
+Play beyond twelve notes: scales of any number of notes, from EARL's own tunings or your Scala files, for microtonal and xenharmonic music. Even scales that don't repeat at the octave, like Bohlen-Pierce.
 
 <!-- screenshot: tuning -->

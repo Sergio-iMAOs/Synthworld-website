@@ -1,6 +1,13 @@
 
 Main page: Add a cool header with a header image displaying parts of EARL and synthworld's logo (skin drawMainSymbol)
 
+## EARL
+Music samples section
+Turn images into animations.
+
+Web version to demo it
+
+
 ## Portfolio
 Adjust pictures size. Some of them have unnecesarily high resolution, which takes space
 
@@ -9,7 +16,8 @@ Update my email when I have the domain
 ## EARL's screenshots
 
 Its page and card show placeholders (`src/content/synths/earl/screenshots/`). Next: take the real ones with
-`npm run screenshots` (the script already works: it draws six pages of the Init patch) and make them worth
+`npm run screenshots` (the script already works: it draws six pages of the Init patch, and close-ups of
+the velvet noise's panel, the two unisons and the randomiser) and make them worth
 showing:
 - A patch with something in it: the snapshot tool can't load a preset yet ("Loading one does nothing here",
   `tests/snapshot/EarlSnapshot.cpp`), so it needs that in the framework, or the patch built by clicks.

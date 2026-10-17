@@ -47,14 +47,64 @@ Cada procesador es un nodo de un grafo que editas. Cambia el orden de los filtro
 
 <!-- screenshot: global -->
 
+<div class="feature">
+
+<!-- screenshot: randomiser -->
+
+<div>
+
+<p class="kicker">Aleatorizador</p>
+
+## Tira los dados
+
+¿Sin ideas? Deja que EARL haga una variación de tu patch. **DEVIATION** dice hasta dónde llega, de un retoque a un sonido nuevo, y tú eliges qué puede cambiar: valores, opciones, cantidades de modulación, procesadores, cables, modulaciones nuevas. Lo que hayas bloqueado se queda como está.
+
+Cada tirada entra sin un clic y se deshace en un paso: vuelve a tirar hasta dar con la buena.
+
+</div>
+</div>
+
 ## Antes de las notas
 
 Una transposición, un **generador de acordes** que toca un acorde por cada nota, y un **arpegiador** con grooves para darle swing.
 
 <!-- screenshot: notes -->
 
-## Sus afinaciones y presets
+<div class="versus">
 
-Toca en escalas de cualquier número de notas, de las afinaciones de EARL o de tus archivos Scala. Sus presets vienen en tres paquetes: EARL Factory, EARL Extras y EARL Microtonal, en afinaciones de 19, 22 y 31 notas por octava, la escala de Bohlen-Pierce y la serie armónica, con acordes hechos para ellas. Y tres skins entre las que elegir: SW Default, SW Light y Deep Sea.
+<p class="kicker">Unísono</p>
+
+## Dos unísonos
+
+<div class="versus-columns">
+<div>
+
+### En un oscilador
+
+<!-- screenshot: oscillator-unison -->
+
+Hasta 16 copias de un oscilador de tablas de ondas, desafinadas, repartidas por el campo estéreo, cada una en su propio punto de la tabla. Grueso y ancho, y ligero para la CPU.
+
+</div>
+<div>
+
+### En la voz entera
+
+<!-- screenshot: voice-unison -->
+
+Hasta 8 voces enteras por nota, cada una con sus propios osciladores, filtros, envolventes y LFO. Así que no tienen por qué ser copias:
+
+- **Reparte cualquier cosa entre ellas**: una frecuencia de corte, la posición en una tabla de ondas, la altura de un oscilador.
+- **Deja que cada una viva a su manera**: su propia deriva aleatoria, su propia nube granular.
+- **Combínalo** con el unísono de los osciladores.
+
+</div>
+</div>
+
+</div>
+
+## Sus afinaciones
+
+Toca más allá de las doce notas: escalas de cualquier número de notas, de las afinaciones de EARL o de tus archivos Scala, para música microtonal y xenarmónica. Incluso escalas que no se repiten en la octava, como la de Bohlen-Pierce.
 
 <!-- screenshot: tuning -->

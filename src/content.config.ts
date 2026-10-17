@@ -25,8 +25,20 @@ const synths = defineCollection({
       order: z.number().default(0),
       /** A paid synth's price as it's shown ("49 €") and where it's bought; a synth without `paid` is free. */
       paid: z.object({ price: z.string(), buyUrl: z.url().optional() }).optional(),
-      /** The files anyone can download: a free synth itself, a paid synth's demo. Empty while there are none. */
-      downloads: z.array(z.object({ label: z.string(), url: z.string() })).default([]),
+      /**
+       * The systems it's made for, each with the file anyone can download for it once there is one (`url`): a free
+       * synth itself, a paid synth's demo. Its page offers the visitor's system first.
+       */
+      downloads: z
+        .array(
+          z.object({
+            os: z.enum(['windows', 'macos', 'linux']),
+            /** `universal`: one file for every architecture of its system (macOS's, for Apple silicon and Intel). */
+            arch: z.enum(['x64', 'arm64', 'universal']),
+            url: z.string().optional(),
+          }),
+        )
+        .default([]),
       /** Sound examples: audio files (in public/demos/<synth>/, as "/demos/<synth>/file.mp3"). */
       audio: z.array(z.object({ title: z.string(), src: z.string() })).default([]),
       /** Videos, by their YouTube id. */

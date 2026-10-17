@@ -8,7 +8,7 @@ export const getStaticPaths = langPaths;
 
 const lang = langOf(Astro.url);
 const t = textsOf(lang).download;
-const released = (await getSynths(lang)).filter(({ data }) => data.downloads.length > 0 || data.paid?.buyUrl);
+const released = (await getSynths(lang)).filter(({ data }) => data.downloads.some(({ url }) => url) || data.paid?.buyUrl);
 ---
 
 <Base title={t.title} description={t.description}>
