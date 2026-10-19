@@ -1,25 +1,49 @@
 ---
+import { Image } from 'astro:assets';
 import Base from '@/layouts/Base.astro';
+import SineTrail from '@/components/SineTrail.astro';
 import SynthCard from '@/components/SynthCard.astro';
 import { langOf, langPaths, pathIn, textsOf } from '@/i18n';
 import { getSynths } from '@/synths';
+import mark from '@/assets/synthworld/mark.png';
 
 export const getStaticPaths = langPaths;
 
 const lang = langOf(Astro.url);
 const t = textsOf(lang);
 const synths = await getSynths(lang);
+// The first synth with a logo rises on the header's horizon
+const first = synths.find(({ data }) => data.logo);
 ---
 
 <Base>
-  <section class="section">
-    <div class="wrap">
-      <p class="construction" role="status">{t.home.construction}</p>
-      <h1>{t.tagline}</h1>
-      <p class="lead">{t.home.lead}</p>
-      <a class="button" href={pathIn(lang, '/synths/')}>{t.home.cta}</a>
+  <header class="sky">
+    <div class="wrap scene">
+      <div class="intro">
+        <p class="construction" role="status">{t.home.construction}</p>
+        <h1>{t.tagline}</h1>
+        <p class="lead">{t.home.lead}</p>
+        <a class="button" href={pathIn(lang, '/synths/')}>{t.home.cta}</a>
+      </div>
+      <div class="planet">
+        <Image src={mark} alt="" widths={[400, 800, 1395]} sizes="(min-width: 56rem) 26rem, 16rem" loading="eager" />
+      </div>
     </div>
-  </section>
+    {
+      first?.data.logo && (
+        <>
+          <div class="wrap">
+            <a class="sunrise" href={pathIn(lang, `/synths/${first.id}/`)}>
+              <Image class="logo" src={first.data.logo} alt={first.data.name} widths={[300, 600, 1200]} sizes="30rem" loading="eager" />
+              <span class="first">{t.home.first}</span>
+            </a>
+          </div>
+          <div class="horizon" />
+        </>
+      )
+    }
+    <SineTrail />
+  </header>
 
   <section class="section">
     <div class="wrap">
@@ -48,13 +72,182 @@ const synths = await getSynths(lang);
 </Base>
 
 <style>
+  /*
+   * A night sky under the header, darkest at the top, with SynthWorld's planet in it, and the first synth's logo (its
+   * sun and name, a sun's radius high) standing on a horizon across the page, a tenth of the radius under it and a
+   * tenth thick, as on the synth's page. The sun's radius: as big as fits, the logo being 6.04 radii wide. A sine wave
+   * follows the mouse over it (SineTrail).
+   */
+  .sky {
+    --sun: min(4.5rem, (100vw - 2 * var(--gutter)) / 6.04);
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    padding-top: clamp(2rem, 6vw, 4.5rem);
+    background: linear-gradient(var(--recess), var(--background));
+  }
+
+  /* Stars: some still, some twinkling */
+  .sky::before,
+  .sky::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 6% 18%, var(--foreground) 0 1px, transparent 1.5px),
+      radial-gradient(circle at 17% 64%, var(--foreground) 0 1px, transparent 1.5px),
+      radial-gradient(circle at 29% 9%, var(--surface) 0 1.5px, transparent 2px),
+      radial-gradient(circle at 41% 47%, var(--foreground) 0 1px, transparent 1.5px),
+      radial-gradient(circle at 52% 14%, var(--surface) 0 1px, transparent 1.5px),
+      radial-gradient(circle at 63% 71%, var(--foreground) 0 1px, transparent 1.5px),
+      radial-gradient(circle at 74% 6%, var(--foreground) 0 1.5px, transparent 2px),
+      radial-gradient(circle at 87% 58%, var(--surface) 0 1px, transparent 1.5px),
+      radial-gradient(circle at 95% 23%, var(--foreground) 0 1px, transparent 1.5px);
+    opacity: 0.55;
+  }
+
+  .sky::after {
+    background:
+      radial-gradient(circle at 11% 41%, var(--highlight) 0 1px, transparent 1.5px),
+      radial-gradient(circle at 35% 27%, var(--foreground) 0 1.5px, transparent 2px),
+      radial-gradient(circle at 58% 36%, var(--highlight) 0 1px, transparent 1.5px),
+      radial-gradient(circle at 81% 33%, var(--foreground) 0 1.5px, transparent 2px),
+      radial-gradient(circle at 92% 77%, var(--highlight) 0 1px, transparent 1.5px);
+    opacity: 0.8;
+  }
+
+  .scene {
+    display: grid;
+    gap: 2rem 3rem;
+    align-items: center;
+  }
+
   .construction {
     display: inline-block;
     margin-bottom: 2rem;
     padding: 0.5rem 1rem;
     border: 1px solid var(--warning);
     border-radius: var(--radius);
+    background: var(--recess);
     color: var(--warning);
     font-family: var(--font-display);
+  }
+
+  /* The planet, lit by a halo of its own colour; first on a narrow screen, beside the text on a wide one */
+  .planet {
+    position: relative;
+    order: -1;
+    justify-self: center;
+    width: min(16rem, 70%);
+  }
+
+  .planet::before {
+    content: '';
+    position: absolute;
+    inset: -30% -20%;
+    z-index: -1;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 30%, transparent), transparent);
+  }
+
+  .planet img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  @media (min-width: 56rem) {
+    .scene {
+      grid-template-columns: minmax(0, 1fr) 26rem;
+    }
+
+    .planet {
+      order: 0;
+      width: 100%;
+    }
+  }
+
+  /* The first synth, rising; a link to its page. Its label goes over the logo where there's no room beside it, so
+     that the logo still stands on the horizon */
+  .sunrise {
+    position: relative;
+    display: inline-flex;
+    flex-wrap: wrap-reverse;
+    align-items: flex-start; /* the bottom, the lines going up */
+    gap: 0.5rem 2rem;
+    margin-top: clamp(3rem, 8vw, 5rem);
+    color: var(--surface);
+    text-decoration: none;
+  }
+
+  .sunrise::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    left: calc(var(--sun) * -2.5);
+    bottom: calc(var(--sun) * -0.2);
+    width: calc(var(--sun) * 7);
+    height: calc(var(--sun) * 2.6);
+    background: radial-gradient(50% 100% at 50% 100%, color-mix(in srgb, var(--accent) 35%, transparent), transparent);
+    transition: opacity 0.3s;
+    opacity: 0.8;
+  }
+
+  .sunrise:hover::before,
+  .sunrise:focus-visible::before {
+    opacity: 1;
+  }
+
+  .logo {
+    display: block;
+    width: auto;
+    height: var(--sun);
+  }
+
+  .first {
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .sunrise:hover .first {
+    color: var(--highlight);
+  }
+
+  .horizon {
+    height: calc(var(--sun) * 0.1);
+    margin-top: calc(var(--sun) * 0.1);
+    background: var(--foreground);
+  }
+
+  /* The planet floats, and some stars twinkle, unless the visitor asked for less motion */
+  @media (prefers-reduced-motion: no-preference) {
+    .planet img {
+      animation: float 7s ease-in-out infinite alternate;
+    }
+
+    .sky::after {
+      animation: twinkle 3.5s ease-in-out infinite alternate;
+    }
+  }
+
+  @keyframes float {
+    from {
+      transform: translateY(-0.6rem) rotate(-2deg);
+    }
+    to {
+      transform: translateY(0.6rem) rotate(2deg);
+    }
+  }
+
+  @keyframes twinkle {
+    from {
+      opacity: 0.2;
+    }
+    to {
+      opacity: 0.9;
+    }
   }
 </style>

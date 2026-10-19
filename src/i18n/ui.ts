@@ -14,6 +14,7 @@ const en = {
     construction: 'This site is under construction: nothing has been released yet, and what you read here may still change.',
     lead: 'Synthesizers on an engine of their own, where anything can be routed into anything and anything can modulate anything.',
     cta: 'See the synths',
+    first: 'The first synth →',
     synths: 'The synths',
     engine: 'In every SynthWorld synth',
     features: [
@@ -90,6 +91,7 @@ const es: typeof en = {
     construction: 'Este sitio está en construcción: aún no se ha publicado nada, y lo que lees aquí todavía puede cambiar.',
     lead: 'Sintetizadores sobre un motor propio, en los que cualquier cosa puede enrutarse a cualquier otra y cualquier cosa puede modular cualquier otra.',
     cta: 'Ver los sintes',
+    first: 'El primer sinte →',
     synths: 'Los sintes',
     engine: 'En todos los sintes de SynthWorld',
     features: [

@@ -3,10 +3,11 @@
 // the synth's UI changes, look at them, and commit them. The tools are built in the framework's tree:
 //   cmake --build build --target synthworld_earl_snapshot      (in ../Synthworld)
 // The framework is looked for next to this repository (../Synthworld), or where SYNTHWORLD_DIR says, and its build
-// in its build/ folder, or where SYNTHWORLD_BUILD_DIR says. `npm run screenshots -- earl` takes one synth's only.
+// in its build/ folder, or where SYNTHWORLD_BUILD_DIR says. `npm run screenshots -- earl` takes one synth's only, and
+// `npm run screenshots -- synthworld` SynthWorld's mark only.
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { rm } from 'node:fs/promises';
+import { mkdir, readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
@@ -70,7 +71,101 @@ const synths = {
   },
 };
 
+/**
+ * SynthWorld's mark, as the skin draws it for a symbol (SWSkin::drawMainSymbol(): flat, the ring in the palette's
+ * highlight and the planet in its accent), for the site's header, the home page's and the favicon. The logo's tool
+ * (tests/snapshot/LogoSnapshot.cpp) draws it on a sheet with its other forms, on the panel's colour: rows of marks of
+ * growing sizes, the first row in one colour (the foreground), the second in the skin's two. The largest of each is
+ * cut out, and how much of each pixel the mark covers worked out from the first, so that the mark's own colours are
+ * left on a transparent background.
+ */
+const MARK = {
+  tool: 'synthworld_logo_snapshot',
+  /** Pixels per unit of the sheet: its largest mark is 220 units high */
+  scale: 4,
+  /** The sheet's layout (LogoSnapshot.cpp): its margin, and its rows of marks' height */
+  margin: 12,
+  row: 220,
+  file: 'src/assets/synthworld/mark.png',
+  favicon: { file: 'public/favicon.png', size: 64 },
+};
+
+/** The colours of a part of an image (RGBA), the most used first: [r, g, b] and how many pixels have it. */
+function coloursOf(pixels, width, [left, top, right, bottom]) {
+  const counts = new Map();
+  for (let y = top; y < bottom; y++)
+    for (let x = left; x < right; x++) {
+      const i = (y * width + x) * 4;
+      const key = (pixels[i] << 16) | (pixels[i + 1] << 8) | pixels[i + 2];
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+  return [...counts].sort((a, b) => b[1] - a[1]).map(([key]) => [key >> 16, (key >> 8) & 255, key & 255]);
+}
+
+async function takeMark() {
+  const tool = path.join(build, 'tests', MARK.tool);
+  if (!existsSync(tool)) throw new Error(`No ${tool}: build it in the framework (cmake --build build --target ${MARK.tool})`);
+  const output = path.join(root, MARK.file);
+  await mkdir(path.dirname(output), { recursive: true });
+  const sheetFile = `${output}.sheet.png`;
+  execFileSync(tool, [sheetFile, String(MARK.scale)], { stdio: 'inherit' });
+  const { data: sheet, info } = await sharp(sheetFile).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  await rm(sheetFile);
+
+  const at = (x, y) => (y * info.width + x) * 4;
+  const panel = [...sheet.subarray(0, 3)];
+  const differs = (i) => Math.abs(sheet[i] - panel[0]) + Math.abs(sheet[i + 1] - panel[1]) + Math.abs(sheet[i + 2] - panel[2]) > 0;
+
+  // The rows' bands, and the largest mark's box: the last one in the first row, from the rightmost column drawn in to
+  // the gap (a margin) before it
+  const rowTop = (row) => Math.round((MARK.margin + row * (MARK.row + MARK.margin)) * MARK.scale);
+  const height = Math.round(MARK.row * MARK.scale);
+  const drawnIn = (x) => {
+    for (let y = rowTop(0); y < rowTop(0) + height; y++) if (differs(at(x, y))) return true;
+    return false;
+  };
+  let right = info.width - 1;
+  while (right > 0 && !drawnIn(right)) right--;
+  let left = right;
+  for (let gap = 0; left > 0 && gap < (MARK.margin * MARK.scale) / 2; left--) gap = drawnIn(left - 1) ? 0 : gap + 1;
+  left += Math.round((MARK.margin * MARK.scale) / 2);
+  const width = right + 1 - left;
+
+  // The colours: the first row's one (the most used but the panel's), the second's two
+  const [foreground] = coloursOf(sheet, info.width, [left, rowTop(0), right + 1, rowTop(0) + height]).filter((c) => c.join() !== panel.join());
+  const twoColours = coloursOf(sheet, info.width, [left, rowTop(1), right + 1, rowTop(1) + height]).filter((c) => c.join() !== panel.join()).slice(0, 2);
+
+  // Each pixel: how much of it the mark covers (how far the first row's goes from the panel towards the foreground),
+  // and the colour of the second row's it's nearer to, so drawn on the panel
+  const mark = Buffer.alloc(width * height * 4);
+  const towards = foreground.map((c, k) => c - panel[k]);
+  const length = towards.reduce((sum, c) => sum + c * c, 0);
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++) {
+      const one = at(left + x, rowTop(0) + y);
+      const two = at(left + x, rowTop(1) + y);
+      const cover = Math.min(1, Math.max(0, towards.reduce((sum, c, k) => sum + c * (sheet[one + k] - panel[k]), 0) / length));
+      const error = (colour) => colour.reduce((sum, c, k) => sum + (sheet[two + k] - (cover * c + (1 - cover) * panel[k])) ** 2, 0);
+      const colour = error(twoColours[0]) <= error(twoColours[1]) ? twoColours[0] : twoColours[1];
+      mark.set([...colour, Math.round(cover * 255)], (y * width + x) * 4);
+    }
+  await sharp(mark, { raw: { width, height, channels: 4 } }).png().toFile(output);
+  console.log(`synthworld: ${MARK.file}`);
+
+  // The favicon: the mark on the background's colour, in a square with round corners (a tab may be light)
+  const { size } = MARK.favicon;
+  const background = (await readFile(path.join(root, 'src/styles/palette.css'), 'utf8')).match(/--background:\s*(#[0-9a-f]{6})/i)?.[1];
+  if (!background) throw new Error('No --background in src/styles/palette.css');
+  const inner = Math.round(size * 0.84);
+  await sharp(Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><rect width="${size}" height="${size}" rx="${size * 0.22}" fill="${background}"/></svg>`))
+    .composite([{ input: await sharp(output).resize(inner, inner, { fit: 'contain', background: '#0000' }).toBuffer(), gravity: 'center' }])
+    .png()
+    .toFile(path.join(root, MARK.favicon.file));
+  console.log(`synthworld: ${MARK.favicon.file}`);
+}
+
 const only = process.argv.slice(2);
+if (only.length === 0 || only.includes('synthworld')) await takeMark();
 for (const [id, synth] of Object.entries(synths)) {
   if (only.length > 0 && !only.includes(id)) continue;
 

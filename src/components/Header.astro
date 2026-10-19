@@ -1,6 +1,8 @@
 ---
+import { Image } from 'astro:assets';
 import { langOf, languages, pathIn, pathWithoutLang, textsOf, type Lang } from '@/i18n';
 import { site } from '@/site';
+import mark from '@/assets/synthworld/mark.png';
 
 const lang = langOf(Astro.url);
 const t = textsOf(lang);
@@ -16,7 +18,10 @@ const nav = [
 
 <header>
   <div class="wrap bar">
-    <a class="name" href={pathIn(lang, '/')}>{site.name}</a>
+    <a class="name" href={pathIn(lang, '/')}>
+      <Image class="mark" src={mark} alt="" widths={[64, 128]} sizes="3.2rem" loading="eager" />
+      {site.name}
+    </a>
     <nav aria-label="Main">
       <ul>
         {
@@ -58,12 +63,21 @@ const nav = [
   }
 
   .name {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
     margin-right: auto;
     font-family: var(--font-display);
     font-size: 1.25rem;
     font-weight: 700;
     color: var(--foreground);
     text-decoration: none;
+  }
+
+  /* SynthWorld's mark, as its synths draw it on their buttons */
+  .mark {
+    width: auto;
+    height: 2rem;
   }
 
   ul {

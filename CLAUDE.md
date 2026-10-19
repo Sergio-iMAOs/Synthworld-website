@@ -25,7 +25,7 @@ There are no tests or linter: `npm run build` is the check to run before finishi
 
 ## Structure
 
-A static Astro site (no UI framework; the only client-side JavaScript is `SynthGet`'s, which picks the visitor's system, and the pages work without it), in TypeScript (`astro/tsconfigs/strict`). `@/` is `src/`.
+A static Astro site (no UI framework; the only client-side JavaScript is `SynthGet`'s, which picks the visitor's system, and `SineTrail`'s, a decoration; the pages work without it), in TypeScript (`astro/tsconfigs/strict`). `@/` is `src/`.
 
 - `src/site.ts`: what doesn't depend on the language (the name, the manual's address, the portfolio's path, the contact address, unset for now) and the portfolio's `author`.
 - `src/i18n/`: the languages (`index.ts`) and the site's own texts in each (`ui.ts`).
@@ -33,9 +33,10 @@ A static Astro site (no UI framework; the only client-side JavaScript is `SynthG
 - `src/pages/[...lang]/`: the pages, each built once per language.
 - `src/layouts/Base.astro`: the page every page of the synths' site is in (`title` and `description` props).
 - `src/layouts/Portfolio.astro`: the same for the portfolio's pages (see below).
-- `src/components/`: `SynthCard` (a synth in a list), `ProjectCard` (a project of the portfolio in a list), `SynthGet` (its buy button, and its download: a button for the visitor's system with a menu of the others), `SynthScreenshot` (a picture of it in its page), `SynthDemos` (its audio and videos), `Header`, `Footer`.
+- `src/components/`: `SynthCard` (a synth in a list), `ProjectCard` (a project of the portfolio in a list), `SynthGet` (its buy button, and its download: a button for the visitor's system with a menu of the others), `SynthScreenshot` (a picture of it in its page), `SynthDemos` (its audio and videos), `SineTrail` (a sine wave following the mouse over the home page's header), `Header`, `Footer`.
 - `src/styles/global.css`: the synths' site's only global stylesheet. What's only one component's goes in its own `<style>`.
 - `public/demos/<synth>/`: the audio demos' files.
+- `src/assets/synthworld/mark.png`: SynthWorld's mark (see below), in the header and the home page's sky, where it floats over the horizon the first synth with a `logo` rises on.
 
 ## Languages
 
@@ -70,7 +71,7 @@ Its content came from the author's previous portfolio (sergioimaos.myportfolio.c
 
 The site looks like the synths' UI, which is still changing: sync when it does.
 
-`npm run screenshots` (`scripts/screenshots.mjs`) takes the synths' screenshots the same way: the framework's off-screen snapshot tool (`synthworld_earl_snapshot`, built in `../Synthworld/build`, or `SYNTHWORLD_BUILD_DIR`) draws the synth's window, driven by the clicks the script lists for each shot, into `src/content/synths/<synth>/screenshots/`, in the SW Default skin (the site's palette) at twice the window's size, or a part of it (`crop`) at its own `scale`; the page shows each at most half its pixels wide. A synth's `logo` is drawn the same way by a tool of its own (EARL's: `synthworld_earl_header_snapshot`, its mark and name on a transparent background): its page's header, standing on a horizon the page draws across the whole width. They're committed too, and retaken, never edited, when the UI changes. The shots and how each is taken are in the script; what each shows, in `synth.yaml`.
+`npm run screenshots` (`scripts/screenshots.mjs`) takes the synths' screenshots the same way: the framework's off-screen snapshot tool (`synthworld_earl_snapshot`, built in `../Synthworld/build`, or `SYNTHWORLD_BUILD_DIR`) draws the synth's window, driven by the clicks the script lists for each shot, into `src/content/synths/<synth>/screenshots/`, in the SW Default skin (the site's palette) at twice the window's size, or a part of it (`crop`) at its own `scale`; the page shows each at most half its pixels wide. A synth's `logo` is drawn the same way by a tool of its own (EARL's: `synthworld_earl_header_snapshot`, its mark and name on a transparent background): its page's header, standing on a horizon the page draws across the whole width. SynthWorld's mark, the flat one the skin draws as a symbol (`SWSkin::drawMainSymbol()`: the ring in `--highlight`, the planet in `--accent`), is cut from the logo tool's sheet (`synthworld_logo_snapshot`) onto a transparent background, into `src/assets/synthworld/mark.png`, and the favicon (`public/favicon.png`) made from it (`npm run screenshots -- synthworld`). They're committed too, and retaken, never edited, when the UI changes. The shots and how each is taken are in the script; what each shows, in `synth.yaml`.
 
 ## Free and paid synths
 

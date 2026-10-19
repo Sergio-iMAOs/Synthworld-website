@@ -1,0 +1,138 @@
+---
+/**
+ * A sine wave that follows the mouse over the element it's in (which must be positioned), drawn along the way the
+ * mouse goes, as SynthWorld's ring is a sine wave: the mouse draws it, and it fades behind it. Behind the element's
+ * content, and only a decoration: without JavaScript, with a touch screen, or for a visitor who asked for less motion,
+ * there's nothing.
+ */
+---
+
+<canvas class="sine-trail" aria-hidden="true"></canvas>
+
+<style>
+  canvas {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+</style>
+
+<script>
+  /** How long a point of the mouse's way stays, in milliseconds */
+  const LIFE = 700;
+  /** The longest the wave gets, its wavelength, its amplitude and its width at the mouse, in CSS pixels */
+  const LENGTH = 260;
+  const WAVELENGTH = 56;
+  const AMPLITUDE = 9;
+  const WIDTH = 3;
+  /** The distance between the points it's drawn through, and how far from the mouse it takes to reach its amplitude */
+  const STEP = 3;
+  const RISE = 24;
+  /** How many of its points each stroke of it joins: each is a little fainter than the one before */
+  const CHUNK = 6;
+
+  interface Point {
+    x: number;
+    y: number;
+    /** How far the mouse had gone there: the wave's phase, so that it stays where it was drawn */
+    d: number;
+    t: number;
+  }
+
+  const lessMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+  for (const canvas of document.querySelectorAll<HTMLCanvasElement>('canvas.sine-trail')) {
+    const area = canvas.parentElement;
+    const g = canvas.getContext('2d');
+    if (!area || !g) continue;
+
+    const colour = getComputedStyle(canvas).getPropertyValue('--highlight').trim() || '#fff287';
+    let way: Point[] = [];
+    let frame = 0;
+    let scale = 1;
+
+    const resize = () => {
+      scale = devicePixelRatio || 1;
+      canvas.width = Math.round(area.clientWidth * scale);
+      canvas.height = Math.round(area.clientHeight * scale);
+    };
+    new ResizeObserver(resize).observe(area);
+    resize();
+
+    area.addEventListener('pointermove', (event) => {
+      if (event.pointerType !== 'mouse' || lessMotion.matches) return;
+      const box = area.getBoundingClientRect();
+      const x = event.clientX - box.left;
+      const y = event.clientY - box.top;
+      const t = performance.now();
+      const last = way.at(-1);
+      const moved = last ? Math.hypot(x - last.x, y - last.y) : 0;
+      if (last && moved < 1) {
+        last.t = t;
+        return;
+      }
+      const d = last ? last.d + moved : 0;
+      way.push({ x, y, d, t });
+      while (way.length > 2 && d - way[1].d > LENGTH) way.shift();
+      if (!frame) frame = requestAnimationFrame(draw);
+    });
+
+    function draw(now: number) {
+      frame = 0;
+      g!.setTransform(1, 0, 0, 1, 0, 0);
+      g!.clearRect(0, 0, canvas.width, canvas.height);
+      way = way.filter(({ t }) => now - t < LIFE);
+      if (way.length < 2) return;
+
+      // The way, from the mouse back, in points STEP apart
+      const head = way.at(-1)!;
+      const length = head.d - way[0].d;
+      const points: Point[] = [];
+      for (let s = 0, i = way.length - 2; s <= length; s += STEP) {
+        const d = head.d - s;
+        while (i > 0 && way[i].d > d) i--;
+        const [a, b] = [way[i], way[i + 1]];
+        const k = b.d > a.d ? (d - a.d) / (b.d - a.d) : 0;
+        points.push({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, d, t: a.t + (b.t - a.t) * k });
+      }
+      if (points.length < 3) return;
+
+      // Smoothed, but for the point at the mouse, so that the way's direction doesn't shake with the hand
+      for (let pass = 0; pass < 2; pass++)
+        for (let i = 1; i < points.length - 1; i++) {
+          points[i].x = (points[i - 1].x + points[i].x * 2 + points[i + 1].x) / 4;
+          points[i].y = (points[i - 1].y + points[i].y * 2 + points[i + 1].y) / 4;
+        }
+
+      // The wave: each point moved across the way, nothing at the mouse, the whole amplitude a little behind it
+      const wave = points.map((point, i) => {
+        const before = points[Math.max(0, i - 1)];
+        const after = points[Math.min(points.length - 1, i + 1)];
+        const along = Math.hypot(before.x - after.x, before.y - after.y) || 1;
+        const [nx, ny] = [-(before.y - after.y) / along, (before.x - after.x) / along];
+        const offset = AMPLITUDE * Math.min(1, (i * STEP) / RISE) * Math.sin((2 * Math.PI * point.d) / WAVELENGTH);
+        return { x: point.x + nx * offset, y: point.y + ny * offset, t: point.t };
+      });
+
+      g!.setTransform(scale, 0, 0, scale, 0, 0);
+      g!.strokeStyle = colour;
+      g!.shadowColor = colour;
+      g!.shadowBlur = 8;
+      g!.lineJoin = 'round';
+      for (let start = 0; start < wave.length - 1; start += CHUNK) {
+        const behind = start / (wave.length - 1);
+        g!.globalAlpha = Math.max(0, 1 - (now - wave[start].t) / LIFE) * (1 - behind);
+        g!.lineWidth = WIDTH * (1 - 0.6 * behind);
+        g!.lineCap = start === 0 ? 'round' : 'butt';
+        g!.beginPath();
+        g!.moveTo(wave[start].x, wave[start].y);
+        for (let i = start + 1; i <= Math.min(start + CHUNK, wave.length - 1); i++) g!.lineTo(wave[i].x, wave[i].y);
+        g!.stroke();
+      }
+      frame = requestAnimationFrame(draw);
+    }
+  }
+</script>

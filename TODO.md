@@ -1,5 +1,5 @@
 
-Main page: Add a cool header with a header image displaying parts of EARL and synthworld's logo (skin drawMainSymbol)
+
 
 ## EARL
 Music samples section
@@ -7,6 +7,7 @@ Turn images into animations.
 
 Web version to demo it
 
+Remove manual tab
 
 ## Portfolio
 Adjust pictures size. Some of them have unnecesarily high resolution, which takes space
