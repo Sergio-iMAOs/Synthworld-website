@@ -11,7 +11,6 @@ const path = pathWithoutLang(Astro.url);
 const nav = [
   { href: pathIn(lang, '/synths/'), label: t.nav.synths, current: path.startsWith('/synths/') },
   { href: pathIn(lang, '/download/'), label: t.nav.download, current: path.startsWith('/download/') },
-  { href: site.manual, label: t.nav.manual, current: false },
   { href: pathIn(lang, '/about/'), label: t.nav.about, current: path.startsWith('/about/') },
 ];
 ---

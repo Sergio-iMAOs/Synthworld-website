@@ -6,7 +6,6 @@ const en = {
   nav: {
     synths: 'Synths',
     download: 'Download',
-    manual: 'Manual',
     about: 'About',
   },
   footer: 'SynthWorld is a work in progress.',
@@ -84,7 +83,6 @@ const es: typeof en = {
   nav: {
     synths: 'Sintes',
     download: 'Descargas',
-    manual: 'Manual (en inglés)',
     about: 'Acerca de',
   },
   footer: 'SynthWorld está en desarrollo.',

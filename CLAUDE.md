@@ -17,7 +17,7 @@ npm run dev        # Dev server at http://localhost:4321
 npm run build      # astro check (types) and then the build, into dist/
 npm run check      # Only the type check
 npm run preview    # Serves dist/
-npm run sync       # Copies the font, the manual and the palette from the framework (see below)
+npm run sync       # Copies the font and the palette from the framework (see below)
 npm run screenshots  # Takes the synths' screenshots with the framework's snapshot tool (see below)
 ```
 
@@ -27,7 +27,7 @@ There are no tests or linter: `npm run build` is the check to run before finishi
 
 A static Astro site (no UI framework; the only client-side JavaScript is `SynthGet`'s, which picks the visitor's system, `SynthSkins`', its slideshow's buttons, and `SineTrail`'s, a decoration; the pages work without it), in TypeScript (`astro/tsconfigs/strict`). `@/` is `src/`.
 
-- `src/site.ts`: what doesn't depend on the language (the name, the manual's address, the portfolio's path, the contact address, unset for now) and the portfolio's `author`.
+- `src/site.ts`: what doesn't depend on the language (the name, the portfolio's path, the contact address, unset for now) and the portfolio's `author`.
 - `src/i18n/`: the languages (`index.ts`) and the site's own texts in each (`ui.ts`).
 - `src/content/synths/<synth>/`: a synth. `synth.yaml` has its facts (version, formats, platforms, price, downloads, audio and video demos, its `logo`, its `cover` and `screenshots` with their descriptions in both languages, its `skins` with a picture of each), `en.md` and `es.md` its texts, `screenshots/` and `skins/` its pictures. A text places each screenshot with `<!-- screenshot: <id> -->` and the slideshow of its skins with `<!-- skins -->`, and can set a part apart in `<div class="spotlight">` (EARL's velvet noise). They are two content collections (`synths`, `synthTexts`; fields in `src/content.config.ts`) that `getSynths(lang)` in `src/synths.ts` joins: pages use it, not the collections. Adding a synth is adding a folder.
 - `src/pages/[...lang]/`: the pages, each built once per language.
@@ -45,7 +45,6 @@ English and Spanish. English is at the root (`/synths/`), Spanish under `/es/` (
 - Every text a visitor reads is in both: a string of the site in `src/i18n/ui.ts` (the Spanish object has the English one's type, so a missing key doesn't build), a synth's text in its `en.md` and `es.md`. No text is written in a page or a component.
 - A page gets its language from its URL (`langOf(Astro.url)`) and its texts with `textsOf(lang)`. Links between pages go through `pathIn(lang, '/synths/')`, never a bare path.
 - A new page goes in `src/pages/[...lang]/` with `export const getStaticPaths = langPaths`.
-- The manual is the exception: only in English, one address for both.
 
 ## The portfolio
 
@@ -63,11 +62,10 @@ Its content came from the author's previous portfolio (sergioimaos.myportfolio.c
 
 ## From the framework
 
-`npm run sync` (`scripts/sync-framework.mjs`) copies three things from `../Synthworld` (or `SYNTHWORLD_DIR`). They are committed here, so the site builds without the framework, but never edited here: change them there and sync.
+`npm run sync` (`scripts/sync-framework.mjs`) copies two things from `../Synthworld` (or `SYNTHWORLD_DIR`). They are committed here, so the site builds without the framework, but never edited here: change them there and sync.
 
 - `src/assets/fonts/`: Oscilla, SynthWorld's UI font, used for headings and navigation.
 - `src/styles/palette.css`: the default skin's palette (`struct Palette` in `modules/synthworld_gui/skin/Skin.h`) as custom properties with its names (`--background`, `--recess`, `--surface`, `--foreground`, `--accent`, `--highlight`, `--warning`). Use them, not literal colours.
-- `public/manual/index.html`: the user manual every SynthWorld synth shares (an outline for now), served at `/manual/` as a page of its own, with its own styles.
 
 The site looks like the synths' UI, which is still changing: sync when it does.
 

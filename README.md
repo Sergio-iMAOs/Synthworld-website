@@ -13,7 +13,7 @@ npm install
 npm run dev        # The site at http://localhost:4321, reloading as you edit
 npm run build      # Type-checks, then builds the site into dist/
 npm run preview    # Serves dist/
-npm run sync       # Copies the font, the manual and the palette from the framework's repository
+npm run sync       # Copies the font and the palette from the framework's repository
 ```
 
 ## Where things are
@@ -31,7 +31,6 @@ src/music.ts             The works of the portfolio's music page
 src/components/          Header, Footer, and a synth's card, demos, buy button and downloads
 src/styles/              global.css, and palette.css (synced from the framework)
 src/assets/fonts/        Oscilla, SynthWorld's UI font (synced from the framework)
-public/manual/           The user manual (synced from the framework), served at /manual/
 public/demos/            The synths' audio demos
 scripts/                 sync-framework.mjs: what `npm run sync` runs
 ```
@@ -46,7 +45,7 @@ Add a folder to `src/content/synths/` with its `synth.yaml`, `en.md` and `es.md`
 
 ## Syncing from the framework
 
-The Oscilla font, the palette and the user manual come from the framework's repository and are committed here. After they change there, run `npm run sync` (it looks for the framework at `../Synthworld`, or where `SYNTHWORLD_DIR` says) and commit the result.
+The Oscilla font and the palette come from the framework's repository and are committed here. After they change there, run `npm run sync` (it looks for the framework at `../Synthworld`, or where `SYNTHWORLD_DIR` says) and commit the result.
 
 ## Deploying
 

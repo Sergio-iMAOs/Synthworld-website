@@ -1,7 +1,7 @@
-// Brings what the site takes from the framework's repository up to date: the Oscilla font, the user manual
-// and the default skin's palette. Run it (npm run sync) after any of them changes there, and commit the result.
+// Brings what the site takes from the framework's repository up to date: the Oscilla font and the default
+// skin's palette. Run it (npm run sync) after any of them changes there, and commit the result.
 // The framework is looked for next to this repository (../Synthworld), or where SYNTHWORLD_DIR says.
-import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { copyFile, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -13,11 +13,6 @@ for (const weight of ['Regular', 'Bold']) {
   const file = `Oscilla-${weight}.ttf`;
   await copyFile(path.join(framework, 'assets', file), path.join(root, 'src/assets/fonts', file));
 }
-
-// The manual, without its comments (they are notes for whoever writes it)
-const manual = await readFile(path.join(framework, 'docs/manual/index.html'), 'utf8');
-await mkdir(path.join(root, 'public/manual'), { recursive: true });
-await writeFile(path.join(root, 'public/manual/index.html'), manual.replace(/<!--[\s\S]*?-->\n?/g, ''));
 
 // The palette: the colours of `struct Palette` in the default skin, as custom properties with their names
 const skin = await readFile(path.join(framework, 'modules/synthworld_gui/skin/Skin.h'), 'utf8');
@@ -34,4 +29,4 @@ const css = [
 ].join('\n');
 await writeFile(path.join(root, 'src/styles/palette.css'), css);
 
-console.log(`Synced from ${framework}: the font, the manual and ${colours.length} colours.`);
+console.log(`Synced from ${framework}: the font and ${colours.length} colours.`);
