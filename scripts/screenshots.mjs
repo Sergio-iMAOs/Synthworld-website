@@ -4,7 +4,7 @@
 //   cmake --build build --target synthworld_earl_snapshot      (in ../Synthworld)
 // The framework is looked for next to this repository (../Synthworld), or where SYNTHWORLD_DIR says, and its build
 // in its build/ folder, or where SYNTHWORLD_BUILD_DIR says. `npm run screenshots -- earl` takes one synth's only, and
-// `npm run screenshots -- synthworld` SynthWorld's mark only.
+// `npm run screenshots -- synthworld` SynthWorld's marks only.
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, rm } from 'node:fs/promises';
@@ -72,12 +72,13 @@ const synths = {
 };
 
 /**
- * SynthWorld's mark, as the skin draws it for a symbol (SWSkin::drawMainSymbol(): flat, the ring in the palette's
- * highlight and the planet in its accent), for the site's header, the home page's and the favicon. The logo's tool
- * (tests/snapshot/LogoSnapshot.cpp) draws it on a sheet with its other forms, on the panel's colour: rows of marks of
- * growing sizes, the first row in one colour (the foreground), the second in the skin's two. The largest of each is
- * cut out, and how much of each pixel the mark covers worked out from the first, so that the mark's own colours are
- * left on a transparent background.
+ * SynthWorld's mark, in its two forms. The flat one, as the skin draws it for a symbol (SWSkin::drawMainSymbol(): the
+ * ring in the palette's highlight and the planet in its accent), for the site's header and the favicon; the shaded
+ * one, the logo (SynthWorldLogo::drawMark(): the planet a lit sphere, the ring fading as it goes behind), for the home
+ * page's sky. The logo's tool (tests/snapshot/LogoSnapshot.cpp) draws them on a sheet with its other forms, on the
+ * panel's colour: rows of marks of growing sizes, the first row flat in one colour (the foreground), the second flat
+ * in the skin's two, the fourth shaded. The largest of each is cut out onto a transparent background: the flat one's
+ * cover of each pixel worked out from the first row's, the shaded one's from its own colours (see takeShaded()).
  */
 const MARK = {
   tool: 'synthworld_logo_snapshot',
@@ -87,6 +88,7 @@ const MARK = {
   margin: 12,
   row: 220,
   file: 'src/assets/synthworld/mark.png',
+  shaded: { row: 3, file: 'src/assets/synthworld/logo.png' },
   favicon: { file: 'public/favicon.png', size: 64 },
 };
 
@@ -100,6 +102,65 @@ function coloursOf(pixels, width, [left, top, right, bottom]) {
       counts.set(key, (counts.get(key) ?? 0) + 1);
     }
   return [...counts].sort((a, b) => b[1] - a[1]).map(([key]) => [key >> 16, (key >> 8) & 255, key & 255]);
+}
+
+/**
+ * The shaded mark, cut out of the sheet (its box in it) onto a transparent background. The planet is opaque, and
+ * everything drawn on it too: the disc, found from its top and bottom (the mark's), is kept as it is, its edge as
+ * much as the disc covers of each pixel. Outside it, only the ring: the foreground, going towards the planet's
+ * colour (the accent) as it turns away, and fading as it goes behind; each pixel is worked out as such a colour over
+ * the panel, how much of it there is and how far towards the accent it goes the nearest to what's drawn there.
+ */
+async function takeShaded(sheet, sheetWidth, top, height, { left, width }, panel) {
+  const palette = await readFile(path.join(root, 'src/styles/palette.css'), 'utf8');
+  const colourOf = (name) => {
+    const hex = palette.match(new RegExp(`--${name}:\\s*#([0-9a-f]{6})`, 'i'))?.[1];
+    if (!hex) throw new Error(`No --${name} in src/styles/palette.css`);
+    return [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  };
+  const foreground = colourOf('foreground');
+  const accent = colourOf('accent');
+  const at = (x, y) => ((top + y) * sheetWidth + left + x) * 4;
+  const differs = (i) => [0, 1, 2].some((k) => sheet[i + k] !== panel[k]);
+
+  // The disc: from the mark's top row to its bottom one, centred under the middle of the top row's drawn pixels
+  const drawnInRow = (y) => [...Array(width).keys()].filter((x) => differs(at(x, y)));
+  let first = 0;
+  while (first < height && drawnInRow(first).length === 0) first++;
+  let last = height - 1;
+  while (last > first && drawnInRow(last).length === 0) last--;
+  const topRow = drawnInRow(first);
+  const centre = [(topRow[0] + topRow[topRow.length - 1] + 1) / 2, (first + last + 1) / 2];
+  const radius = (last + 1 - first) / 2;
+
+  // The ring's colours over the panel: what's drawn there less the panel, as some of the way from the panel to the
+  // foreground (u) and some from the foreground to the accent (v), the least squares of the two
+  const toForeground = foreground.map((c, k) => c - panel[k]);
+  const toAccent = accent.map((c, k) => c - foreground[k]);
+  const dot = (a, b) => a.reduce((sum, c, k) => sum + c * b[k], 0);
+  const [ff, fa, aa] = [dot(toForeground, toForeground), dot(toForeground, toAccent), dot(toAccent, toAccent)];
+  const determinant = ff * aa - fa * fa;
+
+  const logo = Buffer.alloc(width * height * 4);
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++) {
+      const i = at(x, y);
+      const drawn = [sheet[i], sheet[i + 1], sheet[i + 2]];
+      const fromPanel = drawn.map((c, k) => c - panel[k]);
+      const [pf, pa] = [dot(fromPanel, toForeground), dot(fromPanel, toAccent)];
+      const ring = Math.min(1, Math.max(0, (pf * aa - pa * fa) / determinant));
+      const disc = Math.min(1, Math.max(0, radius + 0.5 - Math.hypot(x + 0.5 - centre[0], y + 0.5 - centre[1])));
+      const alpha = Math.max(ring, disc);
+      // The colour, unmixed from the panel's
+      const colour = alpha > 0 ? drawn.map((c, k) => Math.round(Math.min(255, Math.max(0, (c - (1 - alpha) * panel[k]) / alpha)))) : [0, 0, 0];
+      logo.set([...colour, Math.round(alpha * 255)], (y * width + x) * 4);
+    }
+  await sharp(logo, { raw: { width, height, channels: 4 } })
+    .extract({ left: 0, top: first, width, height: last + 1 - first })
+    .trim({ background: '#00000000', threshold: 0 })
+    .png()
+    .toFile(path.join(root, MARK.shaded.file));
+  console.log(`synthworld: ${MARK.shaded.file}`);
 }
 
 async function takeMark() {
@@ -116,20 +177,23 @@ async function takeMark() {
   const panel = [...sheet.subarray(0, 3)];
   const differs = (i) => Math.abs(sheet[i] - panel[0]) + Math.abs(sheet[i + 1] - panel[1]) + Math.abs(sheet[i + 2] - panel[2]) > 0;
 
-  // The rows' bands, and the largest mark's box: the last one in the first row, from the rightmost column drawn in to
-  // the gap (a margin) before it
+  // The rows' bands, and a row's largest mark's box: its last one, from the rightmost column drawn in to the gap (a
+  // margin) before it. The flat marks' rows have the same boxes
   const rowTop = (row) => Math.round((MARK.margin + row * (MARK.row + MARK.margin)) * MARK.scale);
   const height = Math.round(MARK.row * MARK.scale);
-  const drawnIn = (x) => {
-    for (let y = rowTop(0); y < rowTop(0) + height; y++) if (differs(at(x, y))) return true;
-    return false;
+  const largestIn = (row) => {
+    const drawnIn = (x) => {
+      for (let y = rowTop(row); y < rowTop(row) + height; y++) if (differs(at(x, y))) return true;
+      return false;
+    };
+    let right = info.width - 1;
+    while (right > 0 && !drawnIn(right)) right--;
+    let left = right;
+    for (let gap = 0; left > 0 && gap < (MARK.margin * MARK.scale) / 2; left--) gap = drawnIn(left - 1) ? 0 : gap + 1;
+    left += Math.round((MARK.margin * MARK.scale) / 2);
+    return { left, right, width: right + 1 - left };
   };
-  let right = info.width - 1;
-  while (right > 0 && !drawnIn(right)) right--;
-  let left = right;
-  for (let gap = 0; left > 0 && gap < (MARK.margin * MARK.scale) / 2; left--) gap = drawnIn(left - 1) ? 0 : gap + 1;
-  left += Math.round((MARK.margin * MARK.scale) / 2);
-  const width = right + 1 - left;
+  const { left, right, width } = largestIn(0);
 
   // The colours: the first row's one (the most used but the panel's), the second's two
   const [foreground] = coloursOf(sheet, info.width, [left, rowTop(0), right + 1, rowTop(0) + height]).filter((c) => c.join() !== panel.join());
@@ -151,6 +215,7 @@ async function takeMark() {
     }
   await sharp(mark, { raw: { width, height, channels: 4 } }).png().toFile(output);
   console.log(`synthworld: ${MARK.file}`);
+  await takeShaded(sheet, info.width, rowTop(MARK.shaded.row), height, largestIn(MARK.shaded.row), panel);
 
   // The favicon: the mark on the background's colour, in a square with round corners (a tab may be light)
   const { size } = MARK.favicon;

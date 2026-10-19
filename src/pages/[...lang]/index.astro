@@ -5,7 +5,7 @@ import SineTrail from '@/components/SineTrail.astro';
 import SynthCard from '@/components/SynthCard.astro';
 import { langOf, langPaths, pathIn, textsOf } from '@/i18n';
 import { getSynths } from '@/synths';
-import mark from '@/assets/synthworld/mark.png';
+import logo from '@/assets/synthworld/logo.png';
 
 export const getStaticPaths = langPaths;
 
@@ -26,7 +26,7 @@ const first = synths.find(({ data }) => data.logo);
         <a class="button" href={pathIn(lang, '/synths/')}>{t.home.cta}</a>
       </div>
       <div class="planet">
-        <Image src={mark} alt="" widths={[400, 800, 1395]} sizes="(min-width: 56rem) 26rem, 16rem" loading="eager" />
+        <Image src={logo} alt="" widths={[400, 800, 1356]} sizes="(min-width: 56rem) 26rem, 16rem" loading="eager" />
       </div>
     </div>
     {
@@ -73,7 +73,7 @@ const first = synths.find(({ data }) => data.logo);
 
 <style>
   /*
-   * A night sky under the header, darkest at the top, with SynthWorld's planet in it, and the first synth's logo (its
+   * A night sky under the header, darkest at the top, with SynthWorld's planet in it (its logo, shaded), and the first synth's logo (its
    * sun and name, a sun's radius high) standing on a horizon across the page, a tenth of the radius under it and a
    * tenth thick, as on the synth's page. The sun's radius: as big as fits, the logo being 6.04 radii wide. A sine wave
    * follows the mouse over it (SineTrail).

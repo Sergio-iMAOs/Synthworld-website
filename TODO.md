@@ -1,7 +1,15 @@
 
+Main page:
+"In your DAW or on its own
+CLAP and VST3 plugins, and a standalone application"
+Add LV2 and AU
+
 
 
 ## EARL
+
+EARL page: Add a skins section with a slideshow showing an image of each of EARL's skins.
+
 Music samples section
 Turn images into animations.
 
