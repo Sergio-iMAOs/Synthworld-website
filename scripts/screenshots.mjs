@@ -78,7 +78,9 @@ const synths = {
  * page's sky. The logo's tool (tests/snapshot/LogoSnapshot.cpp) draws them on a sheet with its other forms, on the
  * panel's colour: rows of marks of growing sizes, the first row flat in one colour (the foreground), the second flat
  * in the skin's two, the fourth shaded. The largest of each is cut out onto a transparent background: the flat one's
- * cover of each pixel worked out from the first row's, the shaded one's from its own colours (see takeShaded()).
+ * cover of each pixel worked out from the first row's, the shaded one's from its own colours (see takeShaded()). Under
+ * them, the wide logos (the shaded mark, then the name): the name of the largest is cut out too (see takeName()), for
+ * the home page's sky, over the shaded mark.
  */
 const MARK = {
   tool: 'synthworld_logo_snapshot',
@@ -89,6 +91,8 @@ const MARK = {
   row: 220,
   file: 'src/assets/synthworld/mark.png',
   shaded: { row: 3, file: 'src/assets/synthworld/logo.png' },
+  /** The name, from the largest wide logo (under the rows of marks, after two smaller ones, each this high) */
+  name: { file: 'src/assets/synthworld/name.png', rows: 4, wide: [24, 48, 120] },
   favicon: { file: 'public/favicon.png', size: 64 },
 };
 
@@ -163,6 +167,53 @@ async function takeShaded(sheet, sheetWidth, top, height, { left, width }, panel
   console.log(`synthworld: ${MARK.shaded.file}`);
 }
 
+/**
+ * SynthWorld's name, as the largest wide logo draws it after the mark, in the foreground, cut out onto a transparent
+ * background: how much of each pixel it covers is how far it goes from the panel towards the foreground. The wide logo
+ * is drawn twice side by side, on the panel and on the background's colour; along the first, the columns drawn in
+ * fall into the mark, the name's letters, and the second's box, which fills its band to the top. The name is from
+ * the gap after the mark to the one before that box.
+ */
+async function takeName(sheet, sheetWidth, panel) {
+  const { file, rows, wide } = MARK.name;
+  const top = Math.round((MARK.margin + rows * (MARK.row + MARK.margin) + wide.slice(0, -1).reduce((sum, h) => sum + h + MARK.margin, 0)) * MARK.scale);
+  const height = Math.round(wide[wide.length - 1] * MARK.scale);
+  const at = (x, y) => ((top + y) * sheetWidth + x) * 4;
+  const differs = (i) => [0, 1, 2].some((k) => sheet[i + k] !== panel[k]);
+  const drawnIn = (x) => {
+    for (let y = 0; y < height; y++) if (differs(at(x, y))) return true;
+    return false;
+  };
+
+  // The columns: past the margin, the mark's, then a gap, then the name's until the second box
+  let x = Math.round(MARK.margin * MARK.scale);
+  while (!drawnIn(x)) x++;
+  while (drawnIn(x)) x++;
+  while (!drawnIn(x)) x++;
+  const left = x;
+  let right = left;
+  for (; !differs(at(x, 0)); x++) if (drawnIn(x)) right = x;
+  const width = right + 1 - left;
+
+  const foreground = (await readFile(path.join(root, 'src/styles/palette.css'), 'utf8')).match(/--foreground:\s*#([0-9a-f]{6})/i)?.[1];
+  if (!foreground) throw new Error('No --foreground in src/styles/palette.css');
+  const colour = [0, 2, 4].map((i) => parseInt(foreground.slice(i, i + 2), 16));
+  const towards = colour.map((c, k) => c - panel[k]);
+  const length = towards.reduce((sum, c) => sum + c * c, 0);
+  const name = Buffer.alloc(width * height * 4);
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++) {
+      const i = at(left + x, y);
+      const cover = Math.min(1, Math.max(0, towards.reduce((sum, c, k) => sum + c * (sheet[i + k] - panel[k]), 0) / length));
+      name.set([...colour, Math.round(cover * 255)], (y * width + x) * 4);
+    }
+  await sharp(name, { raw: { width, height, channels: 4 } })
+    .trim({ background: '#00000000', threshold: 0 })
+    .png()
+    .toFile(path.join(root, file));
+  console.log(`synthworld: ${file}`);
+}
+
 async function takeMark() {
   const tool = path.join(build, 'tests', MARK.tool);
   if (!existsSync(tool)) throw new Error(`No ${tool}: build it in the framework (cmake --build build --target ${MARK.tool})`);
@@ -216,6 +267,7 @@ async function takeMark() {
   await sharp(mark, { raw: { width, height, channels: 4 } }).png().toFile(output);
   console.log(`synthworld: ${MARK.file}`);
   await takeShaded(sheet, info.width, rowTop(MARK.shaded.row), height, largestIn(MARK.shaded.row), panel);
+  await takeName(sheet, info.width, panel);
 
   // The favicon: the mark on the background's colour, in a square with round corners (a tab may be light)
   const { size } = MARK.favicon;

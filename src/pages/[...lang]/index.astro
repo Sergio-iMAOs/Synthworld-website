@@ -6,6 +6,7 @@ import SynthCard from '@/components/SynthCard.astro';
 import { langOf, langPaths, pathIn, textsOf } from '@/i18n';
 import { getSynths } from '@/synths';
 import logo from '@/assets/synthworld/logo.png';
+import name from '@/assets/synthworld/name.png';
 
 export const getStaticPaths = langPaths;
 
@@ -25,8 +26,11 @@ const first = synths.find(({ data }) => data.logo);
         <p class="lead">{t.home.lead}</p>
         <a class="button" href={pathIn(lang, '/synths/')}>{t.home.cta}</a>
       </div>
-      <div class="planet">
-        <Image src={logo} alt="" widths={[400, 800, 1356]} sizes="(min-width: 56rem) 26rem, 16rem" loading="eager" />
+      <div class="brand">
+        <Image class="name" src={name} alt="SynthWorld" widths={[400, 800, 1600]} sizes="(min-width: 56rem) 26rem, 16rem" loading="eager" />
+        <div class="planet">
+          <Image src={logo} alt="" widths={[400, 800, 1356]} sizes="(min-width: 56rem) 26rem, 16rem" loading="eager" />
+        </div>
       </div>
     </div>
     {
@@ -73,7 +77,7 @@ const first = synths.find(({ data }) => data.logo);
 
 <style>
   /*
-   * A night sky under the header, darkest at the top, with SynthWorld's planet in it (its logo, shaded), and the first synth's logo (its
+   * A night sky under the header, darkest at the top, with SynthWorld's name and planet in it (its logo, shaded), and the first synth's logo (its
    * sun and name, a sun's radius high) standing on a horizon across the page, a tenth of the radius under it and a
    * tenth thick, as on the synth's page. The sun's radius: as big as fits, the logo being 6.04 radii wide. A sine wave
    * follows the mouse over it (SineTrail).
@@ -135,12 +139,22 @@ const first = synths.find(({ data }) => data.logo);
     font-family: var(--font-display);
   }
 
-  /* The planet, lit by a halo of its own colour; first on a narrow screen, beside the text on a wide one */
-  .planet {
-    position: relative;
+  /* The name over the planet, lit by a halo of its own colour; first on a narrow screen, beside the text on a wide one */
+  .brand {
     order: -1;
     justify-self: center;
     width: min(16rem, 70%);
+  }
+
+  .name {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin-bottom: clamp(1.5rem, 4vw, 2.5rem);
+  }
+
+  .planet {
+    position: relative;
   }
 
   .planet::before {
@@ -162,7 +176,7 @@ const first = synths.find(({ data }) => data.logo);
       grid-template-columns: minmax(0, 1fr) 26rem;
     }
 
-    .planet {
+    .brand {
       order: 0;
       width: 100%;
     }
