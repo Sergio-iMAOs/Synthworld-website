@@ -57,6 +57,14 @@ const synths = defineCollection({
       screenshots: z
         .array(z.object({ id: z.string(), image: image(), alt: inEveryLanguage, caption: inEveryLanguage }))
         .default([]),
+      /**
+       * Its skins, in the order it offers them, for the slideshow on its page: each one's name, its window in it (a path
+       * from its folder), what that shows and a line on it. Its texts place the slideshow with <!-- skins -->; if they
+       * don't, it's shown after them.
+       */
+      skins: z
+        .array(z.object({ name: z.string(), image: image(), alt: inEveryLanguage, caption: inEveryLanguage }))
+        .default([]),
     }),
 });
 

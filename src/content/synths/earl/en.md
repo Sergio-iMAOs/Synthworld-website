@@ -108,3 +108,9 @@ Up to 8 whole voices for each note, each with its own oscillators, filters, enve
 Play beyond twelve notes: scales of any number of notes, from EARL's own tunings or your Scala files, for microtonal and xenharmonic music. Even scales that don't repeat at the octave, like Bohlen-Pierce.
 
 <!-- screenshot: tuning -->
+
+## Its skins
+
+Choose how it looks, and the whole window changes at once: SynthWorld's own skin, dark or light; **Deep Sea**, in navy blues; **Riso**, a riso-printed poster with shapes of its own, its knobs inked suns and its displays windows of straw paper; and on Linux, **Tux**. EARL asks which one you want the first time you open it, and you can change it in its settings whenever you like. The sound never changes.
+
+<!-- skins -->

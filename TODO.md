@@ -22,6 +22,11 @@ Adjust pictures size. Some of them have unnecesarily high resolution, which take
 
 Update my email when I have the domain
 
+## Future
+
+Make main page look like the space, but also the Graph. Nodes are synthesisers. You can drag to move around the space, zoom in and out; like in a synth graph
+
+
 ## EARL's screenshots
 
 Its page and card show placeholders (`src/content/synths/earl/screenshots/`). Next: take the real ones with

@@ -51,6 +51,7 @@ const en = {
     listen: 'Listen',
     watch: 'Watch',
     sections: 'On this page',
+    skins: { label: 'Skins', previous: 'Previous skin', next: 'Next skin' },
   },
   get: {
     buy: 'Buy for',
@@ -128,6 +129,7 @@ const es: typeof en = {
     listen: 'Escucha',
     watch: 'Mira',
     sections: 'En esta página',
+    skins: { label: 'Skins', previous: 'Skin anterior', next: 'Skin siguiente' },
   },
   get: {
     buy: 'Comprar por',

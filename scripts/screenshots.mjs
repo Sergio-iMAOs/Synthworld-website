@@ -39,6 +39,14 @@ const synths = {
       // radius; the page draws the horizon under it
       { file: 'logo.png', tool: 'synthworld_earl_header_snapshot', args: ['480'] },
       { file: 'screenshots/synth.png', env: { SYNTHWORLD_SNAPSHOT_AUDIO: '1' }, actions: ['wait=500'] },
+      // Its skins, in the order it offers them (EarlUI.cpp; Tux is only on Linux): the Synth page in each, playing a
+      // factory preset with more of its panels on (the second oscillator, the noise, the sub-oscillator, Filter 1 and
+      // the saturator) for more of each skin's colours, and the mouse out of the window
+      ...['SW Default', 'SW Light', 'Deep Sea', 'Riso', 'Tux'].map((skin) => ({
+        file: `skins/${skin.toLowerCase().replaceAll(' ', '-')}.png`,
+        env: { SYNTHWORLD_SNAPSHOT_SKIN: skin, SYNTHWORLD_SNAPSHOT_PATCH: 'EARL Factory/Soft Pad', SYNTHWORLD_SNAPSHOT_AUDIO: '1' },
+        actions: ['click=315,47', 'click=905,47', 'click=907,234', 'click=17,352', 'click=614,352', 'move=600,620', 'wait=500'],
+      })),
       // The velvet noise's panel, turned on (its switch at its top left)
       { file: 'screenshots/velvet-noise.png', scale: 3, crop: [892, 34, 304, 184], actions: ['click=905,47'] },
       // The two unisons, close up: the first oscillator's (its unison button, 6 voices, some WT SPREAD), and the voice's

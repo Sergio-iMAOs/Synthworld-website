@@ -1,0 +1,225 @@
+---
+import { Image } from 'astro:assets';
+import { langOf, textsOf } from '@/i18n';
+import type { Synth } from '@/synths';
+
+interface Props {
+  synth: Synth;
+}
+
+const { id, data } = Astro.props.synth;
+const lang = langOf(Astro.url);
+const t = textsOf(lang).synths.skins;
+// Each slide's id: the names link to them, which scrolls to one without the script
+const slideId = (index: number) => `${id}-skin-${index + 1}`;
+---
+
+<div class="skins" data-skins>
+  <div class="bar">
+    <button type="button" class="arrow" data-previous aria-label={t.previous} aria-controls={`${id}-skins`} hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"></path></svg>
+    </button>
+    <ol class="names">
+      {
+        data.skins.map(({ name }, index) => (
+          <li>
+            <a href={`#${slideId(index)}`} data-name>
+              {name}
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+    <button type="button" class="arrow" data-next aria-label={t.next} aria-controls={`${id}-skins`} hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"></path></svg>
+    </button>
+  </div>
+
+  <div class="track" id={`${id}-skins`} role="region" aria-label={t.label} tabindex="0" data-track>
+    {
+      data.skins.map(({ name, image, alt, caption }, index) => (
+        <figure class="slide" id={slideId(index)}>
+          <Image class="window" src={image} alt={alt[lang]} widths={[800, 1200, 1600, 2400]} sizes="(min-width: 64rem) 51rem, 100vw" />
+          <figcaption>
+            <strong>{name}</strong> {caption[lang]}
+          </figcaption>
+        </figure>
+      ))
+    }
+  </div>
+</div>
+
+<script>
+  // The script adds the buttons to the previous and the next skin, and marks the name of the one shown
+  for (const skins of document.querySelectorAll<HTMLElement>('[data-skins]')) {
+    const track = skins.querySelector<HTMLElement>('[data-track]')!;
+    const slides = [...track.children] as HTMLElement[];
+    const names = [...skins.querySelectorAll<HTMLAnchorElement>('[data-name]')];
+    const previous = skins.querySelector<HTMLButtonElement>('[data-previous]')!;
+    const next = skins.querySelector<HTMLButtonElement>('[data-next]')!;
+
+    /** The slide shown: the one the track is scrolled nearest to. */
+    function shown() {
+      const distance = (slide: HTMLElement) => Math.abs(slide.offsetLeft - track.scrollLeft);
+      return slides.reduce((nearest, slide, index) => (distance(slide) < distance(slides[nearest]) ? index : nearest), 0);
+    }
+
+    /** Scrolls the track to a slide (smoothly, unless the visitor asked for less motion: its CSS). */
+    function show(index: number) {
+      track.scrollTo({ left: slides[Math.max(0, Math.min(slides.length - 1, index))].offsetLeft });
+    }
+
+    /** Marks the name of the slide shown, and turns off a button with no slide to go to. */
+    function mark() {
+      const index = shown();
+      names.forEach((name, i) => (i === index ? name.setAttribute('aria-current', 'true') : name.removeAttribute('aria-current')));
+      previous.disabled = index === 0;
+      next.disabled = index === slides.length - 1;
+    }
+
+    previous.addEventListener('click', () => show(shown() - 1));
+    next.addEventListener('click', () => show(shown() + 1));
+    // A name scrolls the track only, not the page as its link would
+    names.forEach((name, index) =>
+      name.addEventListener('click', (event) => {
+        event.preventDefault();
+        show(index);
+      }),
+    );
+    track.addEventListener('scroll', mark, { passive: true });
+
+    previous.hidden = next.hidden = false;
+    skins.classList.add('enhanced');
+    mark();
+  }
+</script>
+
+<style>
+  .skins {
+    margin: 2rem 0 2.5rem;
+  }
+
+  /* The names, as the synth's tabs: the one shown underlined; with the script, between the two buttons */
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .names {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .names a {
+    display: block;
+    padding-block: 0.25rem;
+    border-bottom: 2px solid transparent;
+    color: var(--surface);
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .names a:hover {
+    color: var(--highlight);
+  }
+
+  .names a[aria-current] {
+    border-color: var(--accent);
+    color: var(--foreground);
+  }
+
+  .arrow {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    background: var(--recess);
+    border: 1px solid color-mix(in srgb, var(--surface) 45%, transparent);
+    border-radius: 50%;
+    color: var(--foreground);
+    cursor: pointer;
+  }
+
+  .arrow[hidden] {
+    display: none;
+  }
+
+  .arrow:hover:not(:disabled) {
+    border-color: var(--highlight);
+    color: var(--highlight);
+  }
+
+  .arrow:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  svg {
+    width: 1.1rem;
+    height: 1.1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* The slides in a row, each as wide as the row, scrolled one at a time; with the script, without a scrollbar */
+  .track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 100%;
+    gap: var(--gutter);
+    position: relative;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-color: var(--surface) var(--recess);
+    scrollbar-width: thin;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .track {
+      scroll-behavior: smooth;
+    }
+  }
+
+  .enhanced .track {
+    scrollbar-width: none;
+  }
+
+  .enhanced .track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .slide {
+    margin: 0;
+    scroll-snap-align: start;
+  }
+
+  figcaption {
+    margin-block: 0.75rem 0.5rem;
+    font-size: 0.9rem;
+    color: var(--surface);
+  }
+
+  figcaption strong {
+    margin-right: 0.35rem;
+    color: var(--foreground);
+    font-family: var(--font-display);
+    font-weight: 400;
+  }
+</style>

@@ -108,3 +108,9 @@ Hasta 8 voces enteras por nota, cada una con sus propios osciladores, filtros, e
 Toca más allá de las doce notas: escalas de cualquier número de notas, de las afinaciones de EARL o de tus archivos Scala, para música microtonal y xenarmónica. Incluso escalas que no se repiten en la octava, como la de Bohlen-Pierce.
 
 <!-- screenshot: tuning -->
+
+## Sus skins
+
+Elige su aspecto y toda la ventana cambia a la vez: la skin de SynthWorld, oscura o clara; **Deep Sea**, en azules marinos; **Riso**, un póster de risografía con formas propias, sus perillas soles entintados y sus pantallas ventanas de papel de paja; y en Linux, **Tux**. EARL te pregunta cuál quieres la primera vez que lo abres, y puedes cambiarla en sus ajustes cuando quieras. El sonido nunca cambia.
+
+<!-- skins -->

@@ -6,6 +6,7 @@ import Base from '@/layouts/Base.astro';
 import SynthDemos from '@/components/SynthDemos.astro';
 import SynthGet from '@/components/SynthGet.astro';
 import SynthScreenshot from '@/components/SynthScreenshot.astro';
+import SynthSkins from '@/components/SynthSkins.astro';
 import { langOf, langPaths, textsOf } from '@/i18n';
 import { getSynths } from '@/synths';
 
@@ -19,16 +20,21 @@ const t = textsOf(lang).synths;
 const synth = (await getSynths(lang)).find(({ id }) => id === Astro.params.id)!;
 const { data, text } = synth;
 
-// The text, cut where it places a screenshot (<!-- screenshot: <id> -->): its HTML and the screenshots' ids, in turn
+// The text, cut where it places a screenshot (<!-- screenshot: <id> -->) or the slideshow of its skins (<!-- skins -->):
+// its HTML and what it places there, in turn
 const html = text.rendered?.html;
 if (html === undefined) throw new Error(`The text "${text.id}" isn't rendered`);
-const parts = html.split(/<!--\s*screenshot:\s*([\w-]+)\s*-->/);
+const parts = html.split(/<!--\s*(skins|screenshot:\s*[\w-]+)\s*-->/);
+const placed = parts.filter((_, index) => index % 2 === 1);
+/** The id of the screenshot a place in the text is for, if it's for one. */
+const screenshotIdIn = (place: string) => place.match(/^screenshot:\s*([\w-]+)$/)?.[1];
 const screenshotOf = (id: string) => {
   const screenshot = data.screenshots.find((screenshot) => screenshot.id === id);
   if (!screenshot) throw new Error(`The text "${text.id}" places a screenshot "${id}" that synth.yaml doesn't have`);
   return screenshot;
 };
-const unplaced = data.screenshots.filter(({ id }) => !parts.some((part, index) => index % 2 === 1 && part === id));
+const unplaced = data.screenshots.filter(({ id }) => !placed.some((place) => screenshotIdIn(place) === id));
+if (placed.includes('skins') && data.skins.length === 0) throw new Error(`The text "${text.id}" places the skins, but synth.yaml has none`);
 
 // Its sections, for the menu beside them: the text's headings of the second level (a spotlight's too), without a final stop
 const sections = ((text.rendered?.metadata?.headings ?? []) as MarkdownHeading[])
@@ -72,8 +78,17 @@ const sections = ((text.rendered?.metadata?.headings ?? []) as MarkdownHeading[]
   <div class="wrap body">
     <div class="main">
       <div class="prose">
-        {parts.map((part, index) => (index % 2 === 0 ? <Fragment set:html={part} /> : <SynthScreenshot screenshot={screenshotOf(part)} />))}
+        {parts.map((part, index) =>
+          index % 2 === 0 ? (
+            <Fragment set:html={part} />
+          ) : part === 'skins' ? (
+            <SynthSkins synth={synth} />
+          ) : (
+            <SynthScreenshot screenshot={screenshotOf(screenshotIdIn(part)!)} />
+          ),
+        )}
         {unplaced.map((screenshot) => <SynthScreenshot screenshot={screenshot} />)}
+        {data.skins.length > 0 && !placed.includes('skins') && <SynthSkins synth={synth} />}
       </div>
 
       <SynthDemos synth={synth} />
