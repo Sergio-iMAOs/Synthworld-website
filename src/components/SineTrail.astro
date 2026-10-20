@@ -1,9 +1,9 @@
 ---
 /**
- * A sine wave that follows the mouse over the element it's in (which must be positioned), drawn along the way the
- * mouse goes, as SynthWorld's ring is a sine wave: the mouse draws it, and it fades behind it. Behind the element's
- * content, and only a decoration: without JavaScript, with a touch screen, or for a visitor who asked for less motion,
- * there's nothing.
+ * A sine wave that follows the mouse over the whole page, drawn along the way the mouse goes, as SynthWorld's ring is
+ * a sine wave: the mouse draws it, and it fades behind it. Over the page's background (put it after Space) and behind
+ * its content, and never over the site's header. Only a decoration: without JavaScript, with a touch screen, or for a
+ * visitor who asked for less motion, there's nothing.
  */
 ---
 
@@ -11,7 +11,7 @@
 
 <style>
   canvas {
-    position: absolute;
+    position: fixed;
     inset: 0;
     z-index: -1;
     width: 100%;
@@ -45,9 +45,10 @@
   const lessMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
   for (const canvas of document.querySelectorAll<HTMLCanvasElement>('canvas.sine-trail')) {
-    const area = canvas.parentElement;
     const g = canvas.getContext('2d');
-    if (!area || !g) continue;
+    if (!g) continue;
+    // The site's header, which it's never drawn over: it's a pane of glass, clear at the top of the page
+    const header = document.querySelector('body > header');
 
     const colour = getComputedStyle(canvas).getPropertyValue('--highlight').trim() || '#fff287';
     let way: Point[] = [];
@@ -56,17 +57,15 @@
 
     const resize = () => {
       scale = devicePixelRatio || 1;
-      canvas.width = Math.round(area.clientWidth * scale);
-      canvas.height = Math.round(area.clientHeight * scale);
+      canvas.width = Math.round(innerWidth * scale);
+      canvas.height = Math.round(innerHeight * scale);
     };
-    new ResizeObserver(resize).observe(area);
+    addEventListener('resize', resize);
     resize();
 
-    area.addEventListener('pointermove', (event) => {
+    addEventListener('pointermove', (event) => {
       if (event.pointerType !== 'mouse' || lessMotion.matches) return;
-      const box = area.getBoundingClientRect();
-      const x = event.clientX - box.left;
-      const y = event.clientY - box.top;
+      const [x, y] = [event.clientX, event.clientY];
       const t = performance.now();
       const last = way.at(-1);
       const moved = last ? Math.hypot(x - last.x, y - last.y) : 0;
@@ -118,6 +117,11 @@
       });
 
       g!.setTransform(scale, 0, 0, scale, 0, 0);
+      g!.save();
+      const top = Math.max(0, header?.getBoundingClientRect().bottom ?? 0);
+      g!.beginPath();
+      g!.rect(0, top, innerWidth, innerHeight - top);
+      g!.clip();
       g!.strokeStyle = colour;
       g!.shadowColor = colour;
       g!.shadowBlur = 8;
@@ -132,6 +136,7 @@
         for (let i = start + 1; i <= Math.min(start + CHUNK, wave.length - 1); i++) g!.lineTo(wave[i].x, wave[i].y);
         g!.stroke();
       }
+      g!.restore();
       frame = requestAnimationFrame(draw);
     }
   }

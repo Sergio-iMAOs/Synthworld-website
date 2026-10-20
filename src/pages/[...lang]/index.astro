@@ -24,6 +24,7 @@ if (t.home.features.length !== objects.length) throw new Error(`The home page ha
 
 <Base>
   <Space />
+  <SineTrail />
 
   <section class="hero">
     <p class="construction" role="status">{t.home.construction}</p>
@@ -38,7 +39,6 @@ if (t.home.features.length !== objects.length) throw new Error(`The home page ha
       <p class="lead">{t.home.lead}</p>
       <a class="button" href={pathIn(lang, '/synths/')}>{t.home.cta}</a>
     </div>
-    <SineTrail />
   </section>
 
   {
@@ -114,7 +114,8 @@ if (t.home.features.length !== objects.length) throw new Error(`The home page ha
 <style>
   /*
    * The page is in space (Space): first SynthWorld, its planet (its logo, shaded) over its name, as tall as most of
-   * the window, so that the first synth's horizon shows under it. A sine wave follows the mouse over it (SineTrail).
+   * the window, so that the first synth's horizon shows under it. A sine wave follows the mouse over the whole page
+   * (SineTrail).
    */
   .hero {
     position: relative;

@@ -59,10 +59,12 @@ const rewired = [2, 6];
 
 // The satellite's orbit, seen tilted round the planet's centre (a circle squashed to so much of its height), where on
 // it the satellite rests (degrees from its right end: on its far side, clear of the planet), and its signal's arcs over
-// its antenna
+// its antenna. Over the planet, the satellite is drawn whole while it's on the orbit's near half, which it enters as it
+// turns past the orbit's right end: so much of a turn after its start
 const ORBIT_TILT = 0.28;
 const ORBIT_PLANE = `translate(50 66) rotate(-14) scale(1 ${ORBIT_TILT})`;
 const ORBIT_START = -35;
+const NEAR_FROM = -ORBIT_START / 360;
 const signals = [5, 9, 13].map((radius) => {
   const side = radius * 0.7;
   return `M${-side} ${-8.5 - side}A${radius} ${radius} 0 0 1 ${side} ${-8.5 - side}`;
@@ -209,7 +211,8 @@ const signals = [5, 9, 13].map((radius) => {
         </defs>
         <circle cx="50" cy="66" r="38" fill={url('glow-accent')} />
         {/*
-         * The orbit and the satellite twice: whole behind the planet, then the near half over it. The satellite goes
+         * The orbit and the satellite twice: whole behind the planet, then over it the orbit's near half and the
+         * satellite while it's on it (not cut where the orbit is, or its signal's arcs would be). The satellite goes
          * round in the orbit's plane, turned back as much as it goes round, and its plane's squash undone: it stays as
          * it's drawn, only tilted as the orbit is
          */}
@@ -222,8 +225,11 @@ const signals = [5, 9, 13].map((radius) => {
               </>
             )}
             <g transform={ORBIT_PLANE}>
-              <g clip-path={layer === 'over' ? url('front') : undefined}>
-                <circle class="course" r="46" />
+              <circle class="course" r="46" clip-path={layer === 'over' ? url('front') : undefined} />
+              <g
+                class={layer === 'over' ? 'near' : undefined}
+                style={layer === 'over' ? `--near-from: ${NEAR_FROM}` : undefined}
+              >
                 <g transform={`rotate(${ORBIT_START})`}>
                   <g class="orbit">
                     <g transform="translate(46 0)">
@@ -424,6 +430,11 @@ const signals = [5, 9, 13].map((radius) => {
     stroke-width: 0.8;
   }
 
+  /* At its start the satellite is on the orbit's far side */
+  .near {
+    visibility: hidden;
+  }
+
   .signal {
     fill: none;
     stroke: var(--highlight);
@@ -465,6 +476,12 @@ const signals = [5, 9, 13].map((radius) => {
       animation: turn 7s linear infinite reverse paused;
     }
 
+    /* Over the planet the first half of each turn from the orbit's right end */
+    .near {
+      animation: near 7s step-end infinite paused;
+      animation-delay: calc((var(--near-from) - 1) * 7s);
+    }
+
     .signal {
       animation: signal 1.5s ease-out infinite paused;
     }
@@ -489,6 +506,16 @@ const signals = [5, 9, 13].map((radius) => {
   @keyframes glide {
     50% {
       translate: 3px -3px;
+    }
+  }
+
+  @keyframes near {
+    from {
+      visibility: visible;
+    }
+
+    50% {
+      visibility: hidden;
     }
   }
 

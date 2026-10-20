@@ -18,15 +18,18 @@ const nav = [
 <header>
   <div class="wrap bar">
     <a class="name" href={pathIn(lang, '/')}>
-      <Image class="mark" src={mark} alt="" widths={[64, 128]} sizes="3.2rem" loading="eager" />
+      <span class="planet">
+        <Image class="mark" src={mark} alt="" widths={[64, 128]} sizes="3.2rem" loading="eager" />
+      </span>
       {site.name}
     </a>
     <nav aria-label="Main">
-      <ul>
+      <ul class="links">
         {
           nav.map(({ href, label, current }) => (
             <li>
               <a href={href} aria-current={current ? 'page' : undefined}>
+                <span class="orbit" aria-hidden="true" />
                 {label}
               </a>
             </li>
@@ -38,8 +41,15 @@ const nav = [
       {
         (Object.keys(languages) as Lang[]).map((code) => (
           <li>
-            <a href={pathIn(code, path)} lang={code} hreflang={code} aria-current={code === lang ? 'true' : undefined}>
-              {languages[code]}
+            <a
+              href={pathIn(code, path)}
+              lang={code}
+              hreflang={code}
+              aria-label={languages[code]}
+              title={languages[code]}
+              aria-current={code === lang ? 'true' : undefined}
+            >
+              {code}
             </a>
           </li>
         ))
@@ -49,31 +59,104 @@ const nav = [
 </header>
 
 <style>
+  /*
+   * A pane of glass over space, its lower edge a horizon lit from the top left, as SynthWorld's planet is. Where the
+   * browser can, it's clear at the top of the page, over the hero, and turns to glass as the page scrolls.
+   */
   header {
-    background: var(--recess);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: color-mix(in srgb, var(--recess) 72%, transparent);
+    backdrop-filter: blur(12px) saturate(1.3);
+  }
+
+  header::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--foreground) 55%, transparent) 12%,
+      color-mix(in srgb, var(--accent) 60%, transparent) 45%,
+      transparent
+    );
+    box-shadow: 0 0 0.6rem color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+
+  /* In longhands: a minifier would put the timeline in the shorthand, where browsers don't take it */
+  @supports (animation-timeline: scroll()) {
+    header,
+    header::after {
+      animation-name: glass;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: scroll();
+      animation-range: 0 8rem;
+    }
+
+    header::after {
+      animation-name: edge;
+    }
+  }
+
+  @keyframes glass {
+    from {
+      background-color: transparent;
+      backdrop-filter: none;
+    }
+  }
+
+  @keyframes edge {
+    from {
+      opacity: 0.35;
+    }
   }
 
   .bar {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    gap: 0.5rem 2rem;
-    padding-block: 1rem;
+    gap: 0.5rem 1.5rem;
+    padding-block: 0.75rem;
   }
 
   .name {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.7rem;
     margin-right: auto;
     font-family: var(--font-display);
     font-size: 1.25rem;
     font-weight: 700;
+    letter-spacing: 0.03em;
     color: var(--foreground);
     text-decoration: none;
   }
 
-  /* SynthWorld's mark, as its synths draw it on their buttons */
+  /* SynthWorld's mark, as its synths draw it on their buttons, lit by a halo of its own colour */
+  .planet {
+    position: relative;
+    display: flex;
+  }
+
+  .planet::before {
+    content: '';
+    position: absolute;
+    inset: -60% -35%;
+    z-index: -1;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 35%, transparent), transparent);
+    transition: opacity 0.4s;
+    opacity: 0.7;
+  }
+
+  .name:hover .planet::before {
+    opacity: 1;
+  }
+
   .mark {
     width: auto;
     height: 2rem;
@@ -81,30 +164,189 @@ const nav = [
 
   ul {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem 1.5rem;
     padding: 0;
     margin: 0;
     list-style: none;
   }
 
-  .languages {
-    gap: 0.75rem;
-    font-size: 0.85rem;
+  .links {
+    flex-wrap: wrap;
+    gap: 0 0.5rem;
   }
 
-  li a {
+  /*
+   * The pages: the one the visitor is on circled by a tilted orbit, its ring in --highlight and a moon on it in
+   * --accent, as SynthWorld's mark is drawn; a fainter one on hover
+   */
+  .links a {
+    position: relative;
+    display: block;
+    padding: 0.55rem 1.05rem;
     color: var(--surface);
     font-family: var(--font-display);
+    font-size: 0.85rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
     text-decoration: none;
   }
 
-  li a:hover,
-  li a[aria-current] {
+  .links a:hover,
+  .links a[aria-current] {
     color: var(--foreground);
   }
 
-  nav a[aria-current] {
-    border-bottom: 2px solid var(--accent);
+  .orbit {
+    position: absolute;
+    inset: 0 -0.3rem;
+    rotate: -6deg;
+    opacity: 0;
+    scale: 0.85;
+    pointer-events: none;
+  }
+
+  .orbit::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1px solid color-mix(in srgb, var(--surface) 45%, transparent);
+    border-radius: 50%;
+  }
+
+  /* The moon, at the ring's right end, shaded as the planet is */
+  .orbit::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    translate: -50% -50%;
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--foreground) 85%, transparent), transparent 55%),
+      radial-gradient(circle at 35% 30%, transparent 40%, color-mix(in srgb, var(--recess) 70%, transparent)),
+      var(--surface);
+  }
+
+  .links a:hover .orbit {
+    opacity: 0.6;
+    scale: 1;
+  }
+
+  .links a[aria-current] .orbit {
+    opacity: 1;
+    scale: 1;
+  }
+
+  .links a[aria-current] .orbit::before {
+    border-color: color-mix(in srgb, var(--highlight) 60%, transparent);
+    box-shadow: 0 0 0.5rem color-mix(in srgb, var(--highlight) 15%, transparent);
+  }
+
+  .links a[aria-current] .orbit::after {
+    background:
+      radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--foreground) 85%, transparent), transparent 55%),
+      radial-gradient(circle at 35% 30%, transparent 40%, color-mix(in srgb, var(--recess) 70%, transparent)),
+      var(--accent);
+    box-shadow: 0 0 0.4rem var(--accent);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .orbit {
+      transition:
+        opacity 0.3s,
+        scale 0.4s cubic-bezier(0.2, 0.8, 0.3, 1.2);
+    }
+
+    /*
+     * On hover, the moon goes round its ring, a turn in 8 s: across and up and down, each eased as a sine, a quarter
+     * turn apart. Off hover, it stops where it is.
+     */
+    .orbit::after {
+      animation:
+        orbit-across 4s cubic-bezier(0.37, 0, 0.63, 1) infinite alternate paused,
+        orbit-up-down 4s cubic-bezier(0.37, 0, 0.63, 1) -2s infinite alternate paused;
+    }
+
+    .links a:hover .orbit::after {
+      animation-play-state: running;
+    }
+  }
+
+  @keyframes orbit-across {
+    from {
+      left: 100%;
+    }
+    to {
+      left: 0;
+    }
+  }
+
+  @keyframes orbit-up-down {
+    from {
+      top: 0;
+    }
+    to {
+      top: 100%;
+    }
+  }
+
+  /* The languages: a pill, the page's lit */
+  .languages {
+    padding: 0.2rem;
+    border: 1px solid color-mix(in srgb, var(--surface) 22%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--recess) 50%, transparent);
+  }
+
+  .languages a {
+    display: block;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    color: var(--surface);
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+  }
+
+  .languages a:hover {
+    color: var(--foreground);
+  }
+
+  .languages a[aria-current] {
+    background: color-mix(in srgb, var(--accent) 35%, transparent);
+    color: var(--foreground);
+  }
+
+  /* Narrow: the name and the languages, and the pages under them */
+  @media (max-width: 44rem) {
+    .bar {
+      flex-wrap: wrap;
+      padding-block: 0.6rem 0.35rem;
+    }
+
+    nav {
+      order: 1;
+      width: 100%;
+    }
+
+    .links {
+      justify-content: center;
+    }
+
+    .links a {
+      padding-inline: 0.8rem;
+      font-size: 0.78rem;
+      letter-spacing: 0.1em;
+    }
+  }
+
+  @media (max-width: 24rem) {
+    .links a {
+      padding-inline: 0.6rem;
+      letter-spacing: 0.06em;
+    }
   }
 </style>

@@ -1,5 +1,4 @@
 
-Add the sine wave squiggle mouse animation to all the main page (drawn behind elements but over teh background)
 
 
 ## EARL
@@ -16,7 +15,8 @@ Update my email when I have the domain
 
 ## Future
 
-Make main page look like the space, but also the Graph. Nodes are synthesisers. You can drag to move around the space, zoom in and out; like in a synth graph
+Make Synths page look like the space (like the main page), but also a synth Graph. Nodes (Shaped like planets) are synthesisers. You can drag to move around the space, zoom in and out; like in a synth graph, (add vertical and horizontal scroll bars too to move with the mouse wheel too instead of only dragging).
+Show EARL's planet first, add two more unknown planets that will be future synths.
 
 
 ## EARL's screenshots
