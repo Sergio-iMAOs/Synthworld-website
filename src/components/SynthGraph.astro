@@ -1,0 +1,1557 @@
+---
+/**
+ * The synths as a synth's graph in space, as EARL's Starship skin draws its graph (EarlStarshipSkin in the framework):
+ * each synth a node, a planet (Planet) under its name in the corners of a sight that lights up under the mouse, and
+ * SynthWorld's planet a beam of light into it, its cable's way the graph's; the synths still to come, uncharted planets
+ * seen against the light, which nothing reaches yet. As in the graph, the view is dragged around and zoomed (the wheel,
+ * two fingers, its buttons), a star chart's marks follow it, and the space behind it (Space, `pannedBy` the graph)
+ * drifts as it's panned. A click on a planet expands it into a pane of glass with what the synth is and where to get it
+ * (one at a time); going on to the synth's page from there, a ship flies to its planet from outside the view. The view
+ * starts zoomed out, then zooms in to the first synth. Far behind, the faint nodes of another graph are connected,
+ * disconnected, moved and modulated, now and then.
+ *
+ * Without the script, the planets' panes are in a row, open. For a visitor who asked for less motion, the view starts
+ * on the first synth, only moves when it's moved, and no ship flies.
+ */
+import { Image } from 'astro:assets';
+import Planet from '@/components/Planet.astro';
+import SynthGet from '@/components/SynthGet.astro';
+import { langOf, pathIn, textsOf } from '@/i18n';
+import { site } from '@/site';
+import { nightAndDayOf, unchartedWorlds, type Synth } from '@/synths';
+import logo from '@/assets/synthworld/logo.png';
+
+interface Props {
+  synths: Synth[];
+}
+
+const lang = langOf(Astro.url);
+const t = textsOf(lang);
+const g = t.synths.graph;
+const { synths } = Astro.props;
+
+interface Point {
+  x: number;
+  y: number;
+}
+
+// In the graph's units (CSS pixels at a zoom of 1). A node's planet's centre, from its box's top left: its name along
+// its top, its planet under it. A beam comes into its left edge, level with its planet's centre
+const PLANET: Point = { x: 100, y: 132 };
+
+// SynthWorld's node: its logo as wide as its box, its planet's disc so wide round the logo's centre
+const ENGINE = { width: 240, disc: 78 };
+
+// The planets' centres: SynthWorld's at the origin, its beams leaving the right edge of its disc; then the synths', in
+// their order, and the uncharted ones. Only the first is in reach of a beam that crosses nothing
+const OUTPUT: Point = { x: ENGINE.disc, y: 0 };
+const places: Point[] = [
+  { x: 520, y: 60 },
+  { x: 1040, y: -300 },
+  { x: 980, y: 430 },
+];
+const planets = synths.length + unchartedWorlds.length;
+if (planets > places.length) throw new Error(`The synths' graph has places for ${places.length} planets, not ${planets}`);
+const boxAt = ({ x, y }: Point) => `left: ${x - PLANET.x}px; top: ${y - PLANET.y}px`;
+
+/** A beam from SynthWorld's planet into a node: its way, as the graph's cables go (SWSkin::buildSignalCablePath()), and its head. */
+const beamTo = (place: Point) => {
+  const [from, to] = [OUTPUT, { x: place.x - PLANET.x, y: place.y }];
+  const pull = Math.abs(to.x - from.x) / 2 + 40;
+  return {
+    way: `M${from.x} ${from.y}C${from.x + pull} ${from.y} ${to.x - pull} ${to.y} ${to.x} ${to.y}`,
+    head: `M${to.x - 9} ${to.y - 4.5}L${to.x} ${to.y}L${to.x - 9} ${to.y + 4.5}Z`,
+  };
+};
+
+// Each synth's pane shows its window in SynthWorld's own dark skin, as the home page does, or else its cover
+const pictureOf = (synth: Synth) => nightAndDayOf(synth)[0]?.night ?? synth.data.cover;
+const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted-${index + 1}`, place: places[synths.length + index] }));
+---
+
+<section class="synth-graph" aria-labelledby="synths-title" data-synth-graph>
+  {/* The graph's layout from the start, before its script has loaded: without the script, there's none */}
+  <script is:inline>
+    document.currentScript.parentElement.classList.add('enhanced');
+  </script>
+
+  <div class="titles">
+    <h1 id="synths-title">{t.synths.title}</h1>
+    <p class="lead">{t.synths.lead}</p>
+  </div>
+
+  <div class="viewport" tabindex="0" aria-describedby="synths-hint" data-viewport>
+    <canvas class="chart" aria-hidden="true" data-chart></canvas>
+
+    <div class="world" data-world>
+      <svg class="links" aria-hidden="true">
+        <g class="faint" data-faint></g>
+        {
+          synths.map((_, index) => {
+            const { way, head } = beamTo(places[index]);
+            return (
+              <g class="beam">
+                <path class="glow" d={way} />
+                <path class="light" d={way} />
+                <path class="core" d={way} />
+                <path class="head" d={head} />
+              </g>
+            );
+          })
+        }
+      </svg>
+
+      <div class="node box engine" style={`left: ${-ENGINE.width / 2}px; top: ${-PLANET.y}px`} aria-hidden="true" data-box>
+        <span class="name">{site.name}</span>
+        <Image class="logo" src={logo} alt="" widths={[480, 960]} sizes="480px" />
+      </div>
+
+      <ul class="planets">
+        {
+          synths.map((synth, index) => {
+            const { id, data, text } = synth;
+            const picture = pictureOf(synth);
+            const pane = `planet-${id}`;
+            return (
+              <li class="node" style={boxAt(places[index])} data-node data-box data-x={places[index].x} data-y={places[index].y} data-first={index === 0 ? '' : undefined}>
+                <button type="button" class="toggle box" aria-expanded="false" aria-controls={pane} data-toggle>
+                  <span class="name">{data.name}</span>
+                  <Planet class="globe" world={data.planet} sight />
+                </button>
+                <section class="pane" id={pane} aria-labelledby={`${pane}-name`} data-pane>
+                  <header>
+                    <h2 id={`${pane}-name`}>{data.name}</h2>
+                    <Planet class="mini" world={data.planet} />
+                    <button type="button" class="close" aria-label={g.close} title={g.close} data-close>
+                      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
+                    </button>
+                  </header>
+                  {picture && <Image class="cover" src={picture.image} alt={picture.alt[lang]} widths={[704, 1408]} sizes="704px" />}
+                  <p class="summary">{text.data.summary}</p>
+                  <ul class="tags">
+                    <li>v{data.version}</li>
+                    <li>{data.paid ? data.paid.price : t.synths.free}</li>
+                    {data.formats.map((format) => (
+                      <li>{format}</li>
+                    ))}
+                  </ul>
+                  <div class="actions">
+                    <SynthGet synth={synth} />
+                    <a class="enter" href={pathIn(lang, `/synths/${id}/`)} data-enter>
+                      {t.home.discover(data.name)}
+                      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" /></svg>
+                    </a>
+                  </div>
+                </section>
+              </li>
+            );
+          })
+        }
+        {
+          uncharted.map(({ world, id, place }) => (
+            <li class="node uncharted" style={boxAt(place)} data-node data-box data-x={place.x} data-y={place.y}>
+              <button type="button" class="toggle box" aria-expanded="false" aria-controls={id} data-toggle>
+                <span class="name">{g.uncharted}</span>
+                <Planet class="globe" world={world} uncharted sight />
+              </button>
+              <section class="pane" id={id} aria-labelledby={`${id}-name`} data-pane>
+                <header>
+                  <h2 id={`${id}-name`}>{g.uncharted}</h2>
+                  <Planet class="mini" world={world} uncharted />
+                  <button type="button" class="close" aria-label={g.close} title={g.close} data-close>
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
+                  </button>
+                </header>
+                <p class="summary">{g.toCome}</p>
+              </section>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+
+    {/* The ship that flies to a planet, its trail behind it, and the dark it dives into */}
+    <canvas class="trail" aria-hidden="true" data-trail></canvas>
+    <svg class="ship" viewBox="-40 -20 80 40" aria-hidden="true" data-ship>
+      <defs>
+        <linearGradient id="ship-flame" gradientUnits="userSpaceOnUse" x1="-20" y1="0" x2="-38" y2="0">
+          <stop offset="0" class="flame-hot"></stop>
+          <stop offset="1" class="flame-out"></stop>
+        </linearGradient>
+        <linearGradient id="ship-hull" x1="0" y1="0" x2="0.3" y2="1">
+          <stop offset="0.2" class="hull-lit"></stop>
+          <stop offset="1" class="hull-dark"></stop>
+        </linearGradient>
+        <radialGradient id="ship-engine">
+          <stop offset="0" class="flame-hot"></stop>
+          <stop offset="1" class="flame-out"></stop>
+        </radialGradient>
+      </defs>
+      <circle cx="-21" r="9" fill="url(#ship-engine)"></circle>
+      <path class="flame" d="M-20-3.5Q-38 0-20 3.5Z" fill="url(#ship-flame)"></path>
+      <path class="wing" d="M-3-4-15-15h-6l6 12ZM-3 4-15 15h-6l6-12Z"></path>
+      <path d="M28 0C20-5 4-7-18-5L-21 0-18 5C4 7 20 5 28 0Z" fill="url(#ship-hull)"></path>
+      <ellipse class="cockpit" cx="10" cy="-1.4" rx="6.5" ry="2.2"></ellipse>
+    </svg>
+    <div class="veil" data-veil></div>
+  </div>
+
+  <p class="hint" id="synths-hint">
+    <span class="mouse">{g.hint}</span>
+    <span class="touch">{g.touchHint}</span>
+  </p>
+
+  <div class="controls" data-controls>
+    <button type="button" aria-label={g.zoomIn} title={g.zoomIn} data-zoom="in">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>
+    </button>
+    <button type="button" aria-label={g.zoomOut} title={g.zoomOut} data-zoom="out">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10" /></svg>
+    </button>
+    <button type="button" aria-label={g.all} title={g.all} data-zoom="all">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" /></svg>
+    </button>
+  </div>
+</section>
+
+<style>
+  /* With the script, the page is the window: the graph fills what the header and the footer leave of it */
+  :global(body:has(.synth-graph.enhanced)) {
+    height: 100dvh;
+    min-height: 0;
+  }
+
+  :global(main:has(> .synth-graph.enhanced)) {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .synth-graph {
+    position: relative;
+    text-align: center;
+  }
+
+  .enhanced {
+    flex: 1;
+    min-height: 22rem;
+  }
+
+  /* Its title over space, out of the way of the mouse, gone while a pane is open */
+  .titles {
+    padding: clamp(2.5rem, 7vw, 4rem) var(--gutter) 0;
+    text-shadow: 0 0 1rem #03070d;
+    transition: opacity 0.3s;
+  }
+
+  .titles h1 {
+    margin-bottom: 0.5rem;
+  }
+
+  .titles .lead {
+    margin-inline: auto;
+  }
+
+  .enhanced .titles {
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding-top: clamp(1rem, 3vh, 2rem);
+    pointer-events: none;
+  }
+
+  .enhanced .titles h1 {
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+  }
+
+  .enhanced .titles .lead {
+    font-size: 1rem;
+  }
+
+  .synth-graph:has(.expanded) .titles,
+  .entering .titles {
+    opacity: 0;
+  }
+
+  @media (max-height: 34rem) {
+    .enhanced .titles .lead {
+      display: none;
+    }
+  }
+
+  /* The view: what's in it moved and zoomed as one (the world), over a star chart; dragged, never scrolled */
+  .enhanced .viewport {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    overflow: clip;
+    touch-action: none;
+    cursor: grab;
+    user-select: none;
+  }
+
+  .enhanced.dragging .viewport {
+    cursor: grabbing;
+  }
+
+  .viewport:focus-visible {
+    outline: 2px solid var(--highlight);
+    outline-offset: -2px;
+  }
+
+  .chart,
+  .trail {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .enhanced .world {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: 0 0;
+    opacity: 0;
+  }
+
+  .enhanced .world.placed {
+    opacity: 1;
+    transition: opacity 1s;
+  }
+
+  .links {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 1px;
+    overflow: visible;
+  }
+
+  /* A beam of light (the skin's drawBeam()): a wide glow, the beam, its white-hot core; an arrowhead where it goes in */
+  .beam path {
+    fill: none;
+    stroke-linecap: round;
+  }
+
+  .beam .glow {
+    stroke: var(--accent);
+    stroke-opacity: 0.16;
+    stroke-width: 8;
+  }
+
+  .beam .light {
+    stroke: var(--accent);
+    stroke-width: 2;
+  }
+
+  .beam .core {
+    stroke: var(--foreground);
+    stroke-opacity: 0.75;
+    stroke-width: 0.8;
+  }
+
+  .beam .head {
+    fill: var(--accent);
+    stroke: color-mix(in srgb, var(--accent) 22%, transparent);
+    stroke-width: 3;
+    stroke-linejoin: round;
+    paint-order: stroke;
+  }
+
+  /* The faint graph far behind: its nodes, its cables (lit while they're being connected), its modulations' courses */
+  .faint {
+    opacity: 0.8;
+  }
+
+  .faint :global(.halo) {
+    fill: var(--accent);
+    opacity: 0.12;
+  }
+
+  .faint :global(.dot) {
+    fill: var(--foreground);
+    opacity: 0.5;
+  }
+
+  .faint :global(path) {
+    fill: none;
+    stroke: var(--accent);
+    stroke-linecap: round;
+  }
+
+  .faint :global(.link) {
+    stroke-opacity: 0.4;
+    stroke-width: 1.5;
+    transition:
+      stroke-dashoffset 1.8s ease-out,
+      stroke 1.5s,
+      stroke-opacity 1.5s,
+      opacity 1.2s;
+  }
+
+  .faint :global(.link.drawing) {
+    stroke: var(--highlight);
+    stroke-opacity: 0.55;
+  }
+
+  .faint :global(.course) {
+    transition: opacity 1.2s;
+  }
+
+  .faint :global(.course .dots) {
+    stroke-width: 2;
+    stroke-dasharray: 0.5 4.5;
+    stroke-opacity: 0.55;
+  }
+
+  .faint :global(.course .trail) {
+    stroke-width: 5;
+    stroke-opacity: 0.06;
+  }
+
+  .faint :global(.course circle) {
+    fill: none;
+    stroke: var(--accent);
+    stroke-opacity: 0.55;
+    stroke-width: 1.25;
+  }
+
+  .faint :global(.course .arrives) {
+    fill: var(--accent);
+    fill-opacity: 0.55;
+    stroke: none;
+  }
+
+  .faint :global(.gone) {
+    opacity: 0;
+  }
+
+  /*
+   * A node: its box, in the corners of a sight (lit under the mouse, in the colour of what's under it), its name along
+   * its top over a line, its planet under it
+   */
+  .enhanced .planets {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .enhanced .node {
+    position: absolute;
+    width: 200px;
+    height: 236px;
+  }
+
+  .box {
+    --sight: color-mix(in srgb, var(--accent) 40%, transparent);
+    --arm: 12px;
+    --line: 1px;
+    position: relative;
+    display: block;
+    width: 200px;
+    height: 236px;
+  }
+
+  .box::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(var(--sight) 0 0) top left / var(--arm) var(--line),
+      linear-gradient(var(--sight) 0 0) top left / var(--line) var(--arm),
+      linear-gradient(var(--sight) 0 0) top right / var(--arm) var(--line),
+      linear-gradient(var(--sight) 0 0) top right / var(--line) var(--arm),
+      linear-gradient(var(--sight) 0 0) bottom left / var(--arm) var(--line),
+      linear-gradient(var(--sight) 0 0) bottom left / var(--line) var(--arm),
+      linear-gradient(var(--sight) 0 0) bottom right / var(--arm) var(--line),
+      linear-gradient(var(--sight) 0 0) bottom right / var(--line) var(--arm);
+    background-repeat: no-repeat;
+    pointer-events: none;
+  }
+
+  .name {
+    position: absolute;
+    top: 6px;
+    left: 12px;
+    right: 12px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+    color: var(--foreground);
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+    letter-spacing: 0.14em;
+    text-align: left;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .box :global(.globe) {
+    position: absolute;
+    left: 6.25px;
+    top: 38.25px;
+    width: 187.5px;
+    height: 187.5px;
+  }
+
+  /* SynthWorld's planet: its logo (ENGINE), its planet's centre as high as a node's */
+  .enhanced .engine {
+    width: 240px;
+  }
+
+  .engine .logo {
+    position: absolute;
+    top: 54px;
+    left: 0;
+    width: 100%;
+    height: auto;
+    -webkit-user-drag: none;
+  }
+
+  .toggle {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .toggle:focus-visible {
+    outline: none;
+  }
+
+  .toggle:is(:hover, :focus-visible),
+  .arrival .toggle {
+    --sight: color-mix(in srgb, var(--highlight) 90%, transparent);
+    --line: 1.5px;
+  }
+
+  .toggle:is(:hover, :focus-visible)::before,
+  .arrival .toggle::before {
+    filter: drop-shadow(0 0 3px color-mix(in srgb, var(--highlight) 50%, transparent));
+  }
+
+  .toggle:is(:hover, :focus-visible) :global(.sight),
+  .arrival :global(.sight) {
+    opacity: 1;
+  }
+
+  .uncharted .toggle:not(:hover, :focus-visible) {
+    --sight: color-mix(in srgb, var(--surface) 30%, transparent);
+  }
+
+  .uncharted .name {
+    color: var(--surface);
+    border-bottom-color: color-mix(in srgb, var(--surface) 22%, transparent);
+  }
+
+  /* An open pane: glass, its name and its planet in its header, then what the synth is and where to get it */
+  .pane {
+    width: 22rem;
+    max-width: 100%;
+    padding: 0 1rem 1.1rem;
+    background: color-mix(in srgb, var(--recess) 82%, transparent);
+    border: 1px solid color-mix(in srgb, var(--surface) 22%, transparent);
+    border-radius: calc(var(--radius) * 2);
+    box-shadow:
+      0 2rem 4rem -2rem rgb(0 0 0 / 0.8),
+      0 0 4rem -1rem color-mix(in srgb, var(--accent) 30%, transparent);
+    backdrop-filter: blur(8px);
+    text-align: left;
+  }
+
+  .uncharted .pane {
+    width: 16rem;
+  }
+
+  .pane header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+    padding-block: 0.7rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  }
+
+  .pane h2 {
+    flex: 1;
+    margin: 0;
+    font-size: 1.05rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .pane :global(.mini) {
+    width: 1.9rem;
+    height: 1.9rem;
+  }
+
+  .close,
+  .controls button {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    background: color-mix(in srgb, var(--recess) 75%, transparent);
+    border: 1px solid color-mix(in srgb, var(--surface) 30%, transparent);
+    border-radius: 50%;
+    color: var(--foreground);
+    cursor: pointer;
+  }
+
+  .close:hover,
+  .controls button:hover {
+    border-color: var(--highlight);
+    color: var(--highlight);
+  }
+
+  :is(.close, .controls, .enter) svg {
+    width: 1rem;
+    height: 1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .cover {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin-bottom: 1rem;
+    border: 1px solid color-mix(in srgb, var(--surface) 25%, transparent);
+    border-radius: var(--radius);
+  }
+
+  .summary {
+    margin: 0 0 1rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .uncharted .summary {
+    margin: 0;
+    color: var(--surface);
+  }
+
+  .pane .tags {
+    margin-bottom: 1.1rem;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  /* On to the synth's page */
+  .enter {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 1rem;
+    border: 1px solid color-mix(in srgb, var(--foreground) 35%, transparent);
+    border-radius: var(--radius);
+    color: var(--foreground);
+    font-family: var(--font-display);
+    text-decoration: none;
+  }
+
+  .enter:hover {
+    border-color: var(--highlight);
+    color: var(--highlight);
+  }
+
+  /*
+   * In the graph, a pane is the node expanded: it grows out of the planet, which goes, over what's round it; the node
+   * keeps its top left, as an expanded node of the graph does. Closed, it's unseen and can't be reached (inert)
+   */
+  .enhanced .pane {
+    position: absolute;
+    top: 0;
+    left: 0;
+    max-width: none;
+    transform-origin: 100px 132px;
+    visibility: hidden;
+    opacity: 0;
+    cursor: auto;
+    user-select: text;
+    transition:
+      opacity 0.25s,
+      visibility 0s 0.35s;
+  }
+
+  .enhanced .expanded {
+    z-index: 2;
+  }
+
+  .enhanced .expanded .pane {
+    visibility: visible;
+    opacity: 1;
+    transition: opacity 0.25s;
+  }
+
+  .toggle {
+    transition: opacity 0.25s;
+  }
+
+  .enhanced .expanded .toggle {
+    visibility: hidden;
+    opacity: 0;
+    transition:
+      opacity 0.2s,
+      visibility 0s 0.3s;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .enhanced .pane {
+      scale: 0.4;
+      transition:
+        opacity 0.25s,
+        scale 0.35s cubic-bezier(0.2, 0.8, 0.3, 1),
+        visibility 0s 0.35s;
+    }
+
+    .enhanced .expanded .pane {
+      scale: 1;
+      transition:
+        opacity 0.25s,
+        scale 0.35s cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+
+    .enhanced .expanded .toggle {
+      scale: 0.6;
+      transition:
+        opacity 0.2s,
+        scale 0.3s,
+        visibility 0s 0.3s;
+    }
+
+    .toggle {
+      transition:
+        opacity 0.25s,
+        scale 0.35s cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+  }
+
+  /* How to move round it, and the view's buttons, over its bottom corners; with a touch screen, how to with fingers */
+  .hint,
+  .controls {
+    display: none;
+  }
+
+  .enhanced .hint {
+    display: block;
+    position: absolute;
+    z-index: 2;
+    left: 1rem;
+    bottom: 1rem;
+    max-width: calc(100% - 5.5rem);
+    margin: 0;
+    padding: 0.35rem 0.9rem;
+    background: color-mix(in srgb, var(--recess) 70%, transparent);
+    border: 1px solid color-mix(in srgb, var(--surface) 20%, transparent);
+    border-radius: 1.25rem;
+    color: var(--surface);
+    font-size: 0.85rem;
+    text-align: left;
+    pointer-events: none;
+  }
+
+  .touch {
+    display: none;
+  }
+
+  @media (pointer: coarse) {
+    .mouse {
+      display: none;
+    }
+
+    .touch {
+      display: inline;
+    }
+  }
+
+  .enhanced .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    position: absolute;
+    z-index: 2;
+    right: 1rem;
+    bottom: 1rem;
+  }
+
+  .controls button {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .entering :is(.hint, .controls) {
+    visibility: hidden;
+  }
+
+  /* Once the visitor has moved the view, zoomed it or opened a planet, they know how: the hint goes */
+  .used .hint {
+    opacity: 0;
+    transition: opacity 0.6s;
+  }
+
+  /* Where an open pane takes the whole width, the buttons go while it's open */
+  @media (max-width: 40rem) {
+    .synth-graph:has(.expanded) .controls {
+      visibility: hidden;
+    }
+  }
+
+  /* The ship, flying in from outside the view (moved by the script), its engine burning; the dark it dives into */
+  .ship {
+    position: absolute;
+    z-index: 3;
+    top: -30px;
+    left: -60px;
+    width: 120px;
+    height: 60px;
+    overflow: visible;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .flying .ship {
+    visibility: visible;
+  }
+
+  .flame-hot {
+    stop-color: var(--highlight);
+  }
+
+  .flame-out {
+    stop-color: var(--highlight);
+    stop-opacity: 0;
+  }
+
+  .hull-lit {
+    stop-color: var(--foreground);
+  }
+
+  .hull-dark {
+    stop-color: var(--surface);
+  }
+
+  .wing {
+    fill: var(--accent);
+  }
+
+  .cockpit {
+    fill: var(--recess);
+    stroke: var(--accent);
+    stroke-width: 0.75;
+  }
+
+  .flame {
+    transform-origin: -20px 0;
+    animation: burn 0.09s ease-in-out infinite alternate;
+  }
+
+  @keyframes burn {
+    to {
+      scale: 0.75 0.9;
+    }
+  }
+
+  .trail {
+    transition: opacity 0.4s;
+  }
+
+  .diving .trail {
+    opacity: 0;
+  }
+
+  .veil {
+    position: absolute;
+    z-index: 4;
+    inset: 0;
+    background: #03070d;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.55s ease-in;
+  }
+
+  .diving .veil {
+    opacity: 1;
+  }
+
+  /* Without the script: the panes in a row, open, without the graph's planets and lines */
+  .synth-graph:not(.enhanced) {
+    padding-bottom: clamp(2.5rem, 7vw, 5rem);
+  }
+
+  .synth-graph:not(.enhanced) :is(.chart, .links, .engine, .toggle, .close, .trail, .ship, .veil) {
+    display: none;
+  }
+
+  .synth-graph:not(.enhanced) .planets {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 1.5rem;
+    margin: 2.5rem 0 0;
+    padding: 0 var(--gutter);
+    list-style: none;
+  }
+</style>
+
+<script>
+  /** The view's least and most zoom, and a notch of the mouse wheel's: the framework's graph's (GraphViewport) */
+  const MIN_ZOOM = 0.25;
+  const MAX_ZOOM = 2;
+  const ZOOM_PER_NOTCH = 1.3;
+  /** How far a press moves before it's a drag, not a click, in pixels (the graph's CABLE_DRAG_THRESHOLD) */
+  const DRAG_THRESHOLD = 4;
+  /**
+   * The star chart's marks, the skin's: one every so many of the graph's units, at least so far apart on screen (zoomed
+   * out, every other one is skipped), each a cross of arms so long, so opaque
+   */
+  const CHART_STEP = 24 * 4;
+  const CHART_MIN_SPACING = 64;
+  const CHART_CROSS = 3;
+  const CHART_ALPHA = 0.2;
+  /** Room left on screen round what the view is fitted to, and round a pane it opens on */
+  const FIT_MARGIN = 40;
+  const PANE_MARGIN = 16;
+  /** How far past what's in the graph the view's centre can go, in the graph's units */
+  const REACH = 400;
+  /** At first, how long the whole graph shows before the view zooms in to the first synth, and how long that takes, in ms */
+  const INTRO_DELAY = 600;
+  const INTRO = 2600;
+  /** The ship's flight to a planet, and its dive into it, in ms */
+  const FLIGHT = 1300;
+  const DIVE = 550;
+
+  /** The faint graph far behind: how many nodes, how far round what's in the graph, how far from it and from each other */
+  const FAINT_NODES = 42;
+  const FAINT_AREA = 900;
+  const FAINT_CLEARANCE = 110;
+  const FAINT_SPACING = 120;
+  /** How far apart two nodes a cable joins can be; how many cables there are at least and at most, of the nodes */
+  const FAINT_CABLE_REACH = 420;
+  const FAINT_CABLES = [0.8, 1.3];
+  /** How many modulations there are at most; the time between two changes, and how long a node takes to move, in ms */
+  const FAINT_COURSES = 3;
+  const FAINT_PAUSE = 2800;
+  const FAINT_MOVE = 3200;
+
+  interface Point {
+    x: number;
+    y: number;
+  }
+
+  /** A view: the graph's point at its centre, and its zoom. */
+  interface View extends Point {
+    zoom: number;
+  }
+
+  const lessMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+  const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+  const easeOut = (t: number) => 1 - (1 - t) ** 2;
+  const easeIn = (t: number) => t * t * t;
+  const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
+  const between = (a: Point, b: Point): Point => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+
+  /** A cable's way, as the graph draws one (SWSkin::buildSignalCablePath()): out of `a` rightwards, into `b` from its left. */
+  const cable = (a: Point, b: Point) => {
+    const pull = Math.abs(b.x - a.x) / 2 + 40;
+    return `M${a.x} ${a.y}C${a.x + pull} ${a.y} ${b.x - pull} ${b.y} ${b.x} ${b.y}`;
+  };
+
+  /** The same numbers each time, 0 to 1 (xorshift): the faint graph is the same at every visit, until it changes. */
+  function random(seed: number) {
+    let state = seed >>> 0;
+    return () => {
+      state ^= state << 13;
+      state ^= state >>> 17;
+      state ^= state << 5;
+      state >>>= 0;
+      return (state >>> 8) / 2 ** 24;
+    };
+  }
+
+  /**
+   * The faint graph far behind the planets, in `group`, clear of the `boxes` of what's in the graph: nodes joined by
+   * cables, a few modulations' courses. Unless the visitor asked for less motion, now and then a cable is connected
+   * (lit while it's being drawn) or disconnected, a node moves, a modulation is added or removed.
+   */
+  function startFaintGraph(group: SVGGElement, boxes: DOMRect[]) {
+    interface Node extends Point {
+      element: SVGGElement;
+      cables: Cable[];
+    }
+    interface Cable {
+      from: Node;
+      to: Node;
+      element: SVGPathElement;
+    }
+    interface Course {
+      from: Node;
+      to: Cable;
+      element: SVGGElement;
+    }
+    const make = <K extends keyof SVGElementTagNameMap>(name: K, attributes: Record<string, string | number> = {}) => {
+      const element = document.createElementNS('http://www.w3.org/2000/svg', name);
+      for (const [key, value] of Object.entries(attributes)) element.setAttribute(key, String(value));
+      return element;
+    };
+    const pick = <T,>(list: T[]) => list[Math.floor(Math.random() * list.length)];
+    const fade = (element: SVGElement) => {
+      element.classList.add('gone');
+      setTimeout(() => element.remove(), 1300);
+    };
+
+    // The nodes, scattered round what's in the graph, clear of it and of each other
+    const [left, top] = [Math.min(...boxes.map((box) => box.left)) - FAINT_AREA, Math.min(...boxes.map((box) => box.top)) - FAINT_AREA];
+    const [right, bottom] = [Math.max(...boxes.map((box) => box.right)) + FAINT_AREA, Math.max(...boxes.map((box) => box.bottom)) + FAINT_AREA];
+    const clear = ({ x, y }: Point) =>
+      boxes.every((box) => x < box.left - FAINT_CLEARANCE || x > box.right + FAINT_CLEARANCE || y < box.top - FAINT_CLEARANCE || y > box.bottom + FAINT_CLEARANCE);
+    const next = random(0x5ca1ab1e);
+    const nodes: Node[] = [];
+    for (let tries = 0; nodes.length < FAINT_NODES && tries < 4000; tries++) {
+      const point = { x: left + next() * (right - left), y: top + next() * (bottom - top) };
+      if (!clear(point) || nodes.some((node) => distance(node, point) < FAINT_SPACING)) continue;
+      const element = make('g');
+      element.append(make('circle', { class: 'halo', r: 9 }), make('circle', { class: 'dot', r: 3 }));
+      nodes.push({ ...point, element, cables: [] });
+    }
+
+    const cables: Cable[] = [];
+    const courses: Course[] = [];
+    const cableGroup = make('g');
+    const courseGroup = make('g');
+    group.append(cableGroup, courseGroup, ...nodes.map(({ element }) => element));
+
+    // Where everything that's at a node is drawn: the node, its cables, the modulations from it or into its cables
+    const courseWay = ({ from, to }: Course) => {
+      const end = between(to.from, to.to);
+      const bend = between(from, end);
+      const lift = distance(from, end) * 0.25;
+      const [dx, dy] = [end.x - from.x, end.y - from.y];
+      const length = Math.hypot(dx, dy) || 1;
+      return { from, end, way: `M${from.x} ${from.y}Q${bend.x - (dy / length) * lift} ${bend.y + (dx / length) * lift} ${end.x} ${end.y}` };
+    };
+    const drawCourse = (course: Course) => {
+      const { from, end, way } = courseWay(course);
+      const [trail, dots, leaves, arrives] = course.element.children;
+      trail.setAttribute('d', way);
+      dots.setAttribute('d', way);
+      leaves.setAttribute('cx', String(from.x));
+      leaves.setAttribute('cy', String(from.y));
+      arrives.setAttribute('cx', String(end.x));
+      arrives.setAttribute('cy', String(end.y));
+    };
+    const draw = (node: Node) => {
+      node.element.setAttribute('transform', `translate(${node.x} ${node.y})`);
+      for (const { from, to, element } of node.cables) element.setAttribute('d', cable(from, to));
+      for (const course of courses) if (course.from === node || node.cables.includes(course.to)) drawCourse(course);
+    };
+
+    // A cable goes out of a node into one on its right, not too far, that it isn't joined to yet
+    const intoFrom = (from: Node) =>
+      nodes
+        .filter((to) => to.x > from.x + 60 && distance(from, to) < FAINT_CABLE_REACH && !from.cables.some((cable) => cable.to === to || cable.from === to))
+        .sort((a, b) => distance(from, a) - distance(from, b));
+    const connect = (from: Node, to: Node, drawn: boolean) => {
+      const element = make('path', { class: 'link', d: cable(from, to) });
+      const added = { from, to, element };
+      cables.push(added);
+      from.cables.push(added);
+      to.cables.push(added);
+      cableGroup.append(element);
+      if (!drawn) return;
+
+      // Drawn from where it leaves, lit, then as the others
+      const length = element.getTotalLength();
+      element.classList.add('drawing');
+      element.style.strokeDasharray = String(length);
+      element.style.strokeDashoffset = String(length);
+      element.getBoundingClientRect();
+      element.style.strokeDashoffset = '0';
+      setTimeout(() => {
+        element.classList.remove('drawing');
+        element.style.strokeDasharray = element.style.strokeDashoffset = '';
+      }, 1900);
+    };
+    const disconnect = (gone: Cable) => {
+      cables.splice(cables.indexOf(gone), 1);
+      for (const node of [gone.from, gone.to]) node.cables.splice(node.cables.indexOf(gone), 1);
+      for (const course of courses.filter(({ to }) => to === gone)) unmodulate(course);
+      fade(gone.element);
+    };
+    const modulate = (from: Node, to: Cable) => {
+      const element = make('g', { class: 'course gone' });
+      element.append(make('path', { class: 'trail' }), make('path', { class: 'dots' }), make('circle', { r: 3 }), make('circle', { class: 'arrives', r: 2 }));
+      const course = { from, to, element };
+      courses.push(course);
+      drawCourse(course);
+      courseGroup.append(element);
+      element.getBoundingClientRect();
+      element.classList.remove('gone');
+    };
+    const unmodulate = (gone: Course) => {
+      courses.splice(courses.indexOf(gone), 1);
+      fade(gone.element);
+    };
+
+    // At first, each node joined to its nearest on its right, and a modulation or two
+    for (const node of nodes) {
+      const [nearest] = intoFrom(node);
+      if (nearest) connect(node, nearest, false);
+    }
+    for (const node of nodes) draw(node);
+    for (let course = 0; course < 2 && cables.length > 0; course++) {
+      const to = cables[Math.floor(next() * cables.length)];
+      const from = nodes.find((node) => node !== to.from && node !== to.to && distance(node, to.from) < FAINT_CABLE_REACH);
+      if (from) modulate(from, to);
+    }
+    if (lessMotion.matches || nodes.length < 2) return;
+
+    let moving = false;
+    const move = (node: Node) => {
+      const [from, angle] = [{ x: node.x, y: node.y }, Math.random() * 2 * Math.PI];
+      const to = { x: from.x + Math.cos(angle) * 70, y: from.y + Math.sin(angle) * 70 };
+      if (!clear(to)) return;
+      moving = true;
+      const start = performance.now();
+      const step = (now: number) => {
+        const t = Math.min(1, (now - start) / FAINT_MOVE);
+        const k = easeInOut(t);
+        node.x = from.x + (to.x - from.x) * k;
+        node.y = from.y + (to.y - from.y) * k;
+        draw(node);
+        if (t < 1) requestAnimationFrame(step);
+        else moving = false;
+      };
+      requestAnimationFrame(step);
+    };
+
+    // A change now and then, while the page is seen: as many cables as there should be, then any change
+    const change = () => {
+      if (!document.hidden) {
+        const tooFew = cables.length < nodes.length * FAINT_CABLES[0];
+        const tooMany = cables.length > nodes.length * FAINT_CABLES[1];
+        const kind = tooFew ? 'connect' : tooMany ? 'disconnect' : pick(['connect', 'disconnect', 'move', 'move', 'modulate']);
+        if (kind === 'connect') {
+          const from = pick(nodes);
+          const [to] = intoFrom(from).filter(() => Math.random() < 0.7);
+          if (to) connect(from, to, true);
+        } else if (kind === 'disconnect' && cables.length > 0) {
+          disconnect(pick(cables));
+        } else if (kind === 'move' && !moving) {
+          move(pick(nodes));
+        } else if (kind === 'modulate') {
+          if (courses.length >= FAINT_COURSES) unmodulate(courses[0]);
+          else if (cables.length > 0) {
+            const to = pick(cables);
+            const from = pick(nodes.filter((node) => node !== to.from && node !== to.to && distance(node, between(to.from, to.to)) < FAINT_CABLE_REACH));
+            if (from) modulate(from, to);
+          }
+        }
+      }
+      setTimeout(change, FAINT_PAUSE + Math.random() * 1600);
+    };
+    setTimeout(change, FAINT_PAUSE);
+  }
+
+  for (const graph of document.querySelectorAll<HTMLElement>('[data-synth-graph]')) {
+    const viewport = graph.querySelector<HTMLElement>('[data-viewport]')!;
+    const world = graph.querySelector<HTMLElement>('[data-world]')!;
+    const chart = graph.querySelector<HTMLCanvasElement>('[data-chart]')!;
+    const trail = graph.querySelector<HTMLCanvasElement>('[data-trail]')!;
+    const ship = graph.querySelector<SVGSVGElement>('[data-ship]')!;
+    const space = document.querySelector<HTMLElement>('[data-space="graph"]');
+    const nodes = [...graph.querySelectorAll<HTMLElement>('[data-node]')];
+    const boxes = [...graph.querySelectorAll<HTMLElement>('[data-box]')];
+    const paneOf = (node: HTMLElement) => node.querySelector<HTMLElement>('[data-pane]')!;
+    const toggleOf = (node: HTMLElement) => node.querySelector<HTMLButtonElement>('[data-toggle]')!;
+    const style = getComputedStyle(graph);
+
+    let size = { width: viewport.clientWidth, height: viewport.clientHeight };
+    let view: View = { x: 0, y: 0, zoom: 1 };
+
+    // A node's planet's centre in the graph; a point of the graph on screen (in the view), and back
+    const centreOf = (node: HTMLElement): Point => ({ x: Number(node.dataset.x), y: Number(node.dataset.y) });
+    const toScreen = ({ x, y }: Point): Point => ({ x: size.width / 2 + (x - view.x) * view.zoom, y: size.height / 2 + (y - view.y) * view.zoom });
+    const toGraph = ({ x, y }: Point): Point => ({ x: view.x + (x - size.width / 2) / view.zoom, y: view.y + (y - size.height / 2) / view.zoom });
+    const inView = (event: { clientX: number; clientY: number }): Point => {
+      const box = viewport.getBoundingClientRect();
+      return { x: event.clientX - box.left, y: event.clientY - box.top };
+    };
+
+    /** What's in the graph: its nodes' boxes, an open one's pane's (layout's, which the view's zoom doesn't change). */
+    const boxesOf = () =>
+      boxes.map((box) => {
+        const pane = box.classList.contains('expanded') ? paneOf(box) : null;
+        const [width, height] = [Math.max(box.offsetWidth, pane?.offsetWidth ?? 0), Math.max(box.offsetHeight, pane?.offsetHeight ?? 0)];
+        return new DOMRect(box.offsetLeft, box.offsetTop, width, height);
+      });
+    const bounds = () => {
+      const all = boxesOf();
+      return {
+        left: Math.min(...all.map((box) => box.left)),
+        top: Math.min(...all.map((box) => box.top)),
+        right: Math.max(...all.map((box) => box.right)),
+        bottom: Math.max(...all.map((box) => box.bottom)),
+      };
+    };
+
+    // --- The view: drawn at most once a frame, the world moved and zoomed, the chart's marks and space following ---
+
+    const pen = chart.getContext('2d')!;
+    let frame = 0;
+    function draw() {
+      cancelAnimationFrame(frame);
+      frame = 0;
+      const origin = toScreen({ x: 0, y: 0 });
+      world.style.transform = `translate(${origin.x}px, ${origin.y}px) scale(${view.zoom})`;
+      if (space && !lessMotion.matches) {
+        space.style.setProperty('--pan-x', String(origin.x));
+        space.style.setProperty('--pan-y', String(origin.y));
+      }
+
+      const scale = devicePixelRatio || 1;
+      pen.setTransform(scale, 0, 0, scale, 0, 0);
+      pen.clearRect(0, 0, size.width, size.height);
+      pen.fillStyle = style.getPropertyValue('--accent').trim();
+      pen.globalAlpha = CHART_ALPHA;
+      let step = CHART_STEP * view.zoom;
+      while (step < CHART_MIN_SPACING) step *= 2;
+      const first = (at: number) => ((at % step) + step) % step;
+      for (let x = first(origin.x); x < size.width + CHART_CROSS; x += step)
+        for (let y = first(origin.y); y < size.height + CHART_CROSS; y += step) {
+          pen.fillRect(x - CHART_CROSS, y - 0.5, CHART_CROSS * 2, 1);
+          pen.fillRect(x - 0.5, y - CHART_CROSS, 1, CHART_CROSS * 2);
+        }
+    }
+
+    /** Shows the graph from `to`, zoomed within the graph's bounds and kept in reach of what's in it. */
+    const setView = (to: View) => {
+      const { left, top, right, bottom } = bounds();
+      view = { zoom: clamp(to.zoom, MIN_ZOOM, MAX_ZOOM), x: clamp(to.x, left - REACH, right + REACH), y: clamp(to.y, top - REACH, bottom + REACH) };
+      frame ||= requestAnimationFrame(draw);
+    };
+    /** Zooms to `zoom`, the graph's point `anchor` put at `at` on screen. */
+    const zoomTo = (zoom: number, anchor: Point, at: Point) => {
+      zoom = clamp(zoom, MIN_ZOOM, MAX_ZOOM);
+      setView({ zoom, x: anchor.x - (at.x - size.width / 2) / zoom, y: anchor.y - (at.y - size.height / 2) / zoom });
+    };
+
+    const resize = () => {
+      size = { width: viewport.clientWidth, height: viewport.clientHeight };
+      const scale = devicePixelRatio || 1;
+      for (const canvas of [chart, trail]) {
+        canvas.width = Math.round(size.width * scale);
+        canvas.height = Math.round(size.height * scale);
+      }
+      draw();
+    };
+    resize();
+    new ResizeObserver(resize).observe(viewport);
+
+    // --- The view moving on its own: from one to another, eased, its zoom changing evenly (at once for less motion) ---
+
+    let animation = 0;
+    let timer = 0;
+    const stop = () => {
+      cancelAnimationFrame(animation);
+      clearTimeout(timer);
+      animation = timer = 0;
+    };
+    function animate(to: View, duration: number, then?: () => void, ease = easeInOut) {
+      stop();
+      if (lessMotion.matches) {
+        view = to;
+        draw();
+        then?.();
+        return;
+      }
+      const from = view;
+      const start = performance.now();
+      const step = (now: number) => {
+        const t = Math.min(1, (now - start) / duration);
+        const k = ease(t);
+        view = { x: from.x + (to.x - from.x) * k, y: from.y + (to.y - from.y) * k, zoom: from.zoom * (to.zoom / from.zoom) ** k };
+        draw();
+        animation = t < 1 ? requestAnimationFrame(step) : 0;
+        if (t === 1) then?.();
+      };
+      animation = requestAnimationFrame(step);
+    }
+
+    /** Everything in the graph, as close as it fits, but no closer than its own size. */
+    const all = (): View => {
+      const { left, top, right, bottom } = bounds();
+      const zoom = Math.min((size.width - 2 * FIT_MARGIN) / (right - left), (size.height - 2 * FIT_MARGIN) / (bottom - top));
+      return { x: (left + right) / 2, y: (top + bottom) / 2, zoom: clamp(zoom, MIN_ZOOM, 1) };
+    };
+    /** A node's planet, close up. */
+    const closeUp = (node: HTMLElement): View => ({ ...centreOf(node), zoom: clamp(Math.min(size.width, size.height) / 500, 0.8, 1.2) });
+    /** A node's open pane, whole if it fits, else its top; at its own size, or smaller to fit. */
+    const paneView = (node: HTMLElement): View => {
+      const pane = paneOf(node);
+      const [width, height] = [pane.offsetWidth, pane.offsetHeight];
+      const zoom = clamp(Math.min(1, (size.width - 2 * PANE_MARGIN) / width, (size.height - 2 * PANE_MARGIN) / height), 0.6, 1);
+      const fits = height * zoom <= size.height - 2 * PANE_MARGIN;
+      return { zoom, x: node.offsetLeft + width / 2, y: node.offsetTop + (fits ? height / 2 : (size.height / 2 - PANE_MARGIN) / zoom) };
+    };
+
+    // --- Dragged with a mouse or a finger (a press that moves), zoomed with two fingers or the wheel ---
+
+    const pointers = new Map<number, Point>();
+    let press: Point = { x: 0, y: 0 };
+    let dragged = false;
+    viewport.addEventListener('pointerdown', (event) => {
+      if (event.button !== 0 || graph.classList.contains('entering')) return;
+      // A pane is for reading and clicking: only a finger moves the view from it, and not from what's to click in it
+      const target = event.target as Element;
+      if (target.closest('[data-pane]') && (event.pointerType === 'mouse' || target.closest('a, button, summary'))) return;
+      stop();
+      if (pointers.size === 0) {
+        press = { x: event.clientX, y: event.clientY };
+        dragged = false;
+      }
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    });
+    viewport.addEventListener('pointermove', (event) => {
+      const last = pointers.get(event.pointerId);
+      if (!last) return;
+      const now = { x: event.clientX, y: event.clientY };
+      if (!dragged) {
+        if (pointers.size === 1 && distance(now, press) < DRAG_THRESHOLD) return;
+        // Only now are the pointers the view's: a click under the threshold stays the button's under it
+        dragged = true;
+        graph.classList.add('dragging', 'used');
+        for (const id of pointers.keys()) viewport.setPointerCapture(id);
+      }
+      pointers.set(event.pointerId, now);
+      const other = [...pointers].find(([id]) => id !== event.pointerId)?.[1];
+      if (!other) {
+        setView({ ...view, x: view.x - (now.x - last.x) / view.zoom, y: view.y - (now.y - last.y) / view.zoom });
+        return;
+      }
+      // Two fingers: the point of the graph between them stays between them, zoomed as they spread or close
+      const [from, to] = [between(last, other), between(now, other)];
+      const anchor = toGraph(inView({ clientX: from.x, clientY: from.y }));
+      zoomTo((view.zoom * distance(now, other)) / Math.max(1, distance(last, other)), anchor, inView({ clientX: to.x, clientY: to.y }));
+    });
+    const release = (event: PointerEvent) => {
+      pointers.delete(event.pointerId);
+      if (pointers.size > 0) return;
+      graph.classList.remove('dragging');
+      // Its click, if any, comes first
+      setTimeout(() => (dragged = false));
+    };
+    viewport.addEventListener('pointerup', release);
+    viewport.addEventListener('pointercancel', release);
+
+    // A drag's release isn't a click
+    viewport.addEventListener(
+      'click',
+      (event) => {
+        if (!dragged) return;
+        dragged = false;
+        event.stopPropagation();
+        event.preventDefault();
+      },
+      true,
+    );
+
+    // The wheel zooms round the mouse, a notch at a time; a trackpad's pinch comes as the wheel with Ctrl, in small steps
+    viewport.addEventListener(
+      'wheel',
+      (event) => {
+        if (graph.classList.contains('entering')) return;
+        event.preventDefault();
+        stop();
+        graph.classList.add('used');
+        const pixels = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 33 : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? size.height : 1;
+        const notches = (-event.deltaY * pixels * (event.ctrlKey ? 3 : 1)) / 100;
+        const at = inView(event);
+        zoomTo(view.zoom * ZOOM_PER_NOTCH ** notches, toGraph(at), at);
+      },
+      { passive: false },
+    );
+
+    // With the view focused, the arrows move it, + and - zoom it, 0 shows everything
+    viewport.addEventListener('keydown', (event) => {
+      if (event.target !== viewport || graph.classList.contains('entering')) return;
+      const moves: Record<string, Point> = { ArrowLeft: { x: -1, y: 0 }, ArrowRight: { x: 1, y: 0 }, ArrowUp: { x: 0, y: -1 }, ArrowDown: { x: 0, y: 1 } };
+      const centre = { x: size.width / 2, y: size.height / 2 };
+      const move = moves[event.key];
+      if (move) setView({ ...view, x: view.x + (move.x * 80) / view.zoom, y: view.y + (move.y * 80) / view.zoom });
+      else if (event.key === '+' || event.key === '=') zoomTo(view.zoom * ZOOM_PER_NOTCH, toGraph(centre), centre);
+      else if (event.key === '-') zoomTo(view.zoom / ZOOM_PER_NOTCH, toGraph(centre), centre);
+      else if (event.key === '0') animate(all(), 700);
+      else return;
+      stop();
+      graph.classList.add('used');
+      event.preventDefault();
+    });
+
+    for (const button of graph.querySelectorAll<HTMLButtonElement>('[data-zoom]'))
+      button.addEventListener('click', () => {
+        const { zoom } = button.dataset;
+        graph.classList.add('used');
+        if (zoom === 'all') animate(all(), 700);
+        else animate({ ...view, zoom: clamp(view.zoom * ZOOM_PER_NOTCH ** (zoom === 'in' ? 1 : -1), MIN_ZOOM, MAX_ZOOM) }, 250);
+      });
+
+    // --- A planet expanded into its pane, one at a time; the view moved to it ---
+
+    let open: HTMLElement | null = null;
+    const expand = (node: HTMLElement) => {
+      if (open && open !== node) collapse(open, false);
+      open = node;
+      node.classList.add('expanded');
+      graph.classList.add('used');
+      toggleOf(node).setAttribute('aria-expanded', 'true');
+      paneOf(node).inert = false;
+      paneOf(node).querySelector<HTMLElement>('[data-close]')!.focus({ preventScroll: true });
+      animate(paneView(node), 600);
+    };
+    const collapse = (node: HTMLElement, refocus = true) => {
+      node.classList.remove('expanded');
+      toggleOf(node).setAttribute('aria-expanded', 'false');
+      paneOf(node).inert = true;
+      if (open === node) open = null;
+      if (refocus) toggleOf(node).focus({ preventScroll: true });
+    };
+    for (const node of nodes) {
+      const toggle = toggleOf(node);
+      paneOf(node).inert = true;
+      toggle.addEventListener('click', () => (node.classList.contains('expanded') ? collapse(node) : expand(node)));
+      paneOf(node).querySelector('[data-close]')!.addEventListener('click', () => collapse(node));
+
+      // A planet tabbed to out of sight comes into it
+      toggle.addEventListener('focus', () => {
+        if (!toggle.matches(':focus-visible')) return;
+        const { x, y } = toScreen(centreOf(node));
+        const inset = Math.min(100, size.width / 4, size.height / 4);
+        if (x < inset || x > size.width - inset || y < inset || y > size.height - inset)
+          animate({ ...centreOf(node), zoom: Math.max(view.zoom, 0.6) }, 500);
+      });
+    }
+
+    // A click on space, or Escape, closes it (Escape in the download's menu is the menu's)
+    viewport.addEventListener('click', (event) => {
+      if (open && !(event.target as Element).closest('[data-node]')) collapse(open, false);
+    });
+    graph.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && open && !(event.target as Element).closest('details')) collapse(open);
+    });
+
+    // --- Into a synth: a ship flies to its planet from outside the view, and dives into it ---
+
+    const trailPen = trail.getContext('2d')!;
+    let landed: View | null = null;
+    const fly = (node: HTMLElement, address: string) => {
+      graph.classList.add('entering', 'flying');
+      collapse(node, false);
+      landed = closeUp(node);
+      animate(landed, 600);
+
+      // Its way on screen: from below the view's bottom left corner, round to the view's centre, where the planet will
+      // be; it goes away into the distance, bigger at first than the view's things, then a speck
+      const { width, height } = size;
+      const [from, bend, to] = [
+        { x: -0.08 * width, y: 1.15 * height },
+        { x: 0.1 * width, y: 0.4 * height },
+        { x: width / 2, y: height / 2 },
+      ];
+      const at = (k: number): Point => ({
+        x: (1 - k) ** 2 * from.x + 2 * (1 - k) * k * bend.x + k * k * to.x,
+        y: (1 - k) ** 2 * from.y + 2 * (1 - k) * k * bend.y + k * k * to.y,
+      });
+      const heading = (k: number) =>
+        Math.atan2(2 * (1 - k) * (bend.y - from.y) + 2 * k * (to.y - bend.y), 2 * (1 - k) * (bend.x - from.x) + 2 * k * (to.x - bend.x));
+      const sizeAt = (k: number) => 0.04 + 1.3 * (1 - k) ** 1.3;
+      const highlight = style.getPropertyValue('--highlight').trim();
+
+      const start = performance.now();
+      const step = (now: number) => {
+        const t = Math.min(1, (now - start) / FLIGHT);
+        const k = easeOut(t);
+        const { x, y } = at(k);
+        ship.style.transform = `translate(${x}px, ${y}px) rotate(${heading(k)}rad) scale(${sizeAt(k)})`;
+        ship.style.opacity = String(1 - clamp((k - 0.9) / 0.1, 0, 1));
+
+        // Its trail: the last of its way, thinner and fainter behind it
+        const scale = devicePixelRatio || 1;
+        trailPen.setTransform(scale, 0, 0, scale, 0, 0);
+        trailPen.clearRect(0, 0, width, height);
+        trailPen.strokeStyle = trailPen.shadowColor = highlight;
+        trailPen.shadowBlur = 10;
+        trailPen.lineCap = 'butt';
+        const tail = Math.max(0, k - 0.3);
+        for (let segment = 0; segment < 24; segment++) {
+          const [a, b] = [tail + ((k - tail) * segment) / 24, tail + ((k - tail) * (segment + 1)) / 24];
+          trailPen.globalAlpha = (0.6 * (segment + 1)) / 24;
+          trailPen.lineWidth = 9 * sizeAt(b);
+          trailPen.beginPath();
+          trailPen.moveTo(at(a).x, at(a).y);
+          trailPen.lineTo(at(b).x, at(b).y);
+          trailPen.stroke();
+        }
+        if (t < 1) {
+          requestAnimationFrame(step);
+          return;
+        }
+
+        // Landed: its planet's sight lights up, and the view dives into it as it goes dark
+        node.classList.add('arrival');
+        graph.classList.add('diving');
+        animate({ ...landed!, zoom: landed!.zoom * 5 }, DIVE, () => location.assign(address), easeIn);
+      };
+      requestAnimationFrame(step);
+    };
+    for (const link of graph.querySelectorAll<HTMLAnchorElement>('[data-enter]'))
+      link.addEventListener('click', (event) => {
+        if (lessMotion.matches || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        fly(link.closest<HTMLElement>('[data-node]')!, link.href);
+      });
+
+    // Back from the synth's page, the graph as it was before the dive
+    addEventListener('pageshow', (event) => {
+      if (!event.persisted || !landed) return;
+      stop();
+      graph.classList.remove('entering', 'flying', 'diving');
+      for (const node of nodes) node.classList.remove('arrival');
+      trailPen.clearRect(0, 0, trail.width, trail.height);
+      view = landed;
+      landed = null;
+      draw();
+    });
+
+    // --- At first: the graph whole, zoomed out, then the first synth close up; behind it, the faint graph ---
+
+    const first = nodes.find((node) => node.dataset.first !== undefined);
+    if (first && !lessMotion.matches) {
+      const whole = all();
+      view = { ...whole, zoom: Math.max(MIN_ZOOM, whole.zoom * 0.7) };
+      draw();
+      timer = window.setTimeout(() => animate(closeUp(first), INTRO), INTRO_DELAY);
+    } else {
+      view = first ? closeUp(first) : all();
+      draw();
+    }
+    world.classList.add('placed');
+    startFaintGraph(graph.querySelector<SVGGElement>('[data-faint]')!, boxesOf());
+  }
+</script>

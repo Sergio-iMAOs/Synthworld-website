@@ -1,0 +1,96 @@
+---
+/**
+ * A planet, as EARL's Starship skin draws a node of its graph (drawWorld() and drawNodeSymbol() in the framework): its
+ * picture (src/space.ts, made at build time), lit from the top left, or uncharted, seen against the light; a ringed
+ * one's ring behind it and in front of it. Its disc's radius is RADIUS of its SVG's units, round its centre, its
+ * atmosphere's glow round it; its CSS gives it its size. With `sight`, the ring of a sight round it, which the skin draws
+ * under the mouse: unseen until its parent's CSS shows its `.sight`.
+ */
+import { isRinged, planetPicture, WORLD_DISC, type World } from '@/space';
+
+interface Props {
+  world: World;
+  uncharted?: boolean;
+  sight?: boolean;
+  class?: string;
+}
+
+const { world, uncharted = false, sight = false, class: className } = Astro.props;
+
+const RADIUS = 75;
+/** Its picture's side: its disc and its glow */
+const SIDE = (2 * RADIUS) / (2 * WORLD_DISC);
+
+// A ringed one's ring, seen tilted: its band and the bright line round it, each half an ellipse behind the planet and
+// half in front (the skin's drawRing(), its sizes of the planet's radius)
+const RING_TILT = (-0.3 * 180) / Math.PI;
+const half = (radius: number, far: boolean) => {
+  const [rx, ry] = [radius, radius * 0.26];
+  return far ? `M${-rx} 0A${rx} ${ry} 0 0 1 ${rx} 0` : `M${rx} 0A${rx} ${ry} 0 0 1 ${-rx} 0`;
+};
+const ring = (far: boolean) => [
+  { class: 'band', d: half(RADIUS * 1.85, far), width: RADIUS * 0.17 },
+  { class: 'line', d: half(RADIUS * 1.85 * 1.09, far), width: Math.max(0.75, RADIUS * 0.045) },
+];
+
+// The sight's ring: a gap from the disc, and a tick out of it at each quarter
+const SIGHT = RADIUS + 6;
+const TICK = `M${SIGHT} 0h9`;
+const quarters = [0, 90, 180, 270];
+---
+
+<svg class:list={['planet', className]} viewBox={`${-SIDE / 2} ${-SIDE / 2} ${SIDE} ${SIDE}`} aria-hidden="true">
+  {isRinged(world) && ring(true).map(({ class: kind, d, width }) => <path class:list={['ring', kind]} d={d} stroke-width={width} transform={`rotate(${RING_TILT})`} />)}
+  <image href={planetPicture(world, uncharted)} x={-SIDE / 2} y={-SIDE / 2} width={SIDE} height={SIDE} />
+  {isRinged(world) && ring(false).map(({ class: kind, d, width }) => <path class:list={['ring', kind]} d={d} stroke-width={width} transform={`rotate(${RING_TILT})`} />)}
+  {
+    sight && (
+      <g class="sight">
+        <circle class="glow" r={SIGHT} />
+        <circle r={SIGHT} />
+        {quarters.map((angle) => (
+          <>
+            <path class="glow" d={TICK} transform={`rotate(${angle})`} />
+            <path d={TICK} transform={`rotate(${angle})`} />
+          </>
+        ))}
+      </g>
+    )
+  }
+</svg>
+
+<style>
+  .planet {
+    display: block;
+    overflow: visible;
+  }
+
+  /* The skin's ring's colours: part of the planet, as its picture's are */
+  .ring {
+    fill: none;
+  }
+
+  .band {
+    stroke: #e7a6ff;
+    stroke-opacity: 0.5;
+  }
+
+  .line {
+    stroke: #ffe0f8;
+    stroke-opacity: 0.7;
+  }
+
+  /* The sight: in the colour of what's under the mouse, glowing */
+  .sight {
+    fill: none;
+    stroke: var(--highlight);
+    stroke-width: 1.5;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .sight .glow {
+    stroke-width: 4.5;
+    stroke-opacity: 0.22;
+  }
+</style>

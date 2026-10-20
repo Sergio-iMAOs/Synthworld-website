@@ -53,6 +53,17 @@ const en = {
     watch: 'Watch',
     sections: 'On this page',
     skins: { label: 'Skins', previous: 'Previous skin', next: 'Next skin' },
+    /** The synths as planets in a graph (SynthGraph) */
+    graph: {
+      hint: 'Drag to move around, scroll to zoom, and click a planet to open it.',
+      touchHint: 'Drag to move around, pinch to zoom, and tap a planet to open it.',
+      zoomIn: 'Zoom in',
+      zoomOut: 'Zoom out',
+      all: 'Show them all',
+      close: 'Close',
+      uncharted: 'Uncharted',
+      toCome: 'A synth still to come.',
+    },
   },
   get: {
     buy: 'Buy for',
@@ -131,6 +142,16 @@ const es: typeof en = {
     watch: 'Mira',
     sections: 'En esta página',
     skins: { label: 'Skins', previous: 'Skin anterior', next: 'Skin siguiente' },
+    graph: {
+      hint: 'Arrastra para moverte, usa la rueda para acercar y haz clic en un planeta para abrirlo.',
+      touchHint: 'Arrastra para moverte, pellizca para acercar y toca un planeta para abrirlo.',
+      zoomIn: 'Acercar',
+      zoomOut: 'Alejar',
+      all: 'Verlos todos',
+      close: 'Cerrar',
+      uncharted: 'Inexplorado',
+      toCome: 'Un sinte que está por venir.',
+    },
   },
   get: {
     buy: 'Comprar por',

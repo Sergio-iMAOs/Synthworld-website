@@ -1,6 +1,7 @@
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
+import { worlds } from '@/space';
 
 // A synth is a folder in src/content/synths: its synth.yaml (what doesn't depend on the language) and one
 // Markdown file per language (en.md, es.md).
@@ -23,6 +24,11 @@ const synths = defineCollection({
       platforms: z.array(z.string()),
       /** Where it's shown in the list of synths (lowest first). */
       order: z.number().default(0),
+      /**
+       * Its planet on the synths' page: one of the kinds EARL's Starship skin draws a graph's nodes as (`worlds` in
+       * src/space.ts).
+       */
+      planet: z.enum(worlds).default('ocean'),
       /** A paid synth's price as it's shown ("49 €") and where it's bought; a synth without `paid` is free. */
       paid: z.object({ price: z.string(), buyUrl: z.url().optional() }).optional(),
       /**

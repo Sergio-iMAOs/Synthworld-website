@@ -1,5 +1,9 @@
 import { getCollection, getEntry, type CollectionEntry } from 'astro:content';
 import { defaultLang, type Lang } from '@/i18n';
+import type { World } from '@/space';
+
+/** The synths still to come, on the synths' page after the others: an uncharted planet each, of these kinds. */
+export const unchartedWorlds: World[] = ['giant', 'ice'];
 
 /** A synth with its texts in one language. */
 export interface Synth {
