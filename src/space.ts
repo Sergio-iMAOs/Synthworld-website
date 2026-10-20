@@ -27,8 +27,12 @@ const NEBULA_CELL = 32;
 /** Its densest cloud's opacity */
 const NEBULA_DENSITY = 0.62;
 const NOISE_OCTAVES = 5;
-/** A planet's picture's side: drawn up to about 190 CSS pixels wide, zoomed in up to twice (the skin's is 160) */
+/**
+ * A planet's picture's side: drawn up to about 190 CSS pixels wide, zoomed in up to twice (the skin's is 160); a
+ * synth's sharper, as its window is in it
+ */
 const WORLD_SIDE = 512;
+const SYNTH_WORLD_SIDE = 768;
 /** Its disc's radius, of its side: the rest is its atmosphere's glow */
 export const WORLD_DISC = 0.4;
 /** How far the glow reaches round the disc, of its radius, and on the side away from the light, of the lit side's */
@@ -58,6 +62,7 @@ const scale = (p: Vec3, factor: number): Vec3 => [p[0] * factor, p[1] * factor, 
 const add = (a: Vec3, b: Vec3): Vec3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
 const dot = (a: Vec3, b: Vec3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 const normalise = (v: Vec3) => scale(v, 1 / Math.sqrt(dot(v, v)));
+const cross = (a: Vec3, b: Vec3): Vec3 => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 
 /** Between `stops`, evenly spaced from 0 to 1. */
 function ramp(stops: Vec3[], position: number): Vec3 {
@@ -207,11 +212,8 @@ export function makeNebula(cells = NEBULA_CELLS): Tile {
   return tile;
 }
 
-/**
- * The kinds of planet: the ones the skin draws a graph's nodes as, each telling what its processor is (its World), then
- * each synth's own, which looks like it.
- */
-export const worlds = [
+/** The kinds of planet the skin draws a graph's nodes as, each telling what its processor is (its World). */
+const skinWorlds = [
   /** Seas, land and clouds: a source */
   'ocean',
   /** A banded gas giant: a filter */
@@ -228,14 +230,17 @@ export const worlds = [
   'verdant',
   /** Grey craters: a gain, a panner, anything else */
   'moon',
-  /**
-   * EARL's: the sun of its logo as a planet, its violet striped by dark gaps that widen to its south as the logo's do
-   * to the horizon, each band's edge a wave of a wavetable, drawn in white over the violet as its oscillators draw
-   * theirs; ringed with its velvet noise, pulses up and down
-   */
-  'earl',
 ] as const;
+type SkinWorld = (typeof skinWorlds)[number];
+
+/** Each synth's own planet, which looks like it: made of chunks of its window (synthLooks). */
+const synthWorlds = ['earl'] as const;
+type SynthWorld = (typeof synthWorlds)[number];
+
+/** The kinds of planet: the skin's, then each synth's own. */
+export const worlds = [...skinWorlds, ...synthWorlds] as const;
 export type World = (typeof worlds)[number];
+const isSynthWorld = (world: World): world is SynthWorld => (synthWorlds as readonly World[]).includes(world);
 
 /**
  * A planet's ring, drawn round its picture (Planet): the skin's, a band of dust; or pulses, as a velvet noise's
@@ -257,7 +262,45 @@ interface WorldLook {
   ring?: Ring;
 }
 
+/**
+ * What's more to a synth's planet: the skin of its window its chunks are cut from (its picture as `npm run screenshots`
+ * names it), and where in the window the parts on the chunks most in view and in the light are (each's middle, of the
+ * window's width and height), the first on the one most in view; the others' are anywhere.
+ */
+interface SynthWorldLook extends WorldLook {
+  skin: string;
+  parts: [number, number][];
+}
+
+const synthLooks: Record<SynthWorld, SynthWorldLook> = {
+  // EARL's, in SW Light: its logo and its tabs, its velvet noise, its oscillators' wavetables, its envelope, LFO and
+  // velocity, its filter, its sub-oscillator, its saturator; ringed with its velvet noise, pulses up and down
+  earl: {
+    atmosphere: rgb(0xb894f0),
+    haze: 0.5,
+    tilt: -0.12,
+    pitch: 0.3,
+    craters: 0,
+    ring: 'pulses',
+    skin: 'SW Light',
+    parts: [
+      [0.07, 0.09],
+      [0.868, 0.195],
+      [0.372, 0.195],
+      [0.115, 0.84],
+      [0.45, 0.84],
+      [0.89, 0.84],
+      [0.15, 0.645],
+      [0.868, 0.46],
+      [0.65, 0.645],
+      [0.62, 0.195],
+      [0.125, 0.41],
+    ],
+  },
+};
+
 const looks: Record<World, WorldLook> = {
+  ...synthLooks,
   ocean: { atmosphere: rgb(0x63d2ff), haze: 0.9, tilt: -0.35, craters: 0 },
   giant: { atmosphere: rgb(0xffd08f), haze: 0.55, tilt: -0.25, craters: 0 },
   rust: { atmosphere: rgb(0xff8f6b), haze: 0.35, tilt: 0.2, craters: 14 },
@@ -266,11 +309,13 @@ const looks: Record<World, WorldLook> = {
   lava: { atmosphere: rgb(0xff7b35), haze: 0.4, tilt: 0.1, craters: 8 },
   verdant: { atmosphere: rgb(0x8dffbe), haze: 0.7, tilt: -0.15, craters: 0 },
   moon: { atmosphere: rgb(0xa9c4e8), haze: 0.15, tilt: 0, craters: 26 },
-  earl: { atmosphere: rgb(0xb894f0), haze: 0.65, tilt: -0.12, pitch: 0.3, craters: 0, ring: 'pulses' },
 };
 
 /** A kind of planet's ring, if it has one. */
 export const ringOf = (world: World) => looks[world].ring;
+
+/** The skin of the window a synth's planet is made of; none for the skin's kinds. */
+export const skinOf = (world: World) => (isSynthWorld(world) ? synthLooks[world].skin : undefined);
 
 /** A planet's picture's address (src/pages/space/[picture].ts): lit by the sun, or uncharted, against the light. */
 export const planetPicture = (world: World, uncharted = false) => `/space/${uncharted ? 'uncharted' : 'world'}-${world}.webp`;
@@ -304,23 +349,6 @@ function craterise(colour: Vec3, p: Vec3, craters: Crater[]) {
   return colour;
 }
 
-/**
- * EARL's dark gaps, from its north (-1) to its south (1): its logo's three, where its sun's are (the logo's half of a sun
- * being the planet's north), then wider and wider ones, as if the sun went on setting. Each's edges are a wave going
- * round the planet so many times, of so much of its radius; an edge is so soft
- */
-const EARL_GAPS: [number, number][] = [
-  [-0.62, -0.55],
-  [-0.38, -0.3],
-  [-0.18, -0.08],
-  [0.03, 0.17],
-  [0.3, 0.5],
-  [0.64, 1.1],
-];
-const EARL_WAVES = 4;
-const EARL_WAVE = 0.032;
-const EARL_EDGE = 0.006;
-
 /** A planet's ground at `p`, a point of its sphere: its colour, its own light, its shine (0 to 1). */
 interface Ground {
   colour: Vec3;
@@ -328,7 +356,7 @@ interface Ground {
   shine?: number;
 }
 
-function getGround(world: World, p: Vec3, craters: Crater[]): Ground {
+function getGround(world: SkinWorld, p: Vec3, craters: Crater[]): Ground {
   switch (world) {
     case 'ocean': {
       const land = fbm(scale(p, 1.9), 11);
@@ -391,27 +419,88 @@ function getGround(world: World, p: Vec3, craters: Crater[]): Ground {
       const colour = ramp([rgb(0x41464f), rgb(0x767c88), rgb(0xb7bcc6)], (height - 0.5) * 2 + 0.55);
       return { colour: craterise(colour, p, craters) };
     }
-    case 'earl': {
-      // Its violet streaked and swirled, as a gas giant's clouds are
-      const swirl = fbm(scale(p, 1.6), 91, 4);
-      const streaks = fbm([p[0] * 2, p[1] * 10 + swirl * 2, p[2] * 2], 92, 4);
-      let colour = ramp([rgb(0x3d2466), rgb(0x7a55b8), rgb(0xa57edb), rgb(0xdccbf7)], 0.5 + (streaks - 0.5) * 1.3);
-
-      // Its gaps, dark as its windows' panels, each's edges a wave from a sine (the first) to a triangle (the last), as
-      // a wavetable's frames go; the band under each, its wave drawn along its top in white
-      const around = Math.atan2(p[0], p[2]);
-      EARL_GAPS.forEach(([from, to], index) => {
-        const morph = index / (EARL_GAPS.length - 1);
-        const phase = around * EARL_WAVES + index * 1.3;
-        const wave = (1 - morph) * Math.sin(phase) + morph * (2 / Math.PI) * Math.asin(Math.sin(phase));
-        const y = p[1] - wave * EARL_WAVE;
-        const gap = smoothstep(from - EARL_EDGE, from + EARL_EDGE, y) * (1 - smoothstep(to - EARL_EDGE, to + EARL_EDGE, y));
-        const curve = 1 - smoothstep(EARL_EDGE, EARL_EDGE * 3, Math.abs(y - to - EARL_EDGE * 2));
-        colour = mix(mix(colour, rgb(0x1d1b21), gap), rgb(0xf7f6fa), curve * 0.8);
-      });
-      return { colour };
-    }
   }
+}
+
+/** A picture a planet is made of (a synth's window): its size, and its pixels, so many channels each (red, green, blue). */
+export interface Picture {
+  width: number;
+  height: number;
+  channels: number;
+  pixels: Uint8Array;
+}
+
+/**
+ * A synth's planet's chunks: so many; the crevices between them so wide (radians), each shaded so far in from its edge,
+ * as if it stood out of them; how much of its window each shows (of the window's width, per radian of the planet), how
+ * far each is turned at most (radians), and how much lighter or darker it is at most
+ */
+const CHUNKS = 14;
+const CHUNK_CREVICE = 0.014;
+const CHUNK_SHADE = 0.07;
+const CHUNK_SHOWS = 0.17;
+const CHUNK_TURN = 0.18;
+const CHUNK_TONE = 0.06;
+
+/**
+ * A synth's planet's ground: chunks of its `window` put together into a sphere, crevices between them where a `light`
+ * glows from inside. Each chunk is a flat piece of the window, upright as it is on screen and turned a little; the
+ * parts of it its look names are on the chunks nearest `front` (the planet's point most in view and in the light).
+ */
+function chunksOf(world: SynthWorld, window: Picture, light: Vec3, front: Vec3) {
+  const { parts } = synthLooks[world];
+  const next = random(0xc4a2c + worlds.indexOf(world));
+
+  // Their middles, evenly round the sphere (a Fibonacci spiral's points), each strayed a little; the nearest the front first
+  const middles = Array.from({ length: CHUNKS }, (_, index) => {
+    const y = 1 - (2 * (index + 0.5)) / CHUNKS;
+    const ring = Math.sqrt(1 - y * y);
+    const angle = index * Math.PI * (3 - Math.sqrt(5));
+    const stray: Vec3 = [(next() - 0.5) * 0.25, (next() - 0.5) * 0.25, (next() - 0.5) * 0.25];
+    return normalise(add([ring * Math.cos(angle), y, ring * Math.sin(angle)], stray));
+  }).sort((a, b) => dot(b, front) - dot(a, front));
+
+  // Each's piece of the window: where its middle is in it, its right and its down on the sphere, its turn and its tone
+  const chunks = middles.map((middle, index) => {
+    const right = cross(middle, [0, -1, 0]);
+    const east = Math.hypot(...right) > 1e-3 ? normalise(right) : ([1, 0, 0] as Vec3);
+    const [u, v] = parts[index] ?? [0.15 + next() * 0.7, 0.2 + next() * 0.6];
+    const turn = (next() - 0.5) * 2 * CHUNK_TURN;
+    return { middle, east, south: cross(middle, east), u, v, cos: Math.cos(turn), sin: Math.sin(turn), tone: 1 + (next() - 0.5) * 2 * CHUNK_TONE };
+  });
+
+  // The window at a point, between its pixels, its edges going on past them
+  const { width, height, channels, pixels } = window;
+  const pixel = (x: number, y: number): Vec3 => {
+    const at = (Math.min(height - 1, Math.max(0, y)) * width + Math.min(width - 1, Math.max(0, x))) * channels;
+    return [pixels[at] / 255, pixels[at + 1] / 255, pixels[at + 2] / 255];
+  };
+  const sample = (x: number, y: number) => {
+    const [fx, fy] = [Math.floor(x), Math.floor(y)];
+    const [tx, ty] = [x - fx, y - fy];
+    return mix(mix(pixel(fx, fy), pixel(fx + 1, fy), tx), mix(pixel(fx, fy + 1), pixel(fx + 1, fy + 1), tx), ty);
+  };
+  const shows = CHUNK_SHOWS * width;
+
+  return (p: Vec3): Ground => {
+    // The nearest chunk, and how far `p` is from the edge it shares with the next nearest
+    let [first, second] = dot(p, chunks[0].middle) > dot(p, chunks[1].middle) ? [chunks[0], chunks[1]] : [chunks[1], chunks[0]];
+    for (const chunk of chunks.slice(2)) {
+      const near = dot(p, chunk.middle);
+      if (near > dot(p, first.middle)) [first, second] = [chunk, first];
+      else if (near > dot(p, second.middle)) second = chunk;
+    }
+    const between = add(first.middle, scale(second.middle, -1));
+    const edge = (dot(p, first.middle) - dot(p, second.middle)) / Math.hypot(...between);
+
+    // Its piece of the window, shaded towards its edge; in a crevice, dark, lit from inside
+    const [a, b] = [dot(p, first.east), dot(p, first.south)];
+    const x = first.u * width + (a * first.cos - b * first.sin) * shows;
+    const y = first.v * height + (a * first.sin + b * first.cos) * shows;
+    const raised = 0.8 + 0.2 * smoothstep(CHUNK_CREVICE, CHUNK_CREVICE + CHUNK_SHADE, edge);
+    const crevice = 1 - smoothstep(CHUNK_CREVICE * 0.6, CHUNK_CREVICE, edge);
+    return { colour: mix(scale(sample(x, y), first.tone * raised), rgb(0x120c1a), crevice), glow: scale(light, 0.8 * crevice * crevice) };
+  };
 }
 
 /** The sun: from the top left and in front, as the skin's; for an uncharted planet, from the top left and behind it. */
@@ -421,15 +510,17 @@ const BACKLIGHT = normalise([-0.6, -0.45, -0.66]);
 /**
  * A planet of `world`'s kind: its disc lit from the top left, a cockpit's light (`rim`, 0xrrggbb) round its far edge,
  * its atmosphere glowing round it; see-through beyond. An `uncharted` one is seen against the light: only a crescent
- * of it is lit, at its edge towards the light.
+ * of it is lit, at its edge towards the light. A synth's is made of its `window` (in its look's skin), the cockpit's
+ * light glowing between its chunks.
  */
-export function makeWorld(world: World, rim: number, uncharted = false): Tile {
+export function makeWorld(world: World, rim: number, uncharted = false, window?: Picture): Tile {
   const look = looks[world];
   const craters = makeCraters(look.craters, 0xc0ffee + worlds.indexOf(world));
-  const tile = blank(WORLD_SIDE, look.atmosphere);
+  const side = isSynthWorld(world) ? SYNTH_WORLD_SIDE : WORLD_SIDE;
+  const tile = blank(side, look.atmosphere);
 
-  const centre = WORLD_SIDE * 0.5;
-  const radius = WORLD_SIDE * WORLD_DISC;
+  const centre = side * 0.5;
+  const radius = side * WORLD_DISC;
   const light = uncharted ? BACKLIGHT : SUNLIGHT;
   const lightAcross = Math.hypot(light[0], light[1]);
   const [cosTilt, sinTilt] = [Math.cos(look.tilt), Math.sin(look.tilt)];
@@ -437,8 +528,20 @@ export function makeWorld(world: World, rim: number, uncharted = false): Tile {
   const cockpit = rgb(rim);
   const halfway = normalise(add(light, [0, 0, 1]));
 
-  for (let y = 0; y < WORLD_SIDE; y++)
-    for (let x = 0; x < WORLD_SIDE; x++) {
+  // A point seen on the disc (towards us) as a point of the sphere: turned by its tilt, its pole leant towards us by
+  // its pitch; what's there
+  const onSphere = ([nx, ny, z]: Vec3): Vec3 => {
+    const [sideways, down] = [nx * cosTilt - ny * sinTilt, nx * sinTilt + ny * cosTilt];
+    return [sideways, down * cosPitch - z * sinPitch, down * sinPitch + z * cosPitch];
+  };
+  let groundAt: (p: Vec3) => Ground;
+  if (isSynthWorld(world)) {
+    if (!window) throw new Error(`The planet "${world}" is made of its synth's window, which it wasn't given`);
+    groundAt = chunksOf(world, window, cockpit, onSphere(normalise(add(SUNLIGHT, [0, 0, 1.5]))));
+  } else groundAt = (p) => getGround(world, p, craters);
+
+  for (let y = 0; y < side; y++)
+    for (let x = 0; x < side; x++) {
       const nx = (x + 0.5 - centre) / radius;
       const ny = (y + 0.5 - centre) / radius;
       const distance = Math.hypot(nx, ny);
@@ -455,11 +558,10 @@ export function makeWorld(world: World, rim: number, uncharted = false): Tile {
         continue;
       }
 
-      // Its ground, the sphere turned by its tilt, its pole leant towards us by its pitch
+      // Its ground
       const z = Math.sqrt(Math.max(0, 1 - distance * distance));
       const normal: Vec3 = [nx, ny, z];
-      const [sideways, down] = [nx * cosTilt - ny * sinTilt, nx * sinTilt + ny * cosTilt];
-      const ground = getGround(world, [sideways, down * cosPitch - z * sinPitch, down * sinPitch + z * cosPitch], craters);
+      const ground = groundAt(onSphere(normal));
 
       // Lit by the sun, the night side dark
       const lit = smoothstep(WORLD_TERMINATOR_FROM, WORLD_TERMINATOR_TO, dot(normal, light));
@@ -487,8 +589,8 @@ export function makeWorld(world: World, rim: number, uncharted = false): Tile {
  */
 const PULSES_AROUND = 56;
 const PULSES_ACROSS = 3;
-const PULSES_FROM = 1.28;
-export const PULSES_TO = 1.62;
+const PULSES_FROM = 1.16;
+export const PULSES_TO = 1.46;
 const PULSES_JITTER = 0.8;
 export const PULSE_SIDE = 0.045;
 

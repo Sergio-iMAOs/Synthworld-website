@@ -25,8 +25,8 @@ const synths = defineCollection({
       /** Where it's shown in the list of synths (lowest first). */
       order: z.number().default(0),
       /**
-       * Its planet on the synths' page (`worlds` in src/space.ts): its own, which looks like it, or until it has one,
-       * one of the kinds EARL's Starship skin draws a graph's nodes as.
+       * Its planet on the synths' page (`worlds` in src/space.ts): its own, made of chunks of its window, or until it
+       * has one, one of the kinds EARL's Starship skin draws a graph's nodes as.
        */
       planet: z.enum(worlds),
       /** A paid synth's price as it's shown ("49 €") and where it's bought; a synth without `paid` is free. */
