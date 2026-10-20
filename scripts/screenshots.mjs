@@ -3,8 +3,9 @@
 // the synth's UI changes, look at them, and commit them. The tools are built in the framework's tree:
 //   cmake --build build --target synthworld_earl_snapshot      (in ../Synthworld)
 // The framework is looked for next to this repository (../Synthworld), or where SYNTHWORLD_DIR says, and its build
-// in its build/ folder, or where SYNTHWORLD_BUILD_DIR says. `npm run screenshots -- earl` takes one synth's only, and
-// `npm run screenshots -- synthworld` SynthWorld's marks only.
+// in its build/ folder, or where SYNTHWORLD_BUILD_DIR says. `npm run screenshots -- earl` takes one synth's only,
+// `npm run screenshots -- earl/wavetable` one of its shots (and its loop), and `npm run screenshots -- synthworld`
+// SynthWorld's marks only. The loops are made with ffmpeg (with libx264), which must be installed.
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
@@ -28,7 +29,8 @@ const SCALE = 2;
 // crop, [x, y, width, height] in the window's units, a part of the window alone; its scale, if not SCALE; its patch, a
 // preset file's changed for it (see patchFile()), in place of SYNTHWORLD_SNAPSHOT_PATCH. A shot
 // with a tool of its own is drawn by it, with its args in place of the scale and the actions (the logo).
-// Its file is where synth.yaml looks for it, from the synth's folder.
+// Its file is where synth.yaml looks for it, from the synth's folder. Its loop, if it has one, a silent video of it
+// showing how the window answers its controls (see takeLoop()), is public/loops/<synth>/<its file's name>.mp4.
 
 // EARL's oscillators as its window shows them: the first a wavetable one, as it is, the second a granular one (turned
 // on, Granular from its menu, its sample from its selector's, some POSITION and SPRAY). The sample is the one the tool
@@ -53,6 +55,27 @@ const earlPage = [0, 31, 1200, 533];
 // A patch from the framework's benchmarks, which have more in them than the factory presets: "Everything" has every
 // processor on and the eight effects, "Modulation Matrix" its rows filled
 const earlBench = (name) => path.join(framework, 'synths/EARL/benchmarks/EARL Bench', `Bench ${name}.swpreset`);
+
+/** A loop's frames a second: one each 40 ms of the tool's time, which moves on in steps of 10 ms */
+const LOOP_FPS = 25;
+/** Where the mouse goes between a loop's moves: under the window's pages, out of every close-up */
+const AWAY = 'move=600,620';
+
+// A loop's moves, each what's done before each of its frames, ending as it started, so that the loop goes round
+// without a jump. A control turned by the mouse's wheel at x,y so many notches (away from the user; towards them if
+// negative) and back, easing in and out, over so many seconds; the mouse away at its end
+const turn = (x, y, notches, seconds = 6) => {
+  const frames = Math.round(seconds * LOOP_FPS);
+  // How far it's turned at each frame, in thousandths of a notch, so that its steps add up to nothing
+  const at = (frame) => Math.round(((notches * (1 - Math.cos((2 * Math.PI * frame) / frames))) / 2) * 1000);
+  return [...Array(frames).keys()].map((frame) => {
+    const step = at(frame + 1) - at(frame);
+    return [...(step !== 0 ? [`wheel=${x},${y},${step / 1000}`] : []), ...(frame === frames - 1 ? [AWAY] : [])];
+  });
+};
+// Buttons clicked in turn, each held so many seconds; the last should be the one on at the start
+const press = (points, seconds = 1.2) =>
+  points.flatMap(([x, y]) => [[`click=${x},${y}`, AWAY], ...Array.from({ length: Math.round(seconds * LOOP_FPS) - 1 }, () => [])]);
 
 const synths = {
   earl: {
@@ -88,65 +111,85 @@ const synths = {
       // its menu: Wavetable Oscillator, Triple Oscillator, Sampler, Granular), and the noise as a coloured one with the
       // sub-oscillator under it
       ...[
-        // The Wavefolder wavetable (SynthWorld Wavetables, Digital, in its selector's menu), some POS
-        ['wavetable', ['click=150,65', 'click=150,137', 'click=320,181', 'click=420,269', 'wheel=258,228,6']],
+        // The Wavefolder wavetable (SynthWorld Wavetables, Digital, in its selector's menu), some POS; its loop, POS
+        // turned up through the table and back
+        ['wavetable', ['click=150,65', 'click=150,137', 'click=320,181', 'click=420,269', 'wheel=258,228,6'], [turn(258, 228, 12)]],
         // Its second and third simple oscillators on, a saw and a square
         ['triple-oscillator', ['click=150,46', 'click=150,91', 'click=17,153', 'click=17,240', 'click=59,174', 'click=99,261']],
         // The sample from its selector's arrow
         ['sampler', ['click=150,46', 'click=150,113', 'click=230,65']],
-        // The sample from its selector's menu, some POSITION and SPRAY
-        ['granular', ['click=150,46', 'click=150,135', 'click=184,65', 'click=184,115', 'click=314,115', 'wheel=44,230,8', 'wheel=244,263,8']],
-      ].map(([name, actions]) => ({
+        // The sample from its selector's menu, some POSITION and SPRAY; its loop, POSITION from 36 % to 90 % and back
+        ['granular', ['click=150,46', 'click=150,135', 'click=184,65', 'click=184,115', 'click=314,115', 'wheel=44,230,8', 'wheel=244,263,8'], [turn(40, 224, 12)]],
+      ].map(([name, actions, loop]) => ({
         file: `screenshots/${name}.png`,
         scale: 3,
         crop: [4, 34, 294, 281],
         env: { SYNTHWORLD_SNAPSHOT_PATCH: 'EARL Factory/Soft Pad', SYNTHWORLD_SNAPSHOT_AUDIO: '1' },
         actions: [...actions, 'move=600,620', 'wait=500'],
+        loop,
       })),
-      // The noise turned on, Colour Noise from its menu, pink; the sub-oscillator turned on
+      // The noise turned on, Colour Noise from its menu, pink; the sub-oscillator turned on. Its loop, its colours in
+      // turn from pink's: brown, blue, violet, grey, green, white and pink again
       {
         file: 'screenshots/noise.png',
         scale: 3,
         crop: [892, 34, 304, 281],
         env: { SYNTHWORLD_SNAPSHOT_PATCH: 'EARL Factory/Soft Pad', SYNTHWORLD_SNAPSHOT_AUDIO: '1' },
         actions: ['click=905,47', 'click=1030,46', 'click=1000,91', 'click=948,132', 'click=907,234', 'move=600,620', 'wait=500'],
+        loop: [press([987, 1024, 1061, 1097, 1134, 914, 948].map((x) => [x, 132]))],
       },
       // What the voice's sound goes through, close up, each in its tab under the oscillators, playing the "Everything"
       // benchmark's chord: its four filters, one of each kind (Filter 1 to 4: ladder, state variable, comb, formant), and
-      // its distortions, the saturator in TUBE with its OUTPUT at 0 dB, and the bitcrusher turned on, its RATE at 3000 Hz
+      // its distortions, the saturator in TUBE with its OUTPUT at 0 dB, and the bitcrusher turned on, its RATE at 3000 Hz.
+      // Their loops, a knob of each turned and back: the ladder's CUTOFF down, the state variable's TYPE from low-pass
+      // through band-pass to high-pass, the comb's FREQ up, the formant's VOWEL through its vowels, the saturator's
+      // DRIVE up, and the bitcrusher's RATE down. The benchmark modulates the ladder's cutoff (an envelope) and the
+      // formant's vowel (an LFO), which their displays would follow instead of their knobs: those modulations left out
       ...[
-        ['filter-ladder', 'click=34,327', [3, 339, 597, 102]],
-        ['filter-state-variable', 'click=95,327', [3, 339, 597, 102]],
-        ['filter-comb', 'click=157,327', [3, 339, 597, 102]],
-        ['filter-formant', 'click=219,327', [3, 339, 597, 102]],
-        ['saturator', 'click=636,327', [600, 339, 597, 102]],
-        ['bitcrusher', 'click=712,327', [600, 339, 597, 102]],
-      ].map(([name, tab, crop]) => ({
+        ['filter-ladder', 'click=34,327', [3, 339, 597, 102], turn(258, 406, -7), ['Ladder Filter 1/cutoff']],
+        ['filter-state-variable', 'click=95,327', [3, 339, 597, 102], turn(330, 406, 12)],
+        ['filter-comb', 'click=157,327', [3, 339, 597, 102], turn(253, 406, 9)],
+        ['filter-formant', 'click=219,327', [3, 339, 597, 102], turn(258, 406, 18), ['Formant Filter 4/vowel']],
+        ['saturator', 'click=636,327', [600, 339, 597, 102], turn(1010, 406, 15)],
+        ['bitcrusher', 'click=712,327', [600, 339, 597, 102], turn(1002, 406, -3)],
+      ].map(([name, tab, crop, move, unmodulated]) => ({
         file: `screenshots/${name}.png`,
         scale: 3,
         crop,
         patch: {
           from: earlBench('Everything'),
           values: { 'Voice Saturator/function': 2, 'Voice Saturator/output': 0, 'Voice Bitcrusher/active': 1, 'Voice Bitcrusher/rate': 3000 },
+          unmodulated,
         },
         env: { SYNTHWORLD_SNAPSHOT_AUDIO: '1' },
         actions: [tab, 'move=600,620', 'wait=500'],
+        loop: [move],
       })),
-      // The velvet noise's panel, turned on (its switch at its top left)
-      { file: 'screenshots/velvet-noise.png', scale: 3, crop: [892, 34, 304, 184], actions: ['click=905,47'] },
+      // The velvet noise's panel, turned on (its switch at its top left), the mouse away from it; its loop, DENSITY
+      // turned up, the pulses thickening, and back
+      {
+        file: 'screenshots/velvet-noise.png',
+        scale: 3,
+        crop: [892, 34, 304, 184],
+        actions: ['click=905,47', 'move=600,620'],
+        loop: [turn(944, 130, 7)],
+      },
       // The two unisons, close up: the first oscillator's (its unison button, 6 voices, some WT SPREAD), and the voice's
-      // on the Notes page (7 voices, from its menu)
+      // on the Notes page (7 voices, from its menu). Their loops, each one's WIDTH turned down, its voices drawn closer
+      // together, and back
       {
         file: 'screenshots/oscillator-unison.png',
         scale: 3,
         crop: [4, 34, 294, 281],
         actions: ['click=20,90', 'wheel=55,225,8', 'wheel=110,288,3', 'move=150,330'],
+        loop: [turn(246, 227, -15)],
       },
       {
         file: 'screenshots/voice-unison.png',
         scale: 3,
         crop: [816, 192, 382, 283],
         actions: ['click=343,14', 'click=977,323', 'click=960,478'],
+        loop: [turn(1053, 393, -12)],
       },
       // The randomiser's panel, opened from the die in the header beside the window (which widens it), with CHOICES,
       // MOD AMOUNTS and CONNECTIONS on besides VALUES
@@ -415,26 +458,62 @@ async function takeMark() {
 
 /**
  * A shot's patch (its `patch`): a preset file's (`from`), with the parameters of the processors it names in `defaults`
- * left out, so that they're as they are by default, and its `values` set (in the parameters' own units), in a file of
- * its own in a temporary folder.
+ * left out, so that they're as they are by default, its `values` set (in the parameters' own units), and the
+ * modulations of the parameters it names in `unmodulated` left out, so that their displays show them as their knobs
+ * do, in a file of its own in a temporary folder.
  */
-async function patchFile({ from, defaults = [], values = {} }) {
+async function patchFile({ from, defaults = [], values = {}, unmodulated = [] }) {
   const preset = JSON.parse(await readFile(from, 'utf8'));
   const patch = preset.patch ?? preset;
   for (const name of Object.keys(patch.parameters))
     if (defaults.some((processor) => name.startsWith(`${processor}/`))) delete patch.parameters[name];
   Object.assign(patch.parameters, values);
+  patch.modulations = (patch.modulations ?? []).filter(({ parameter }) => !unmodulated.includes(parameter));
   const file = path.join(await mkdtemp(path.join(os.tmpdir(), 'synthworld-site-patch-')), 'patch.json');
   await writeFile(file, JSON.stringify(patch));
   return file;
 }
 
+/**
+ * A shot's loop, into public/loops/<synth>/<its file's name>.mp4: after its actions, it holds still for a second (as
+ * its picture shows it), then its moves in turn, each frame drawn by the tool at the shot's scale, its part of the
+ * window alone, and the frames made into a silent H.264 video (in 4:2:0, which every browser plays; an even number of
+ * pixels each way, the last row or column left out if need be), the palette's colours as the picture has them (sRGB,
+ * tagged as such).
+ */
+async function takeLoop(tool, env, scale, shot, output) {
+  const frames = [...Array.from({ length: LOOP_FPS }, () => []), ...shot.loop.flat()];
+  const folder = await mkdtemp(path.join(os.tmpdir(), 'synthworld-site-loop-'));
+  const frameFile = (index) => path.join(folder, `${String(index).padStart(4, '0')}.png`);
+  const actions = [
+    `scale=${scale}`,
+    ...shot.actions,
+    ...(shot.crop ? [`crop=${shot.crop.join(',')}`] : []),
+    ...frames.flatMap((done, index) => [...done, `wait=${1000 / LOOP_FPS}`, `shot=${frameFile(index)}`]),
+  ];
+  execFileSync(tool, [path.join(folder, 'last.png'), ...actions], { env, stdio: 'inherit' });
+  await mkdir(path.dirname(output), { recursive: true });
+  // prettier-ignore
+  execFileSync('ffmpeg', [
+    '-loglevel', 'error', '-y', '-framerate', String(LOOP_FPS), '-i', path.join(folder, '%04d.png'),
+    '-vf', 'crop=trunc(iw/2)*2:trunc(ih/2)*2:0:0,scale=out_color_matrix=bt709:out_range=tv,format=yuv420p,setparams=colorspace=bt709:color_primaries=bt709:color_trc=iec61966-2-1:range=tv',
+    '-c:v', 'libx264', '-preset', 'veryslow', '-crf', '22', '-tune', 'animation',
+    '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'iec61966-2-1',
+    '-movflags', '+faststart', '-an', output,
+  ], { stdio: 'inherit' });
+  await rm(folder, { recursive: true });
+}
+
+// What to take: everything, or the synths named ("earl"), or their shots named after their files ("earl/wavetable")
 const only = process.argv.slice(2);
 if (only.length === 0 || only.includes('synthworld')) await takeMark();
 for (const [id, synth] of Object.entries(synths)) {
-  if (only.length > 0 && !only.includes(id)) continue;
+  const shots = only.filter((name) => name.startsWith(`${id}/`)).map((name) => name.slice(id.length + 1));
+  if (only.length > 0 && !only.includes(id) && shots.length === 0) continue;
 
   for (const shot of synth.shots) {
+    const name = path.basename(shot.file, path.extname(shot.file));
+    if (shots.length > 0 && !only.includes(id) && !shots.includes(name)) continue;
     const tool = path.join(build, 'tests', shot.tool ?? synth.tool);
     if (!existsSync(tool)) throw new Error(`No ${tool}: build it in the framework (cmake --build build --target ${path.basename(tool)})`);
 
@@ -443,16 +522,19 @@ for (const [id, synth] of Object.entries(synths)) {
     const drawn = shot.crop ? `${output}.whole.png` : output;
     const args = shot.tool ? (shot.args ?? []) : [`scale=${scale}`, ...(shot.actions ?? [])];
     const patch = shot.patch && (await patchFile(shot.patch));
-    execFileSync(tool, [drawn, ...args], {
-      env: { ...process.env, ...synth.env, ...shot.env, ...(patch && { SYNTHWORLD_SNAPSHOT_PATCH: patch }) },
-      stdio: 'inherit',
-    });
-    if (patch) await rm(path.dirname(patch), { recursive: true });
+    const env = { ...process.env, ...synth.env, ...shot.env, ...(patch && { SYNTHWORLD_SNAPSHOT_PATCH: patch }) };
+    execFileSync(tool, [drawn, ...args], { env, stdio: 'inherit' });
     if (shot.crop) {
       const [left, top, width, height] = shot.crop.map((units) => Math.round(units * scale));
       await sharp(drawn).extract({ left, top, width, height }).toFile(output);
       await rm(drawn);
     }
     console.log(`${id}: ${shot.file}`);
+    if (shot.loop) {
+      const loop = path.join('public/loops', id, `${name}.mp4`);
+      await takeLoop(tool, env, scale, shot, path.join(root, loop));
+      console.log(`${id}: ${loop}`);
+    }
+    if (patch) await rm(path.dirname(patch), { recursive: true });
   }
 }

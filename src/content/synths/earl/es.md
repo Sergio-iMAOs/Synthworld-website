@@ -1,5 +1,5 @@
 ---
-summary: Un sintetizador polifónico gratuito de tablas de ondas, samples, granos y ruido velvet, con un patch que puedes recablear y una matriz de modulación en la que cualquier cosa modula cualquier otra.
+summary: Un sintetizador polifónico todoterreno y gratuito de tablas de ondas, samples, granos y ruido velvet, con un patch que puedes recablear y una matriz de modulación en la que cualquier cosa modula cualquier otra.
 ---
 
 <!-- object: satellite -->

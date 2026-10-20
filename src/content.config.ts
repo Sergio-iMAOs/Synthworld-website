@@ -65,10 +65,12 @@ const synths = defineCollection({
         .optional(),
       /**
        * Its page's other pictures: its pages or parts of its window, each with what it shows. Its texts place each
-       * one with <!-- screenshot: <id> -->; one they don't place is shown after them.
+       * one with <!-- screenshot: <id> -->; one they don't place is shown after them. A picture with a `loop` (in
+       * public/loops/<synth>/, as "/loops/<synth>/<id>.mp4", scripts/screenshots.mjs) is shown moving: a silent video
+       * of the same, its controls turned and the window answering them, starting as the picture does.
        */
       screenshots: z
-        .array(z.object({ id: z.string(), image: image(), alt: inEveryLanguage, caption: inEveryLanguage }))
+        .array(z.object({ id: z.string(), image: image(), loop: z.string().optional(), alt: inEveryLanguage, caption: inEveryLanguage }))
         .default([]),
       /**
        * Its skins, in the order it offers them: each one's name, its window in it (a path from its folder), what that

@@ -3,9 +3,10 @@
  * A picture of a synth's window, or of a part of it, on its page: in the corners of a sight (as the synths' page's
  * nodes are), shining in space, lit from the top left, its line under it. As it comes into view, it turns from lying
  * back in space to facing the visitor: by how far into view it is (`--seen`, 0 to 1, which the page's script gives
- * what has `data-seen`); without it, it faces them.
+ * what has `data-seen`); without it, it faces them. One with a loop is a video of it, which starts as the picture is
+ * and is the picture until it plays: once it's well into view, while it's in view (see the script below).
  */
-import { Image } from 'astro:assets';
+import { Image, getImage } from 'astro:assets';
 import { langOf } from '@/i18n';
 import type { Synth } from '@/synths';
 
@@ -13,20 +14,74 @@ interface Props {
   screenshot: Synth['data']['screenshots'][number];
 }
 
-const { image, alt, caption } = Astro.props.screenshot;
+const { image, loop, alt, caption } = Astro.props.screenshot;
 const lang = langOf(Astro.url);
 // Shown at most half its pixels wide (scripts/screenshots.mjs): the window at its own size, never blown up
 const width = image.width / 2;
+// A loop's picture, as it's shown before it plays: all its pixels, for screens with two for one
+const poster = loop ? await getImage({ src: image, width: image.width, format: 'webp' }) : undefined;
 ---
 
 <figure class="screenshot" style={`max-width: calc(${width}px + 2 * var(--gap))`} data-seen>
   <span class="sight">
     <span class="glass">
-      <Image class="window" src={image} alt={alt[lang]} widths={[width, width * 2].filter((w) => w >= 400)} sizes={`(min-width: ${width}px) ${width}px, 100vw`} />
+      {
+        loop && poster ? (
+          <video
+            class="window"
+            src={loop}
+            poster={poster.src}
+            width={image.width}
+            height={image.height}
+            aria-label={alt[lang]}
+            muted
+            loop
+            playsinline
+            disablepictureinpicture
+            preload="none"
+            data-loop
+          />
+        ) : (
+          <Image class="window" src={image} alt={alt[lang]} widths={[width, width * 2].filter((w) => w >= 400)} sizes={`(min-width: ${width}px) ${width}px, 100vw`} />
+        )
+      }
     </span>
   </span>
   <figcaption>{caption[lang]}</figcaption>
 </figure>
+
+<script>
+  /*
+   * The loops: each plays once it's well into view (its top above the window's last quarter, as it's still turning
+   * to face the visitor, so that it isn't taken for a still picture) and while some of it is still in view, and waits where it is when it's out of view. Not for a visitor
+   * who asked for less motion: they see its picture, as without the script.
+   */
+  const lessMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const loops = [...document.querySelectorAll<HTMLVideoElement>('video[data-loop]')];
+  const facing = new Set<Element>();
+  const update = () => {
+    for (const loop of loops) {
+      if (facing.has(loop) && !lessMotion.matches) loop.play().catch(() => {});
+      else loop.pause();
+    }
+  };
+  const watcher = new IntersectionObserver(
+    (entries) => {
+      for (const { target, isIntersecting } of entries) {
+        if (isIntersecting) facing.add(target);
+        else facing.delete(target);
+      }
+      update();
+    },
+    { rootMargin: '0px 0px -25% 0px' },
+  );
+  for (const loop of loops) watcher.observe(loop);
+  lessMotion.addEventListener('change', () => {
+    // Back to its start, its picture
+    if (lessMotion.matches) for (const loop of loops) loop.currentTime = 0;
+    update();
+  });
+</script>
 
 <style>
   figure {
@@ -92,6 +147,8 @@ const width = image.width / 2;
     display: block;
     width: 100%;
     height: auto;
+    /* A loop's even number of pixels each way, a row fewer than its picture's at most: filled */
+    object-fit: cover;
     border: 1px solid color-mix(in srgb, var(--surface) 25%, transparent);
     border-radius: var(--radius);
     box-shadow:

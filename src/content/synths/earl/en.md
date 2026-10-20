@@ -1,5 +1,5 @@
 ---
-summary: A free polyphonic synthesizer of wavetables, samples, grains and velvet noise, with a patch you can rewire and a modulation matrix where anything modulates anything.
+summary: A free polyphonic workhorse synthesizer of wavetables, samples, grains and velvet noise, with a patch you can rewire and a modulation matrix where anything modulates anything.
 ---
 
 <!-- object: satellite -->

@@ -36,9 +36,11 @@ home:
       en: "EARL's Synth page in the SW Default skin: a wavetable oscillator, a granular one playing a sample, and a third oscillator showing its unison, nine voices spread between left and right"
       es: "La página Synth de EARL con la skin SW Default: un oscilador de tablas de ondas, uno granular tocando una muestra, y un tercer oscilador mostrando su unísono, nueve voces repartidas entre izquierda y derecha"
 screenshots:
+  # A screenshot with a loop is shown moving: a knob turned and back, or buttons pressed in turn (scripts/screenshots.mjs)
   # Its generators, close up: the first oscillator as each of its four, and the noise with the sub-oscillator under it
   - id: wavetable
     image: ./screenshots/wavetable.png
+    loop: /loops/earl/wavetable.mp4
     alt:
       en: "A wavetable oscillator playing the Wavefolder wavetable: its frames drawn one behind the other, the one it's at in front, over its COARSE, ST and CT fields and its PHASE, RANDOM, FM, POS, SYNC, PAN and GAIN knobs"
       es: "Un oscilador de tablas de ondas tocando la tabla Wavefolder: sus fotogramas dibujados uno detrás de otro, con el que está sonando delante, sobre sus campos COARSE, ST y CT y sus perillas PHASE, RANDOM, FM, POS, SYNC, PAN y GAIN"
@@ -63,6 +65,7 @@ screenshots:
       es: "Un sampler, que toca tus archivos de audio."
   - id: granular
     image: ./screenshots/granular.png
+    loop: /loops/earl/granular.mp4
     alt:
       en: "The Granular: a sample's waveform with the part its grains are taken from lit, where it's at marked, and how many grains are playing; its SOURCE, SCAN, TIME, GRAIN, PITCH and MIX tabs, and its position, spray, pan and gain"
       es: "El Granular: la forma de onda de un sample con la parte de la que toma sus granos iluminada, el punto en el que está marcado, y cuántos granos suenan; sus pestañas SOURCE, SCAN, TIME, GRAIN, PITCH y MIX, y su posición, dispersión, paneo y ganancia"
@@ -71,6 +74,7 @@ screenshots:
       es: "Un granular, hecho de granos de un sample."
   - id: noise
     image: ./screenshots/noise.png
+    loop: /loops/earl/noise.mp4
     alt:
       en: "The Colour Noise playing pink noise, its colours' buttons under its display, and the Sub Oscillator under it with its wave's buttons, its pitch, phase, pan and gain"
       es: "El Colour Noise tocando ruido rosa, con los botones de sus colores bajo su pantalla, y debajo el Sub Oscillator con los botones de su onda, su afinación, fase, paneo y ganancia"
@@ -80,6 +84,7 @@ screenshots:
   # What the voice's sound goes through, close up: its four filters, one of each kind, and its saturator and bitcrusher
   - id: filter-ladder
     image: ./screenshots/filter-ladder.png
+    loop: /loops/earl/filter-ladder.mp4
     alt:
       en: "The Ladder Filter: its curve, low-pass at 24 dB, beside its CUTOFF, RES, DRIVE and MIX knobs, and the buttons of the sources going into it"
       es: "El Ladder Filter: su curva, paso bajo de 24 dB, junto a sus perillas CUTOFF, RES, DRIVE y MIX, y los botones de las fuentes que entran en él"
@@ -88,6 +93,7 @@ screenshots:
       es: "Un filtro ladder, paso bajo o paso alto, con su propia saturación."
   - id: filter-state-variable
     image: ./screenshots/filter-state-variable.png
+    loop: /loops/earl/filter-state-variable.mp4
     alt:
       en: "The State Variable Filter: its curve beside its CUTOFF, Q, TYPE, DRIVE and MIX knobs and its slope, 12 dB"
       es: "El State Variable Filter: su curva junto a sus perillas CUTOFF, Q, TYPE, DRIVE y MIX y su pendiente, 12 dB"
@@ -96,6 +102,7 @@ screenshots:
       es: "Un filtro de variable de estado, que pasa de paso bajo a paso banda y a paso alto."
   - id: filter-comb
     image: ./screenshots/filter-comb.png
+    loop: /loops/earl/filter-comb.mp4
     alt:
       en: "The Comb Filter: its comb of peaks across the frequencies beside its FREQ, FEEDBACK, DAMP and MIX knobs, its key tracking on"
       es: "El Comb Filter: su peine de picos a lo largo de las frecuencias junto a sus perillas FREQ, FEEDBACK, DAMP y MIX, con su seguimiento de teclado activado"
@@ -104,6 +111,7 @@ screenshots:
       es: "Un filtro comb, que resuena como una cuerda o un tubo en la nota que tocas."
   - id: filter-formant
     image: ./screenshots/filter-formant.png
+    loop: /loops/earl/filter-formant.mp4
     alt:
       en: "The Formant Filter: a vowel's peaks beside its voice, TENOR, and its VOWEL, SHIFT, Q and MIX knobs"
       es: "El Formant Filter: los picos de una vocal junto a su voz, TENOR, y sus perillas VOWEL, SHIFT, Q y MIX"
@@ -112,6 +120,7 @@ screenshots:
       es: "Un filtro de formantes, que hace hablar al sonido con las vocales de un bajo, un tenor, una contralto o una soprano."
   - id: saturator
     image: ./screenshots/saturator.png
+    loop: /loops/earl/saturator.mp4
     alt:
       en: "The Voice Saturator in TUBE: its curve beside its high-pass and low-pass filters, and its DRIVE, OUTPUT and MIX knobs"
       es: "El Voice Saturator en TUBE: su curva junto a sus filtros paso alto y paso bajo, y sus perillas DRIVE, OUTPUT y MIX"
@@ -120,6 +129,7 @@ screenshots:
       es: "El saturador de la voz, aquí con la calidez de un tubo: una de seis curvas."
   - id: bitcrusher
     image: ./screenshots/bitcrusher.png
+    loop: /loops/earl/bitcrusher.mp4
     alt:
       en: "The Voice Bitcrusher at 3000 Hz: a wave cut into steps beside its BITS, RATE, DITHER and MIX knobs"
       es: "El Voice Bitcrusher a 3000 Hz: una onda cortada en escalones junto a sus perillas BITS, RATE, DITHER y MIX"
@@ -128,6 +138,7 @@ screenshots:
       es: "El bitcrusher de la voz: menos bits y menos frecuencia de muestreo para un sonido más granulado."
   - id: velvet-noise
     image: ./screenshots/velvet-noise.png
+    loop: /loops/earl/velvet-noise.mp4
     alt:
       en: "The velvet noise's panel: its pulses drawn as dots over its DENSITY, JITTER, PW, PAN and GAIN knobs and its LEVEL and MONO switches"
       es: "El panel del ruido velvet: sus pulsos dibujados como puntos sobre sus perillas DENSITY, JITTER, PW, PAN y GAIN y sus interruptores LEVEL y MONO"
@@ -176,6 +187,7 @@ screenshots:
       es: "La página Notes: lo que cambia las notas, y las voces, el glide y el unísono."
   - id: oscillator-unison
     image: ./screenshots/oscillator-unison.png
+    loop: /loops/earl/oscillator-unison.mp4
     alt:
       en: "A wavetable oscillator showing its unison: its voices drawn as lines between left and right, over its VOICES, DETUNE, WIDTH, BLEND, WT SPREAD and BIAS knobs"
       es: "Un oscilador de tablas de ondas mostrando su unísono: sus voces dibujadas como líneas entre izquierda y derecha, sobre sus perillas VOICES, DETUNE, WIDTH, BLEND, WT SPREAD y BIAS"
@@ -184,6 +196,7 @@ screenshots:
       es: "El unísono de un oscilador."
   - id: voice-unison
     image: ./screenshots/voice-unison.png
+    loop: /loops/earl/voice-unison.mp4
     alt:
       en: "The voice's unison on the Notes page: its voices drawn as lines between left and right, over the UNISON menu and its DETUNE, WIDTH, BLEND and BIAS sliders"
       es: "El unísono de la voz en la página Notes: sus voces dibujadas como líneas entre izquierda y derecha, sobre el menú UNISON y sus deslizadores DETUNE, WIDTH, BLEND y BIAS"
