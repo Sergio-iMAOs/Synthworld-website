@@ -57,6 +57,13 @@ const synths = defineCollection({
       /** Its picture at the top of its page and in the lists: its whole window, a path from its folder. */
       cover: z.object({ image: image(), alt: inEveryLanguage }).optional(),
       /**
+       * Its window as the site shows it first, paths from its folder: by day (in SW Light) on the home page, by night
+       * (in SW Default) in its node's pane on the synths' page; without it, its pictures in those skins.
+       */
+      home: z
+        .object({ day: z.object({ image: image(), alt: inEveryLanguage }), night: z.object({ image: image(), alt: inEveryLanguage }) })
+        .optional(),
+      /**
        * Its page's other pictures: its pages or parts of its window, each with what it shows. Its texts place each
        * one with <!-- screenshot: <id> -->; one they don't place is shown after them.
        */
@@ -64,15 +71,15 @@ const synths = defineCollection({
         .array(z.object({ id: z.string(), image: image(), alt: inEveryLanguage, caption: inEveryLanguage }))
         .default([]),
       /**
-       * Its skins, in the order it offers them, for the slideshow on its page: each one's name, its window in it (a path
-       * from its folder), what that shows and a line on it. Its texts place the slideshow with <!-- skins -->; if they
-       * don't, it's shown after them.
+       * Its skins, in the order it offers them: each one's name, its window in it (a path from its folder), what that
+       * shows and a line on it. Its page shows them in pairs, by day and by night (nightAndDay); its texts place them
+       * with <!-- skins -->; if they don't, they're shown after them. The home page shows its window in SW Light.
        */
       skins: z
         .array(z.object({ name: z.string(), image: image(), alt: inEveryLanguage, caption: inEveryLanguage }))
         .default([]),
       /**
-       * Pairs of its skins (their names) its window is shown in by day and by night on the home page, after SynthWorld's
+       * Pairs of its skins (their names) its window is shown in by day and by night on its page, after SynthWorld's
        * own two: the light one by day.
        */
       nightAndDay: z.array(z.object({ day: z.string(), night: z.string() })).default([]),

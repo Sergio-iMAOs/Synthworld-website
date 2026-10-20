@@ -27,6 +27,14 @@ const SCALE = 2;
 // crop, [x, y, width, height] in the window's units, a part of the window alone; its scale, if not SCALE. A shot
 // with a tool of its own is drawn by it, with its args in place of the scale and the actions (the logo).
 // Its file is where synth.yaml looks for it, from the synth's folder.
+
+// EARL's oscillators as its window shows them: the first a wavetable one, as it is, the second a granular one (turned
+// on, Granular from its menu, its sample from its selector's, some POSITION and SPRAY). The sample is the one the tool
+// has, "Pluck", a stand-in for EARL's Click_01 until the tool has EARL's stock samples
+const earlOscillators = ['click=315,47', 'click=450,46', 'click=380,135', 'click=480,65', 'click=480,115', 'click=620,115', 'wheel=340,230,8', 'wheel=540,263,8'];
+// More of its panels on, for more of a skin's colours: the noise, the sub-oscillator, Filter 1 and the saturator
+const earlPanels = ['click=905,47', 'click=907,234', 'click=17,352', 'click=614,352'];
+
 const synths = {
   earl: {
     tool: 'synthworld_earl_snapshot',
@@ -38,14 +46,34 @@ const synths = {
       // The header's logo (tests/snapshot/EarlHeaderSnapshot.cpp): the sun and the name, 480 pixels high, the sun's
       // radius; the page draws the horizon under it
       { file: 'logo.png', tool: 'synthworld_earl_header_snapshot', args: ['480'] },
-      { file: 'screenshots/synth.png', env: { SYNTHWORLD_SNAPSHOT_AUDIO: '1' }, actions: ['wait=500'] },
+      { file: 'screenshots/synth.png', env: { SYNTHWORLD_SNAPSHOT_AUDIO: '1' }, actions: [...earlOscillators, 'move=600,620', 'wait=500'] },
       // Its skins, in the order it offers them (EarlUI.cpp; Tux is only on Linux): the Synth page in each, playing a
-      // factory preset with more of its panels on (the second oscillator, the noise, the sub-oscillator, Filter 1 and
-      // the saturator) for more of each skin's colours, and the mouse out of the window
+      // factory preset with its two oscillators and more of its panels on, and the mouse out of the window
       ...['SW Default', 'SW Light', 'Deep Sea', 'Riso', 'Starship', 'Tux'].map((skin) => ({
         file: `skins/${skin.toLowerCase().replaceAll(' ', '-')}.png`,
         env: { SYNTHWORLD_SNAPSHOT_SKIN: skin, SYNTHWORLD_SNAPSHOT_PATCH: 'EARL Factory/Soft Pad', SYNTHWORLD_SNAPSHOT_AUDIO: '1' },
-        actions: ['click=315,47', 'click=905,47', 'click=907,234', 'click=17,352', 'click=614,352', 'move=600,620', 'wait=500'],
+        actions: [...earlOscillators, ...earlPanels, 'move=600,620', 'wait=500'],
+      })),
+      // Its window on the home page (in SW Light) and in its node's pane on the synths' page (in SW Default): the same,
+      // with the third oscillator on too, showing its unison (its unison button, 9 voices, DETUNE, WIDTH, BLEND,
+      // WT SPREAD and BIAS turned up)
+      ...[['SW Light', 'day'], ['SW Default', 'night']].map(([skin, when]) => ({
+        file: `screenshots/home-${when}.png`,
+        env: { SYNTHWORLD_SNAPSHOT_SKIN: skin, SYNTHWORLD_SNAPSHOT_PATCH: 'EARL Factory/Soft Pad', SYNTHWORLD_SNAPSHOT_AUDIO: '1' },
+        actions: [
+          ...earlOscillators,
+          'click=611,47',
+          'click=612,90',
+          'wheel=641,224,12',
+          'wheel=757,224,6',
+          'wheel=868,224,4',
+          'wheel=641,288,3',
+          'wheel=757,288,8',
+          'wheel=868,288,3',
+          ...earlPanels,
+          'move=600,620',
+          'wait=500',
+        ],
       })),
       // The velvet noise's panel, turned on (its switch at its top left)
       { file: 'screenshots/velvet-noise.png', scale: 3, crop: [892, 34, 304, 184], actions: ['click=905,47'] },

@@ -1,12 +1,9 @@
 
 
-EARL's screenshots, Oscillator 1 as wavetable (same as currently), but Oscillator 2 should be Granular (with a loaded sample)
-
-Move the EARL skin slider visulizer from the main page to EARL page (replacing current skins slideshow).
-In the main page replace it for just an image of EARL but present it cosmically cool. Clicking the image redirects to EARL page
-
-
 ## EARL
+
+Remake EARL page to better fit the style of main and Synths page. Make it look cosmically cool and creative. Add animations, integrate the different parts and sections into space elements.
+The first showcase of EARL at the beginning of the page has to be cosmically epic.
 
 Music samples section
 Turn images into animations.

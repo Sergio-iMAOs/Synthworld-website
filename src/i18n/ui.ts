@@ -15,12 +15,6 @@ const en = {
     cta: 'See the synths',
     first: 'The first synth',
     discover: (name: string) => `Discover ${name}`,
-    /** A synth's window in SynthWorld's two skins, the light one by day and the dark one by night (SynthDayNight) */
-    dayNight: {
-      line: 'The line between day and night',
-      hint: 'Drag the line between day and night.',
-      show: (day: string, night: string) => `Show ${day} and ${night}`,
-    },
     engine: 'In every SynthWorld synth',
     features: [
       {
@@ -52,7 +46,12 @@ const en = {
     listen: 'Listen',
     watch: 'Watch',
     sections: 'On this page',
-    skins: { label: 'Skins', previous: 'Previous skin', next: 'Next skin' },
+    /** Its window in pairs of its skins, a light one by day and a dark one by night (SynthDayNight) */
+    dayNight: {
+      line: 'The line between day and night',
+      hint: 'Drag the line between day and night.',
+      show: (day: string, night: string) => `Show ${day} and ${night}`,
+    },
     /** The synths as planets in a graph (SynthGraph) */
     graph: {
       hint: 'Drag to move around, scroll to zoom, and click a planet to open it.',
@@ -106,11 +105,6 @@ const es: typeof en = {
     cta: 'Ver los sintes',
     first: 'El primer sinte',
     discover: (name: string) => `Descubre ${name}`,
-    dayNight: {
-      line: 'La línea entre el día y la noche',
-      hint: 'Arrastra la línea entre el día y la noche.',
-      show: (day: string, night: string) => `Ver ${day} y ${night}`,
-    },
     engine: 'En todos los sintes de SynthWorld',
     features: [
       {
@@ -142,7 +136,11 @@ const es: typeof en = {
     listen: 'Escucha',
     watch: 'Mira',
     sections: 'En esta página',
-    skins: { label: 'Skins', previous: 'Skin anterior', next: 'Skin siguiente' },
+    dayNight: {
+      line: 'La línea entre el día y la noche',
+      hint: 'Arrastra la línea entre el día y la noche.',
+      show: (day: string, night: string) => `Ver ${day} y ${night}`,
+    },
     graph: {
       hint: 'Arrastra para moverte, usa la rueda para acercar y haz clic en un planeta para abrirlo.',
       touchHint: 'Arrastra para moverte, pellizca para acercar y toca un planeta para abrirlo.',

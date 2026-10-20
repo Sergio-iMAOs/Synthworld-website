@@ -22,6 +22,19 @@ cover:
   alt:
     en: "EARL's window on its Synth page: three oscillators, the noise and the sub-oscillator at the top, the filters and the voice's distortions under them, the envelopes and LFOs at the bottom"
     es: "La ventana de EARL en su página Synth: tres osciladores, el ruido y el suboscilador arriba, los filtros y las distorsiones de la voz debajo, y las envolventes y los LFO abajo"
+# Its window with its third oscillator showing its unison: by day on the home page, by night in its node's pane on the
+# synths' page
+home:
+  day:
+    image: ./screenshots/home-day.png
+    alt:
+      en: "EARL's Synth page in the SW Light skin: a wavetable oscillator, a granular one playing a sample, and a third oscillator showing its unison, nine voices spread between left and right"
+      es: "La página Synth de EARL con la skin SW Light: un oscilador de tablas de ondas, uno granular tocando una muestra, y un tercer oscilador mostrando su unísono, nueve voces repartidas entre izquierda y derecha"
+  night:
+    image: ./screenshots/home-night.png
+    alt:
+      en: "EARL's Synth page in the SW Default skin: a wavetable oscillator, a granular one playing a sample, and a third oscillator showing its unison, nine voices spread between left and right"
+      es: "La página Synth de EARL con la skin SW Default: un oscilador de tablas de ondas, uno granular tocando una muestra, y un tercer oscilador mostrando su unísono, nueve voces repartidas entre izquierda y derecha"
 screenshots:
   - id: velvet-noise
     image: ./screenshots/velvet-noise.png
@@ -95,7 +108,7 @@ screenshots:
     caption:
       en: "The Tuning page."
       es: "La página Tuning."
-# The slideshow of its skins, in the order it offers them (Tux is only on Linux): the Synth page in each, taken the same way
+# Its skins, in the order it offers them (Tux is only on Linux): the Synth page in each, taken the same way
 skins:
   - name: SW Default
     image: ./skins/sw-default.png
@@ -145,6 +158,7 @@ skins:
     caption:
       en: "Only on Linux: near black, with Tux's yellow and a terminal's green."
       es: "Solo en Linux: casi negra, con el amarillo de Tux y el verde de una terminal."
-# On the home page, its window by day and by night in more of its skins than SynthWorld's two: the light one by day
+# On its page, its window by day and by night in more of its skins than SynthWorld's two, the lighter one by day
 nightAndDay:
   - { day: Riso, night: Starship }
+  - { day: Deep Sea, night: Tux }

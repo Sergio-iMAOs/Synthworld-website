@@ -63,8 +63,9 @@ const beamTo = (place: Point) => {
   };
 };
 
-// Each synth's pane shows its window in SynthWorld's own dark skin, as the home page does, or else its cover
-const pictureOf = (synth: Synth) => nightAndDayOf(synth)[0]?.night ?? synth.data.cover;
+// Each synth's pane shows its window by night, as the home page does by day: its own for them, or its SynthWorld's
+// own dark skin's, or else its cover
+const pictureOf = (synth: Synth) => synth.data.home?.night ?? nightAndDayOf(synth)[0]?.night ?? synth.data.cover;
 const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted-${index + 1}`, place: places[synths.length + index] }));
 ---
 
@@ -132,7 +133,11 @@ const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted
                       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
                     </button>
                   </header>
-                  {picture && <Image class="cover" src={picture.image} alt={picture.alt[lang]} widths={[704, 1408]} sizes="704px" />}
+                  {picture && (
+                    <a class="cover" href={pathIn(lang, `/synths/${id}/`)} tabindex="-1" data-enter>
+                      <Image src={picture.image} alt={picture.alt[lang]} widths={[704, 1408]} sizes="704px" />
+                    </a>
+                  )}
                   <p class="summary">{text.data.summary}</p>
                   <ul class="tags">
                     <li>v{data.version}</li>
@@ -630,13 +635,24 @@ const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted
     stroke-linejoin: round;
   }
 
+  /* Its window, on to its page too (only by mouse: the keyboard has the button) */
   .cover {
     display: block;
-    width: 100%;
-    height: auto;
     margin-bottom: 1rem;
     border: 1px solid color-mix(in srgb, var(--surface) 25%, transparent);
     border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .cover:hover {
+    border-color: var(--highlight);
+  }
+
+  .cover :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
   }
 
   .summary {

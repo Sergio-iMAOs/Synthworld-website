@@ -3,12 +3,12 @@ import type { MarkdownHeading } from 'astro';
 import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
 import Base from '@/layouts/Base.astro';
+import SynthDayNight from '@/components/SynthDayNight.astro';
 import SynthDemos from '@/components/SynthDemos.astro';
 import SynthGet from '@/components/SynthGet.astro';
 import SynthScreenshot from '@/components/SynthScreenshot.astro';
-import SynthSkins from '@/components/SynthSkins.astro';
 import { langOf, langPaths, textsOf } from '@/i18n';
-import { getSynths } from '@/synths';
+import { getSynths, nightAndDayOf } from '@/synths';
 
 export async function getStaticPaths() {
   const synths = await getCollection('synths');
@@ -19,9 +19,10 @@ const lang = langOf(Astro.url);
 const t = textsOf(lang).synths;
 const synth = (await getSynths(lang)).find(({ id }) => id === Astro.params.id)!;
 const { data, text } = synth;
+const pairs = nightAndDayOf(synth);
 
-// The text, cut where it places a screenshot (<!-- screenshot: <id> -->) or the slideshow of its skins (<!-- skins -->):
-// its HTML and what it places there, in turn
+// The text, cut where it places a screenshot (<!-- screenshot: <id> -->) or its window by day and by night in its skins
+// (<!-- skins -->): its HTML and what it places there, in turn
 const html = text.rendered?.html;
 if (html === undefined) throw new Error(`The text "${text.id}" isn't rendered`);
 const parts = html.split(/<!--\s*(skins|screenshot:\s*[\w-]+)\s*-->/);
@@ -34,7 +35,7 @@ const screenshotOf = (id: string) => {
   return screenshot;
 };
 const unplaced = data.screenshots.filter(({ id }) => !placed.some((place) => screenshotIdIn(place) === id));
-if (placed.includes('skins') && data.skins.length === 0) throw new Error(`The text "${text.id}" places the skins, but synth.yaml has none`);
+if (placed.includes('skins') && pairs.length === 0) throw new Error(`The text "${text.id}" places the skins, but synth.yaml has no pairs of them`);
 
 // Its sections, for the menu beside them: the text's headings of the second level (a spotlight's too), without a final stop
 const sections = ((text.rendered?.metadata?.headings ?? []) as MarkdownHeading[])
@@ -82,13 +83,13 @@ const sections = ((text.rendered?.metadata?.headings ?? []) as MarkdownHeading[]
           index % 2 === 0 ? (
             <Fragment set:html={part} />
           ) : part === 'skins' ? (
-            <SynthSkins synth={synth} />
+            <SynthDayNight pairs={pairs} />
           ) : (
             <SynthScreenshot screenshot={screenshotOf(screenshotIdIn(part)!)} />
           ),
         )}
         {unplaced.map((screenshot) => <SynthScreenshot screenshot={screenshot} />)}
-        {data.skins.length > 0 && !placed.includes('skins') && <SynthSkins synth={synth} />}
+        {pairs.length > 0 && !placed.includes('skins') && <SynthDayNight pairs={pairs} />}
       </div>
 
       <SynthDemos synth={synth} />

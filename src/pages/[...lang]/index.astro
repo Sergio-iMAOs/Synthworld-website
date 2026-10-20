@@ -4,10 +4,9 @@ import Base from '@/layouts/Base.astro';
 import SineTrail from '@/components/SineTrail.astro';
 import Space from '@/components/Space.astro';
 import SpaceObject, { type SpaceObjectKind } from '@/components/SpaceObject.astro';
-import SynthDayNight from '@/components/SynthDayNight.astro';
 import { langOf, langPaths, pathIn, textsOf } from '@/i18n';
 import { site } from '@/site';
-import { getSynths, nightAndDayOf } from '@/synths';
+import { getSynths } from '@/synths';
 import logo from '@/assets/synthworld/logo.png';
 import name from '@/assets/synthworld/name.png';
 
@@ -45,7 +44,9 @@ if (t.home.features.length !== objects.length) throw new Error(`The home page ha
     synths.map((synth, index) => {
       const { id, data, text } = synth;
       const href = pathIn(lang, `/synths/${id}/`);
-      const pairs = nightAndDayOf(synth);
+      // Its window in SynthWorld's light skin, which every synth has: its own for this page, or its skin's; without
+      // either, its cover
+      const picture = data.home?.day ?? data.skins.find(({ name }) => name === 'SW Light') ?? data.cover;
       return (
         <article class="synth">
           <header class={data.logo ? 'rise sunrise' : 'rise'}>
@@ -65,6 +66,17 @@ if (t.home.features.length !== objects.length) throw new Error(`The home page ha
           </header>
 
           <div class="wrap ground">
+            {picture && (
+              <a class="orbit" href={href}>
+                <span class="ring back" aria-hidden="true" />
+                <span class="sight">
+                  <Image class="window" src={picture.image} alt={picture.alt[lang]} widths={[800, 1200, 1600, 2400]} sizes="(min-width: 68rem) 56rem, 100vw" />
+                </span>
+                <span class="ring front" aria-hidden="true">
+                  <span class="moon" />
+                </span>
+              </a>
+            )}
             <div class="about">
               <p class="lead">{text.data.summary}</p>
               <ul class="tags">
@@ -80,13 +92,6 @@ if (t.home.features.length !== objects.length) throw new Error(`The home page ha
                 {t.home.discover(data.name)}
               </a>
             </div>
-            {pairs.length > 0 ? (
-              <SynthDayNight pairs={pairs} />
-            ) : (
-              data.cover && (
-                <Image class="cover" src={data.cover.image} alt={data.cover.alt[lang]} widths={[800, 1600, 2400]} sizes="(min-width: 68rem) 64rem, 100vw" />
-              )
-            )}
           </div>
         </article>
       );
@@ -216,6 +221,7 @@ if (t.home.features.length !== objects.length) throw new Error(`The home page ha
   .synth {
     position: relative;
     isolation: isolate;
+    overflow-x: clip;
   }
 
   .synth + .synth {
@@ -323,7 +329,7 @@ if (t.home.features.length !== objects.length) throw new Error(`The home page ha
     }
   }
 
-  /* What it is, and its window */
+  /* Its window, and what it is */
   .ground {
     padding-block: clamp(2rem, 5vw, 3rem) 0;
   }
@@ -333,7 +339,7 @@ if (t.home.features.length !== objects.length) throw new Error(`The home page ha
     flex-direction: column;
     align-items: center;
     gap: 1.25rem;
-    margin-bottom: clamp(2rem, 5vw, 3rem);
+    margin-top: clamp(2.5rem, 6vw, 4rem);
     text-align: center;
   }
 
@@ -346,11 +352,164 @@ if (t.home.features.length !== objects.length) throw new Error(`The home page ha
     justify-content: center;
   }
 
-  .cover {
+  /*
+   * Its window, a link to its page, in orbit: in the corners of a sight (as the synths' page's nodes are), shining in
+   * space, lit from the top left, a ring round it with a moon on it, its back half behind the window and its front half
+   * over it. As it comes into view, it turns to face the visitor; under the mouse, it rises, and its sight lights up.
+   */
+  .orbit {
+    --sight: color-mix(in srgb, var(--accent) 50%, transparent);
+    --arm: 1.5rem;
+    --line: 1.5px;
+    position: relative;
+    isolation: isolate;
+    display: block;
+    max-width: 56rem;
+    margin-inline: auto;
+    padding: clamp(0.5rem, 1.5vw, 0.9rem);
+    transition: translate 0.4s ease-out;
+  }
+
+  /* Its glow: violet light round it, yellow where the light falls from */
+  .orbit::before {
+    content: '';
+    position: absolute;
+    inset: -18% -12%;
+    z-index: -2;
+    background:
+      radial-gradient(30% 34% at 30% 26%, color-mix(in srgb, var(--highlight) 14%, transparent), transparent),
+      radial-gradient(closest-side, color-mix(in srgb, var(--accent) 34%, transparent), transparent);
+    transition: opacity 0.4s;
+    opacity: 0.75;
+    pointer-events: none;
+  }
+
+  .orbit:is(:hover, :focus-visible) {
+    --sight: color-mix(in srgb, var(--highlight) 90%, transparent);
+    translate: 0 -0.5rem;
+  }
+
+  .orbit:is(:hover, :focus-visible)::before {
+    opacity: 1;
+  }
+
+  .orbit:focus-visible {
+    outline: none;
+  }
+
+  .sight {
+    position: relative;
+    z-index: 0;
+    display: block;
+  }
+
+  .sight::before {
+    content: '';
+    position: absolute;
+    inset: calc(-1 * clamp(0.5rem, 1.5vw, 0.9rem));
+    background:
+      linear-gradient(var(--sight) 0 0) top left / var(--arm) var(--line),
+      linear-gradient(var(--sight) 0 0) top left / var(--line) var(--arm),
+      linear-gradient(var(--sight) 0 0) top right / var(--arm) var(--line),
+      linear-gradient(var(--sight) 0 0) top right / var(--line) var(--arm),
+      linear-gradient(var(--sight) 0 0) bottom left / var(--arm) var(--line),
+      linear-gradient(var(--sight) 0 0) bottom left / var(--line) var(--arm),
+      linear-gradient(var(--sight) 0 0) bottom right / var(--arm) var(--line),
+      linear-gradient(var(--sight) 0 0) bottom right / var(--line) var(--arm);
+    background-repeat: no-repeat;
+    transition: filter 0.4s;
+    pointer-events: none;
+  }
+
+  .orbit:is(:hover, :focus-visible) .sight::before {
+    filter: drop-shadow(0 0 3px color-mix(in srgb, var(--highlight) 50%, transparent));
+  }
+
+  /* The light falling on its glass from the top left */
+  .sight::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--foreground) 16%, transparent), transparent 35%);
+    pointer-events: none;
+  }
+
+  .window {
     display: block;
     width: 100%;
     height: auto;
+    border: 1px solid color-mix(in srgb, var(--surface) 25%, transparent);
     border-radius: var(--radius);
+    box-shadow:
+      0 2rem 4rem -2rem rgb(0 0 0 / 0.8),
+      0 0 5rem -1rem color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+
+  /* The ring, wider than the window and tilted: an ellipse, cut in its back half and its front half */
+  .ring {
+    position: absolute;
+    inset: 24% -7% 12%;
+    border: 1.5px solid color-mix(in srgb, var(--surface) 45%, transparent);
+    border-radius: 50%;
+    rotate: -6deg;
+    transition: border-color 0.4s;
+    pointer-events: none;
+  }
+
+  .back {
+    z-index: -1;
+    border-color: color-mix(in srgb, var(--surface) 25%, transparent);
+    clip-path: inset(-2rem -2rem 50% -2rem);
+  }
+
+  .front {
+    z-index: 1;
+    clip-path: inset(50% -2rem -2rem -2rem);
+  }
+
+  .orbit:is(:hover, :focus-visible) .ring {
+    border-color: color-mix(in srgb, var(--highlight) 55%, transparent);
+  }
+
+  /* The moon, on the ring's front, just out of the window on its left: lit, then shaded, from the top left */
+  .moon {
+    position: absolute;
+    left: 3%;
+    top: 67%;
+    width: clamp(0.7rem, 1.6vw, 1.1rem);
+    aspect-ratio: 1;
+    translate: -50% -50%;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 32% 30%, color-mix(in srgb, var(--foreground) 85%, transparent), transparent 55%),
+      radial-gradient(circle at 32% 30%, transparent 35%, color-mix(in srgb, var(--recess) 85%, transparent)),
+      var(--highlight);
+    box-shadow: 0 0 0.9rem color-mix(in srgb, var(--highlight) 45%, transparent);
+  }
+
+  /* As it comes into view, it turns from lying back in space to facing the visitor */
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .orbit {
+        animation-name: face;
+        animation-timing-function: ease-out;
+        animation-fill-mode: both;
+        animation-timeline: view();
+        animation-range: entry 0% cover 45%;
+      }
+    }
+  }
+
+  @keyframes face {
+    from {
+      transform: perspective(70rem) rotateX(24deg) scale(0.92);
+      opacity: 0.4;
+    }
+    to {
+      transform: perspective(70rem) rotateX(0deg) scale(1);
+      opacity: 1;
+    }
   }
 
   /*

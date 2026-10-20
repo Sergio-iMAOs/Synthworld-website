@@ -12,7 +12,7 @@ export interface Synth {
   text: CollectionEntry<'synthTexts'>;
 }
 
-/** A skin of a synth's slideshow, with its picture. */
+/** A skin of a synth, with its picture. */
 export type Skin = Synth['data']['skins'][number];
 
 /** A pair of a synth's skins its window is shown in by night and by day: a dark one and a light one. */

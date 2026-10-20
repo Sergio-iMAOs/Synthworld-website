@@ -1,8 +1,8 @@
 ---
 /**
  * A synth's window by night and by day: its pictures in a pair of its skins (nightAndDayOf() in src/synths.ts), the
- * light one over the dark one from the left to a line, day and night on a planet. Without the script, the first pair
- * only, the line in the middle; with it, the line can be dragged (or moved with the keys, as a range), a button shows
+ * light one over the dark one from the left to a line, day and night on a planet, each one's name and its line under
+ * it. Without the script, the first pair only, the line in the middle; with it, the line can be dragged (or moved with the keys, as a range), a button shows
  * the next pair (the line staying where it is), and the first time the window is in view, the day rises over it from
  * its left, unless the visitor asked for less motion.
  */
@@ -16,9 +16,9 @@ interface Props {
 
 const { pairs } = Astro.props;
 const lang = langOf(Astro.url);
-const t = textsOf(lang).home.dayNight;
+const t = textsOf(lang).synths.dayNight;
 const widths = [800, 1200, 1600, 2400];
-const sizes = '(min-width: 68rem) 64rem, 100vw';
+const sizes = '(min-width: 64rem) 51rem, 100vw';
 // While a pair is shown, the button names the next
 const next = (index: number) => pairs[(index + 1) % pairs.length];
 ---
@@ -37,7 +37,16 @@ const next = (index: number) => pairs[(index + 1) % pairs.length];
   <div class="view" data-view>
     {
       pairs.map(({ night, day }, index) => (
-        <div class="pair" hidden={index > 0} data-pair data-day={day.name} data-night={night.name} data-next={t.show(next(index).day.name, next(index).night.name)}>
+        <div
+          class="pair"
+          hidden={index > 0}
+          data-pair
+          data-day={day.name}
+          data-day-caption={day.caption[lang]}
+          data-night={night.name}
+          data-night-caption={night.caption[lang]}
+          data-next={t.show(next(index).day.name, next(index).night.name)}
+        >
           <Image class="night" src={night.image} alt={night.alt[lang]} widths={widths} sizes={sizes} />
           <Image class="day" src={day.image} alt={day.alt[lang]} widths={widths} sizes={sizes} />
         </div>
@@ -47,18 +56,24 @@ const next = (index: number) => pairs[(index + 1) % pairs.length];
     <input type="range" min="0" max="100" value="50" aria-label={t.line} hidden data-input />
   </div>
   <figcaption>
-    <span class="skin">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="12" cy="12" r="4.5"></circle>
-        <path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"></path>
-      </svg>
-      <span data-day-name>{pairs[0].day.name}</span>
+    <span class="side">
+      <span class="skin">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="4.5"></circle>
+          <path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"></path>
+        </svg>
+        <span data-day-name>{pairs[0].day.name}</span>
+      </span>
+      <span class="caption" data-day-line>{pairs[0].day.caption[lang]}</span>
+    </span>
+    <span class="side night">
+      <span class="skin">
+        <span data-night-name>{pairs[0].night.name}</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path></svg>
+      </span>
+      <span class="caption" data-night-line>{pairs[0].night.caption[lang]}</span>
     </span>
     <span class="hint" hidden data-hint>{t.hint}</span>
-    <span class="skin">
-      <span data-night-name>{pairs[0].night.name}</span>
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path></svg>
-    </span>
   </figcaption>
 </figure>
 
@@ -133,7 +148,9 @@ const next = (index: number) => pairs[(index + 1) % pairs.length];
         pair.inert = i !== index;
       });
       figure.querySelector('[data-day-name]')!.textContent = pairs[index].dataset.day!;
+      figure.querySelector('[data-day-line]')!.textContent = pairs[index].dataset.dayCaption!;
       figure.querySelector('[data-night-name]')!.textContent = pairs[index].dataset.night!;
+      figure.querySelector('[data-night-line]')!.textContent = pairs[index].dataset.nightCaption!;
       if (button) button.querySelector('[data-switch-label]')!.textContent = pairs[index].dataset.next!;
     };
     show(0);
@@ -156,7 +173,7 @@ const next = (index: number) => pairs[(index + 1) % pairs.length];
   }
 
   .day-night {
-    margin: 0;
+    margin: 2rem 0 2.5rem;
   }
 
   /* The button to the next pair, over the window */
@@ -295,15 +312,26 @@ const next = (index: number) => pairs[(index + 1) % pairs.length];
     transition: --day 2.4s cubic-bezier(0.3, 0, 0.2, 1);
   }
 
+  /* The day's skin on the left, the night's on the right, each its name over its line; the hint under them */
   figcaption {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.25rem 1rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem 1.5rem;
     margin-top: 0.75rem;
     color: var(--surface);
     font-size: 0.9rem;
+  }
+
+  .side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .night {
+    align-items: flex-end;
+    text-align: right;
   }
 
   .skin {
@@ -317,18 +345,10 @@ const next = (index: number) => pairs[(index + 1) % pairs.length];
     font-size: 0.8rem;
   }
 
-  /* Under the names where there's no room between them */
   .hint {
-    order: 1;
-    flex-basis: 100%;
-  }
-
-  @media (min-width: 40rem) {
-    .hint {
-      order: 0;
-      flex: 1;
-      text-align: center;
-    }
+    grid-column: 1 / -1;
+    margin-top: 0.25rem;
+    text-align: center;
   }
 
   .hint[hidden] {
