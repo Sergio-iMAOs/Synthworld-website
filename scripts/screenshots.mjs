@@ -40,6 +40,13 @@ const earlSaturatorOutput = 'wheel=1083,406,7.408';
 // More of its panels on, for more of a skin's colours: the noise, the sub-oscillator, Filter 1 and the saturator (its
 // OUTPUT at 0 dB)
 const earlPanels = ['click=905,47', 'click=907,234', 'click=17,352', 'click=614,352', earlSaturatorOutput];
+// Its third oscillator on, showing its unison: its unison button, 9 voices, DETUNE, WIDTH, BLEND, WT SPREAD and BIAS
+// turned up
+const earlThirdOscillator = ['click=611,47', 'click=612,90', 'wheel=641,224,12', 'wheel=757,224,6', 'wheel=868,224,4', 'wheel=641,288,3', 'wheel=757,288,8', 'wheel=868,288,3'];
+// Its window as the home page shows it, playing a factory preset with its oscillators (the third's actions, if it's
+// on) and more of its panels on, the master gain, in the header, turned down so that the output's meter doesn't clip,
+// and the mouse out of the window
+const earlHome = (thirdOscillator) => [...earlOscillators, ...thirdOscillator, ...earlPanels, 'wheel=1185,15,-8', 'move=600,620', 'wait=500'];
 // A page of its window alone, between the header (whose preset selector would name a patch from a file "Init") and the
 // macros under it
 const earlPage = [0, 31, 1200, 533];
@@ -63,33 +70,19 @@ const synths = {
         env: { SYNTHWORLD_SNAPSHOT_AUDIO: '1' },
         actions: [...earlOscillators, earlSaturatorOutput, 'move=600,620', 'wait=500'],
       },
-      // Its skins, in the order it offers them (EarlUI.cpp; Tux is only on Linux): the Synth page in each, playing a
-      // factory preset with its two oscillators and more of its panels on, and the mouse out of the window
+      // Its skins, in the order it offers them (EarlUI.cpp; Tux is only on Linux): the Synth page in each as on the home
+      // page, but with the third oscillator off
       ...['SW Default', 'SW Light', 'Deep Sea', 'Riso', 'Starship', 'Tux'].map((skin) => ({
         file: `skins/${skin.toLowerCase().replaceAll(' ', '-')}.png`,
         env: { SYNTHWORLD_SNAPSHOT_SKIN: skin, SYNTHWORLD_SNAPSHOT_PATCH: 'EARL Factory/Soft Pad', SYNTHWORLD_SNAPSHOT_AUDIO: '1' },
-        actions: [...earlOscillators, ...earlPanels, 'move=600,620', 'wait=500'],
+        actions: earlHome([]),
       })),
-      // Its window on the home page (in SW Light) and in its node's pane on the synths' page (in SW Default): the same,
-      // with the third oscillator on too, showing its unison (its unison button, 9 voices, DETUNE, WIDTH, BLEND,
-      // WT SPREAD and BIAS turned up)
+      // Its window on the home page (in SW Light) and in its node's pane on the synths' page (in SW Default), with the
+      // third oscillator on, showing its unison
       ...[['SW Light', 'day'], ['SW Default', 'night']].map(([skin, when]) => ({
         file: `screenshots/home-${when}.png`,
         env: { SYNTHWORLD_SNAPSHOT_SKIN: skin, SYNTHWORLD_SNAPSHOT_PATCH: 'EARL Factory/Soft Pad', SYNTHWORLD_SNAPSHOT_AUDIO: '1' },
-        actions: [
-          ...earlOscillators,
-          'click=611,47',
-          'click=612,90',
-          'wheel=641,224,12',
-          'wheel=757,224,6',
-          'wheel=868,224,4',
-          'wheel=641,288,3',
-          'wheel=757,288,8',
-          'wheel=868,288,3',
-          ...earlPanels,
-          'move=600,620',
-          'wait=500',
-        ],
+        actions: earlHome(earlThirdOscillator),
       })),
       // Its generators, close up, each playing a factory preset's chord: the first oscillator as each of its four (from
       // its menu: Wavetable Oscillator, Triple Oscillator, Sampler, Granular), and the noise as a coloured one with the

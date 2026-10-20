@@ -22,8 +22,8 @@ cover:
   alt:
     en: "EARL's window on its Synth page: three oscillators, the noise and the sub-oscillator at the top, the filters and the voice's distortions under them, the envelopes and LFOs at the bottom"
     es: "La ventana de EARL en su página Synth: tres osciladores, el ruido y el suboscilador arriba, los filtros y las distorsiones de la voz debajo, y las envolventes y los LFO abajo"
-# Its window with its third oscillator showing its unison: by day on the home page, by night in its node's pane on the
-# synths' page
+# Its window with its third oscillator showing its unison: by day on the home page and in its node's pane on the synths'
+# page, and by night
 home:
   day:
     image: ./screenshots/home-day.png

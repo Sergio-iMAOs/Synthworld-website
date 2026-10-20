@@ -18,7 +18,7 @@ import Planet from '@/components/Planet.astro';
 import SynthGet from '@/components/SynthGet.astro';
 import { langOf, pathIn, textsOf } from '@/i18n';
 import { site } from '@/site';
-import { nightAndDayOf, unchartedWorlds, type Synth } from '@/synths';
+import { unchartedWorlds, type Synth } from '@/synths';
 import logo from '@/assets/synthworld/logo.png';
 
 interface Props {
@@ -63,9 +63,10 @@ const beamTo = (place: Point) => {
   };
 };
 
-// Each synth's pane shows its window by night, as the home page does by day: its own for them, or its SynthWorld's
-// own dark skin's, or else its cover
-const pictureOf = (synth: Synth) => synth.data.home?.night ?? nightAndDayOf(synth)[0]?.night ?? synth.data.cover;
+// Each synth's pane shows its window by day, as the home page does: its own for them, or its SW Light skin's, or else
+// its cover
+const pictureOf = (synth: Synth) =>
+  synth.data.home?.day ?? synth.data.skins.find(({ name }) => name === 'SW Light') ?? synth.data.cover;
 const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted-${index + 1}`, place: places[synths.length + index] }));
 ---
 

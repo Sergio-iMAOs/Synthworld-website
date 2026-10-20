@@ -4,10 +4,6 @@ Optimize performance
 
 ## EARL
 
-EARL page "Its skins" section: The image should show EARL main image (oscillator 3 in unison, saturator ouptut at 0dB) but with oscillator 3 deactivated
-
-Synths page: Change EARL node synth image for EARL main image (the synth page with Synthworld White skin)
-
 Add EARL's user manual?
 
 Music samples section

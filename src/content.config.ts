@@ -57,8 +57,8 @@ const synths = defineCollection({
       /** Its picture at the top of its page and in the lists: its whole window, a path from its folder. */
       cover: z.object({ image: image(), alt: inEveryLanguage }).optional(),
       /**
-       * Its window as the site shows it first, paths from its folder: by day (in SW Light) on the home page, by night
-       * (in SW Default) in its node's pane on the synths' page; without it, its pictures in those skins.
+       * Its window as the site shows it first, paths from its folder: by day (in SW Light) on the home page and in its
+       * node's pane on the synths' page, by night (in SW Default); without it, its pictures in those skins.
        */
       home: z
         .object({ day: z.object({ image: image(), alt: inEveryLanguage }), night: z.object({ image: image(), alt: inEveryLanguage }) })

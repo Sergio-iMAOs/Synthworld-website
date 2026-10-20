@@ -165,6 +165,6 @@ Play beyond twelve notes: scales of any number of notes, from EARL's own tunings
 
 ## Its skins
 
-Choose how it looks, and the whole window changes at once: SynthWorld's own skin, dark or light; **Deep Sea**, in navy blues; **Riso**, a riso-printed poster with shapes of its own, its knobs inked suns and its displays windows of straw paper; and on Linux, **Tux**. EARL asks which one you want the first time you open it, and you can change it in its settings whenever you like. The sound never changes.
+Choose how it looks, and the whole window changes at once: SynthWorld's own skin, dark or light; **Deep Sea**, in navy blues; **Riso**, a riso-printed poster with shapes of its own, its knobs inked suns and its displays windows of straw paper; **Starship**, a starship's cockpit, its screens dark glass lit in cyan; and on Linux, **Tux**. EARL asks which one you want the first time you open it, and you can change it in its settings whenever you like. The sound never changes.
 
 <!-- skins -->

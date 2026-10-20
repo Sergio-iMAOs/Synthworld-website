@@ -165,6 +165,6 @@ Toca más allá de las doce notas: escalas de cualquier número de notas, de las
 
 ## Sus skins
 
-Elige su aspecto y toda la ventana cambia a la vez: la skin de SynthWorld, oscura o clara; **Deep Sea**, en azules marinos; **Riso**, un póster de risografía con formas propias, sus perillas soles entintados y sus pantallas ventanas de papel de paja; y en Linux, **Tux**. EARL te pregunta cuál quieres la primera vez que lo abres, y puedes cambiarla en sus ajustes cuando quieras. El sonido nunca cambia.
+Elige su aspecto y toda la ventana cambia a la vez: la skin de SynthWorld, oscura o clara; **Deep Sea**, en azules marinos; **Riso**, un póster de risografía con formas propias, sus perillas soles entintados y sus pantallas ventanas de papel de paja; **Starship**, la cabina de una nave, sus pantallas de cristal oscuro iluminadas en cian; y en Linux, **Tux**. EARL te pregunta cuál quieres la primera vez que lo abres, y puedes cambiarla en sus ajustes cuando quieras. El sonido nunca cambia.
 
 <!-- skins -->
