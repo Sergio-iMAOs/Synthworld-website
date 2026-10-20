@@ -3,10 +3,14 @@ import type { MarkdownHeading } from 'astro';
 import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
 import Base from '@/layouts/Base.astro';
+import Planet from '@/components/Planet.astro';
+import Space from '@/components/Space.astro';
+import SpaceObject, { spaceObjectKinds, type SpaceObjectKind } from '@/components/SpaceObject.astro';
 import SynthDayNight from '@/components/SynthDayNight.astro';
 import SynthDemos from '@/components/SynthDemos.astro';
 import SynthGet from '@/components/SynthGet.astro';
 import SynthScreenshot from '@/components/SynthScreenshot.astro';
+import VelvetNoise from '@/components/VelvetNoise.astro';
 import { langOf, langPaths, textsOf } from '@/i18n';
 import { getSynths, nightAndDayOf } from '@/synths';
 
@@ -17,16 +21,50 @@ export async function getStaticPaths() {
 
 const lang = langOf(Astro.url);
 const t = textsOf(lang).synths;
-const synth = (await getSynths(lang)).find(({ id }) => id === Astro.params.id)!;
+const synths = await getSynths(lang);
+const synth = synths.find(({ id }) => id === Astro.params.id)!;
 const { data, text } = synth;
 const pairs = nightAndDayOf(synth);
+const tags = [`v${data.version}`, data.paid ? data.paid.price : t.free, ...data.formats, ...data.platforms];
+// Its window as it comes out of its planet: by day, as on the home page, in SW Light like its page's other pictures; its
+// own for it, or its SynthWorld's own light skin's, or else its cover
+const picture = data.home?.day ?? pairs[0]?.day ?? data.cover;
 
-// The text, cut where it places a screenshot (<!-- screenshot: <id> -->) or its window by day and by night in its skins
-// (<!-- skins -->): its HTML and what it places there, in turn
+// The text, cut into its stops: one at each of its headings, or at the block (a <div>, that isn't in another) its heading
+// is in, with the thing in space the text places just before it; a block without a heading (a gallery) is in the stop
+// it's in. Each stop, cut where the text places something: a
+// screenshot (<!-- screenshot: <id> -->), a thing in space (<!-- object: <kind> -->, SpaceObject), velvet noise's pulses
+// (<!-- velvet-noise -->, VelvetNoise) or its window by day and by night in its skins (<!-- skins -->): its HTML and
+// what it places there, in turn
 const html = text.rendered?.html;
 if (html === undefined) throw new Error(`The text "${text.id}" isn't rendered`);
-const parts = html.split(/<!--\s*(skins|screenshot:\s*[\w-]+)\s*-->/);
-const placed = parts.filter((_, index) => index % 2 === 1);
+const starts = [0];
+let depth = 0;
+// Where the block being read starts, and where the last stop did, before its thing in space
+let block = 0;
+let last = 0;
+for (const { 0: tag, index } of html.matchAll(/<div\b|<\/div>|<h2\b/g)) {
+  if (tag === '</div>') {
+    depth--;
+    continue;
+  }
+  if (tag === '<div') {
+    if (depth++ === 0) block = index;
+    continue;
+  }
+  const start = depth === 0 ? index : block;
+  if (start > last) {
+    const object = html.slice(0, start).match(/<!--\s*object:\s*[\w-]+\s*-->\s*$/);
+    starts.push(start - (object?.[0].length ?? 0));
+    last = start;
+  }
+}
+const stops = starts
+  .map((start, index) => html.slice(start, starts[index + 1]))
+  .filter((stop) => stop.trim())
+  .map((stop) => stop.split(/<!--\s*(skins|velvet-noise|(?:screenshot|object):\s*[\w-]+)\s*-->/));
+const placed = stops.flatMap((parts) => parts.filter((_, index) => index % 2 === 1));
+
 /** The id of the screenshot a place in the text is for, if it's for one. */
 const screenshotIdIn = (place: string) => place.match(/^screenshot:\s*([\w-]+)$/)?.[1];
 const screenshotOf = (id: string) => {
@@ -34,180 +72,467 @@ const screenshotOf = (id: string) => {
   if (!screenshot) throw new Error(`The text "${text.id}" places a screenshot "${id}" that synth.yaml doesn't have`);
   return screenshot;
 };
+/** The kind of thing in space a place in the text is for, if it's for one. */
+const objectIn = (place: string) => {
+  const kind = place.match(/^object:\s*([\w-]+)$/)?.[1];
+  if (kind !== undefined && !spaceObjectKinds.includes(kind as SpaceObjectKind)) throw new Error(`The text "${text.id}" places a thing in space "${kind}" that SpaceObject doesn't draw`);
+  return kind as SpaceObjectKind | undefined;
+};
 const unplaced = data.screenshots.filter(({ id }) => !placed.some((place) => screenshotIdIn(place) === id));
 if (placed.includes('skins') && pairs.length === 0) throw new Error(`The text "${text.id}" places the skins, but synth.yaml has no pairs of them`);
+const skinsUnplaced = pairs.length > 0 && !placed.includes('skins');
 
-// Its sections, for the menu beside them: the text's headings of the second level (a spotlight's too), without a final stop
+// Its sections, for the route beside them: the text's headings of the second level (a spotlight's too), without a final stop
 const sections = ((text.rendered?.metadata?.headings ?? []) as MarkdownHeading[])
   .filter(({ depth }) => depth === 2)
   .map(({ slug, text }) => ({ slug, text: text.replace(/\.$/, '') }));
+
+/** Numbers between 0 and 1 that look random, the same each time: so many for each index. */
+const wobble = (index: number, salt: number) => {
+  const wave = Math.sin(index * 127.1 + salt * 311.7) * 43758.5453;
+  return wave - Math.floor(wave);
+};
+
+// The streaks of stars rushing past as the visitor arrives at its planet, round it (its warp's units, its half-side
+// 500): each at an angle, from so far out, so long, so thick, in the light or the accent
+const streaks = Array.from({ length: 110 }, (_, index) => {
+  const angle = wobble(index, 1) * 2 * Math.PI;
+  const from = 70 + wobble(index, 2) * 360;
+  const to = from + 20 + wobble(index, 3) * (from * 0.35);
+  const [cos, sin] = [Math.cos(angle), Math.sin(angle)];
+  return {
+    d: `M${(cos * from).toFixed(1)} ${(sin * from).toFixed(1)}L${(cos * to).toFixed(1)} ${(sin * to).toFixed(1)}`,
+    width: (0.5 + wobble(index, 4) * 1.1).toFixed(2),
+    accent: wobble(index, 5) < 0.3,
+  };
+});
 ---
 
 <Base title={data.name} description={text.data.summary}>
-  <header class={data.logo ? 'hero sunrise' : 'hero'}>
-    <div class="wrap">
-      <h1>{data.logo ? <Image class="logo" src={data.logo} alt={data.name} widths={[600, 1200, 2400]} sizes="(min-width: 68rem) 64rem, 100vw" loading="eager" /> : data.name}</h1>
-    </div>
-    {data.logo && <div class="horizon" />}
-  </header>
+  <Space />
 
-  <section class="wrap intro">
-    <div class="summary">
-      <p class="lead">{text.data.summary}</p>
-      <SynthGet synth={synth} />
-    </div>
-    <ul class="tags">
-      <li>v{data.version}</li>
-      <li>{data.paid ? data.paid.price : t.free}</li>
-      {data.formats.map((format) => <li>{format}</li>)}
-      {data.platforms.map((platform) => <li>{platform}</li>)}
-    </ul>
-    {
-      data.cover && (
-        <Image
-          class="window cover"
-          src={data.cover.image}
-          alt={data.cover.alt[lang]}
-          widths={[800, 1600, 2400]}
-          sizes="(min-width: 68rem) 64rem, 100vw"
-          loading="eager"
-        />
-      )
-    }
-  </section>
+  <div class="synth" data-synth>
+    {/* Its layout for the script from the start, before the script has loaded: without the script, there's none */}
+    <script is:inline>
+      document.currentScript.parentElement.classList.add('enhanced');
+    </script>
 
-  <div class="wrap body">
-    <div class="main">
-      <div class="prose">
-        {parts.map((part, index) =>
-          index % 2 === 0 ? (
-            <Fragment set:html={part} />
-          ) : part === 'skins' ? (
-            <SynthDayNight pairs={pairs} />
-          ) : (
-            <SynthScreenshot screenshot={screenshotOf(screenshotIdIn(part)!)} />
-          ),
-        )}
-        {unplaced.map((screenshot) => <SynthScreenshot screenshot={screenshot} />)}
-        {pairs.length > 0 && !placed.includes('skins') && <SynthDayNight pairs={pairs} />}
+    <section class="stage" data-stage>
+      <div class="frame" data-frame>
+        <div class="hero">
+          <p class="kicker fades">{synths[0] === synth ? t.first : t.another}</p>
+
+          <div class="slot" data-slot>
+            {/* Its planet in two layers: its inside and its ring behind its window, its chunks in front of it */}
+            <div class="layer back">
+              <div class="warp" aria-hidden="true">
+                <svg viewBox="-500 -500 1000 1000">
+                  {streaks.map(({ d, width, accent }) => <path class:list={{ accent }} d={d} stroke-width={width} />)}
+                </svg>
+              </div>
+              <div class="halo" aria-hidden="true"></div>
+              <div class="rays" aria-hidden="true"></div>
+              <div class="flash" aria-hidden="true"></div>
+              <div class="arrive">
+                <div class="float">
+                  <Planet class="globe inside" world={data.planet} />
+                </div>
+              </div>
+              <div class="bloom" aria-hidden="true"></div>
+            </div>
+            <div class="layer front">
+              <div class="arrive">
+                <div class="float">
+                  <Planet class="globe shell" world={data.planet} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <h1 class="title fades">
+            {
+              data.logo ? (
+                <Image class="logo" src={data.logo} alt={data.name} widths={[600, 1200, 2400]} sizes="(min-width: 36rem) 30rem, 100vw" loading="eager" />
+              ) : (
+                data.name
+              )
+            }
+          </h1>
+          <div class="horizon fades" aria-hidden="true"></div>
+
+          <div class="below fades">
+            <p class="lead">{text.data.summary}</p>
+            <SynthGet synth={synth} />
+            <ul class="tags">
+              {tags.map((tag) => <li>{tag}</li>)}
+            </ul>
+          </div>
+        </div>
+
+        {
+          picture && (
+            <figure class="emerge" data-emerge>
+              <span class="sight">
+                <Image src={picture.image} alt={picture.alt[lang]} widths={[800, 1200, 1600, 2400]} sizes="(min-width: 68rem) 64rem, 100vw" loading="eager" />
+              </span>
+            </figure>
+          )
+        }
       </div>
+    </section>
 
+    <article class="text">
+      {
+        stops.map((parts) => (
+          <section class="stop">
+            {parts.map((part, index) => {
+              if (index % 2 === 0) return <Fragment set:html={part} />;
+              const kind = objectIn(part);
+              if (kind) return <SpaceObject kind={kind} />;
+              if (part === 'skins') return <SynthDayNight pairs={pairs} />;
+              if (part === 'velvet-noise') return <VelvetNoise />;
+              return <SynthScreenshot screenshot={screenshotOf(screenshotIdIn(part)!)} />;
+            })}
+          </section>
+        ))
+      }
+      {
+        (unplaced.length > 0 || skinsUnplaced) && (
+          <section class="stop">
+            {unplaced.map((screenshot) => (
+              <SynthScreenshot screenshot={screenshot} />
+            ))}
+            {skinsUnplaced && <SynthDayNight pairs={pairs} />}
+          </section>
+        )
+      }
       <SynthDemos synth={synth} />
-    </div>
+    </article>
 
     {
       sections.length > 1 && (
-        <nav class="sections" aria-label={t.sections}>
-          <p>{t.sections}</p>
+        <nav class="route" aria-label={t.sections} data-route>
           <ol>
             {sections.map(({ slug, text }) => (
               <li>
-                <a href={`#${slug}`}>{text}</a>
+                <a href={`#${slug}`} data-to={slug}>
+                  <span class="label">{text}</span>
+                </a>
               </li>
             ))}
           </ol>
         </nav>
       )
     }
+
+    <section class="launch" aria-labelledby="get-it">
+      <div class="rise" data-seen>
+        {data.logo && <Image class="logo" src={data.logo} alt="" widths={[300, 600, 1200]} sizes="30rem" />}
+      </div>
+      <div class="horizon" aria-hidden="true"></div>
+      <div class="ground">
+        <h2 id="get-it">{t.getIt(data.name)}</h2>
+        <SynthGet synth={synth} />
+        <ul class="tags">
+          {tags.map((tag) => <li>{tag}</li>)}
+        </ul>
+      </div>
+    </section>
   </div>
 </Base>
 
+<script>
+  /*
+   * As the page scrolls: its planet opens and its window comes out of it (the stage's --fade, --centre, --burst,
+   * --settle, --flare and --emerge, 0 to 1, by how far through it the page is); what has `data-seen` is given how far into view it is
+   * (--seen: from its top at the window's bottom to its middle) and how far through it the page is (--through); the
+   * route lights the section the visitor is in. At most once a frame, and none of it for a visitor who asked for less
+   * motion, but the route.
+   */
+  const lessMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
+  const along = (x: number, from: number, to: number) => clamp01((x - from) / (to - from));
+  const smooth = (x: number) => x * x * (3 - 2 * x);
+  const easeOut = (x: number) => 1 - (1 - x) ** 3;
+  /** Numbers between 0 and 1 that look random, the same each time: so many for each index. */
+  const wobble = (index: number, salt: number) => {
+    const wave = Math.sin(index * 127.1 + salt * 311.7) * 43758.5453;
+    return wave - Math.floor(wave);
+  };
+
+  /**
+   * Where a few of its planet's chunks float round its window once it's out, a little out from its edges (where, of its
+   * width and height, as round a pane on the synths' page), each the chunk going most that way, turned so much at most
+   * (degrees); the others fly so far away (of the frame's diagonal, at least), turned so much at most, and go
+   */
+  const FLOATS = [
+    [-0.05, 0.12],
+    [1.05, 0.22],
+    [-0.04, 0.7],
+    [1.04, 0.8],
+    [0.28, 1.05],
+    [0.78, -0.06],
+  ];
+  const FLOAT_TURN = 14;
+  /** How far out from its window's edge each floats, at least (the planet's units: its side is 187.5) */
+  const FLOAT_OUT = 24;
+  const FLY = 0.7;
+  const FLY_TURN = 60;
+
+  const page = document.querySelector<HTMLElement>('[data-synth]');
+  if (page) {
+    const stage = page.querySelector<HTMLElement>('[data-stage]')!;
+    const frame = stage.querySelector<HTMLElement>('[data-frame]')!;
+    const slot = stage.querySelector<HTMLElement>('[data-slot]')!;
+    const emerge = stage.querySelector<HTMLElement>('[data-emerge]');
+    const shell = stage.querySelector<SVGSVGElement>('svg.shell');
+    const chunks = shell ? [...shell.querySelectorAll<SVGGElement>('[data-chunk]')] : [];
+
+    // Where its planet goes as it opens, and where its chunks go: to its window's middle (in the view under the site's
+    // header, which a narrow window makes taller), and round it
+    const header = document.querySelector<HTMLElement>('body > header');
+    const place = () => {
+      if (header) page.style.setProperty('--header', `${header.offsetHeight}px`);
+      if (!emerge || !shell) return;
+      const [frameBox, slotBox] = [frame.getBoundingClientRect(), slot.getBoundingClientRect()];
+      // Its window's top, before it's moved up by half its height: its middle
+      const middle = emerge.offsetTop;
+      stage.style.setProperty('--to-centre', `${(middle - (slotBox.top - frameBox.top + slotBox.height / 2)).toFixed(1)}px`);
+
+      // In the planet's units, as big as it grows as it opens
+      const grow = 1 + Number.parseFloat(getComputedStyle(stage).getPropertyValue('--grow') || '0');
+      const unit = (slot.clientWidth / shell.viewBox.baseVal.width) * grow;
+      const [width, height] = [emerge.offsetWidth / unit, emerge.offsetHeight / unit];
+      const far = Math.hypot(frame.clientWidth, frame.clientHeight) / unit;
+
+      const free = chunks.map((chunk, index) => ({ chunk, index, x: Number(chunk.dataset.x), y: Number(chunk.dataset.y) }));
+      const send = ({ chunk }: (typeof free)[number], x: number, y: number, turn: number, stay: boolean) => {
+        chunk.style.setProperty('--to-x', x.toFixed(1));
+        chunk.style.setProperty('--to-y', y.toFixed(1));
+        chunk.style.setProperty('--turn', turn.toFixed(1));
+        chunk.style.setProperty('--stay', stay ? '1' : '0');
+      };
+      const away = (angle: number, { x, y }: { x: number; y: number }) => Math.abs(Math.atan2(Math.sin(Math.atan2(y, x) - angle), Math.cos(Math.atan2(y, x) - angle)));
+      const out = (along: number, size: number) => (along - 0.5) * size + Math.sign(Math.max(0, along - 1) - Math.max(0, -along)) * FLOAT_OUT;
+      for (const [across, down] of FLOATS) {
+        if (free.length === 0) break;
+        const [x, y] = [out(across, width), out(down, height)];
+        const chosen = free.reduce((best, chunk) => (away(Math.atan2(y, x), chunk) < away(Math.atan2(y, x), best) ? chunk : best));
+        free.splice(free.indexOf(chosen), 1);
+        send(chosen, x - chosen.x, y - chosen.y, (wobble(chosen.index, 1) - 0.5) * 2 * FLOAT_TURN, true);
+      }
+      for (const chunk of free) {
+        const length = Math.hypot(chunk.x, chunk.y) || 1;
+        const distance = far * FLY * (0.8 + wobble(chunk.index, 2) * 0.6);
+        send(chunk, (chunk.x / length) * distance, (chunk.y / length) * distance, (wobble(chunk.index, 3) - 0.5) * 2 * FLY_TURN, false);
+      }
+    };
+
+    // What's given how far into view it is, while it's near enough to be
+    const seen = [...page.querySelectorAll<HTMLElement | SVGElement>('[data-seen]')];
+    const near = new Set<Element>();
+    const watcher = new IntersectionObserver(
+      (entries) => {
+        for (const { target, isIntersecting } of entries) {
+          if (isIntersecting) near.add(target);
+          else near.delete(target);
+        }
+        schedule();
+      },
+      { rootMargin: '20% 0px' },
+    );
+    for (const element of seen) watcher.observe(element);
+
+    // The route: the sections' headings, and their links
+    const route = page.querySelector<HTMLElement>('[data-route]');
+    const links = route ? [...route.querySelectorAll<HTMLAnchorElement>('[data-to]')] : [];
+    const headings = links.map((link) => document.getElementById(link.dataset.to!));
+
+    let frameRequest = 0;
+    const update = () => {
+      frameRequest = 0;
+      const height = innerHeight;
+
+      // The route, past the stage: the section whose heading is the last above the window's upper part, and how far
+      // to the next the page is
+      if (route) {
+        const tops = headings.map((heading) => heading?.getBoundingClientRect().top ?? Infinity);
+        const line = height * 0.4;
+        const current = tops.findLastIndex((top) => top <= line);
+        const next = tops[current + 1];
+        const between = current >= 0 && next !== undefined ? clamp01((line - tops[current]) / (next - tops[current])) : 0;
+        route.classList.toggle('shown', stage.getBoundingClientRect().bottom < height * 0.5);
+        route.style.setProperty('--route', String(links.length > 1 ? clamp01((Math.max(current, 0) + between) / (links.length - 1)) : 0));
+        links.forEach((link, index) => (index === current ? link.setAttribute('aria-current', 'location') : link.removeAttribute('aria-current')));
+      }
+
+      if (lessMotion.matches) return;
+
+      // The stage: how far through it the page is, and from that each part of the opening
+      const travel = stage.offsetHeight - frame.offsetHeight;
+      const through = travel > 0 ? clamp01(-stage.getBoundingClientRect().top / travel) : 0;
+      const parts = {
+        fade: smooth(along(through, 0, 0.2)),
+        centre: smooth(along(through, 0.02, 0.32)),
+        burst: easeOut(along(through, 0.2, 0.72)),
+        settle: smooth(along(through, 0.22, 0.88)),
+        flare: Math.sin(Math.PI * along(through, 0.14, 0.7)),
+        emerge: smooth(along(through, 0.3, 0.88)),
+      };
+      for (const [name, value] of Object.entries(parts)) stage.style.setProperty(`--${name}`, value.toFixed(4));
+      stage.classList.toggle('faded', parts.fade >= 1);
+      stage.classList.toggle('opened', parts.emerge >= 1);
+
+      // What's near: all read, then all given
+      const boxes = [...near].map((element) => [element, element.getBoundingClientRect()] as const);
+      for (const [element, { top, height: tall }] of boxes) {
+        (element as HTMLElement).style.setProperty('--seen', clamp01((height - top) / (height * 0.5)).toFixed(3));
+        (element as HTMLElement).style.setProperty('--through', clamp01((height - top) / (height + tall)).toFixed(3));
+      }
+    };
+    const schedule = () => (frameRequest ||= requestAnimationFrame(update));
+
+    // For a visitor who asks for less motion, everything as it is without the script
+    const still = () => {
+      for (const name of ['--fade', '--centre', '--burst', '--settle', '--flare', '--emerge']) stage.style.removeProperty(name);
+      stage.classList.remove('faded', 'opened');
+      for (const element of seen) {
+        (element as HTMLElement).style.removeProperty('--seen');
+        (element as HTMLElement).style.removeProperty('--through');
+      }
+    };
+
+    addEventListener('scroll', schedule, { passive: true });
+    addEventListener('resize', () => {
+      place();
+      schedule();
+    });
+    lessMotion.addEventListener('change', () => {
+      if (lessMotion.matches) still();
+      place();
+      schedule();
+    });
+    place();
+    update();
+  }
+</script>
+
 <style>
-  /* A click in the menu of sections scrolls to its section, unless the visitor asked for less motion */
+  /* The page's things that are wider than it (velvet noise's band) don't make it scroll sideways */
+  .synth {
+    --header: 4rem;
+    overflow-x: clip;
+  }
+
+  /* A click on the route scrolls to its section, unless the visitor asked for less motion */
   @media (prefers-reduced-motion: no-preference) {
     :global(html) {
       scroll-behavior: smooth;
     }
   }
 
-  /* The text and, where there's room, the menu of its sections beside it, which stays in view while the page scrolls */
-  .sections {
-    display: none;
+  /*
+   * The stage: the synth's planet in the sky, ringed with its velvet noise (Planet), its logo rising over a horizon
+   * that crosses the page, as on the home page, and under it what it is and where to get it. Then its window, which,
+   * with the script, comes out of its planet as the page scrolls (below).
+   */
+  .frame {
+    position: relative;
   }
 
-  @media (min-width: 64rem) {
-    .body {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 11rem;
-      gap: 2.5rem;
-    }
-
-    .sections {
-      display: block;
-      position: sticky;
-      top: 2rem;
-      align-self: start;
-      max-height: calc(100vh - 4rem);
-      overflow-y: auto;
-      padding-left: 1.25rem;
-      border-left: 1px solid color-mix(in srgb, var(--surface) 35%, transparent);
-    }
+  .hero {
+    --planet: clamp(11rem, min(35svh, 64vw), 23rem);
+    --sun: clamp(2.2rem, min(7.5svh, (100vw - 2 * var(--gutter)) / 6.04), 5rem);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: clamp(1.25rem, 3svh, 2.5rem) 0 clamp(2rem, 5svh, 3rem);
+    text-align: center;
   }
 
-  .sections p {
-    margin-bottom: 0.75rem;
+  .kicker {
+    margin-bottom: clamp(0.25rem, 1.5svh, 1.25rem);
     color: var(--surface);
     font-family: var(--font-display);
-    font-size: 0.8rem;
-    letter-spacing: 0.15em;
+    font-size: 0.85rem;
+    letter-spacing: 0.25em;
     text-transform: uppercase;
   }
 
-  .sections ol {
-    margin: 0;
-    padding: 0;
-    list-style: none;
+  /* Its planet's place: its layers over it, and its glows round it */
+  .slot {
+    position: relative;
+    width: var(--planet);
+    aspect-ratio: 1;
+    margin-bottom: clamp(0.5rem, 2svh, 1.75rem);
   }
 
-  .sections li + li {
-    margin-top: 0.5rem;
+  .layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
   }
 
-  .sections a {
-    color: var(--foreground);
-    font-size: 0.95rem;
-    text-decoration: none;
+  .back {
+    z-index: 1;
   }
 
-  .sections a:hover {
-    color: var(--highlight);
+  .front {
+    z-index: 3;
   }
 
-  /* A section scrolled to stops a little under the window's top */
-  .prose :global(h2) {
-    scroll-margin-top: 2rem;
-  }
-
-  /* A picture of the synth's window (here and in SynthScreenshot): framed like a window on the page's colours */
-  :global(.window) {
-    display: block;
+  /* Over its glows */
+  .arrive,
+  .float {
+    position: relative;
     width: 100%;
-    height: auto;
-    border: 1px solid var(--recess);
-    border-radius: var(--radius);
-    box-shadow: 0 1.5rem 3rem -1.5rem rgb(0 0 0 / 0.6);
+    height: 100%;
   }
 
-  /*
-   * Its logo is a sunrise as wide as the page: the sun and the name (the image, the sun's radius high) stand on a
-   * horizon that crosses the whole page, a tenth of the radius under them and a tenth thick, as in the logo's mark.
-   * The sun's radius: as big as fits, the image being 6.04 radii wide.
-   */
-  .hero {
-    --sun: min(10.5rem, (100vw - 2 * var(--gutter)) / 6.04);
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
-    padding-top: clamp(2.5rem, 8vw, 6rem);
+  .layer :global(.globe) {
+    width: 100%;
+    height: 100%;
   }
 
-  .hero h1 {
+  /* Each layer of the planet only its own: behind, its inside and its ring's far half; in front, its chunks and the near half */
+  .layer :global(.inside :is(.chunk, .pulse:not(.far))),
+  .layer :global(.shell :is(.core, .pulse.far)) {
+    display: none;
+  }
+
+  /* Its light: violet round it, yellow where the sun is */
+  .halo {
+    position: absolute;
+    inset: -45%;
+    background:
+      radial-gradient(22% 22% at 36% 34%, color-mix(in srgb, var(--highlight) 12%, transparent), transparent),
+      radial-gradient(closest-side, color-mix(in srgb, var(--accent) 34%, transparent), transparent);
+  }
+
+  .rays,
+  .bloom,
+  .flash,
+  .warp {
+    display: none;
+  }
+
+  /* Its name: its logo, the sun on the horizon and the name beside it, the sky lit behind the sun */
+  .title {
     position: relative;
     margin: 0;
+    clip-path: inset(-100vmax -100vmax 0 -100vmax);
   }
 
-  .hero:not(.sunrise) h1 {
-    padding-bottom: 1rem;
+  .title::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    left: calc(var(--sun) * -2.5);
+    bottom: 0;
+    width: calc(var(--sun) * 7);
+    height: calc(var(--sun) * 2.6);
+    background: radial-gradient(50% 100% at 50% 100%, color-mix(in srgb, var(--accent) 40%, transparent), transparent);
+    pointer-events: none;
   }
 
   .logo {
@@ -216,192 +541,898 @@ const sections = ((text.rendered?.metadata?.headings ?? []) as MarkdownHeading[]
     height: var(--sun);
   }
 
-  /* The sky lit behind the sun, rising from the horizon */
-  .sunrise h1::before {
+  /* The horizon: across the whole page, a tenth of the sun's radius under it and as thick; the night under it */
+  .horizon {
+    position: relative;
+    align-self: stretch;
+    height: calc(var(--sun) * 0.1);
+    margin-top: calc(var(--sun) * 0.1);
+  }
+
+  .horizon::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--foreground);
+    box-shadow: 0 0 calc(var(--sun) * 0.3) color-mix(in srgb, var(--accent) 60%, transparent);
+  }
+
+  .horizon::after {
     content: '';
     position: absolute;
     z-index: -1;
-    left: calc(var(--sun) * -2.5);
-    bottom: calc(var(--sun) * -0.2);
-    width: calc(var(--sun) * 7);
-    height: calc(var(--sun) * 2.6);
-    background: radial-gradient(50% 100% at 50% 100%, color-mix(in srgb, var(--accent) 35%, transparent), transparent);
+    top: 100%;
+    left: 0;
+    right: 0;
+    height: 18rem;
+    background: linear-gradient(rgb(0 0 0 / 0.75), transparent);
+    pointer-events: none;
   }
 
-  .horizon {
-    height: calc(var(--sun) * 0.1);
-    margin-top: calc(var(--sun) * 0.1);
-    background: var(--foreground);
-  }
-
-  .intro {
-    padding-top: clamp(1.5rem, 4vw, 2.5rem);
-  }
-
-  /* What it is and where to get it, side by side */
-  .summary {
+  .below {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    gap: 1.5rem 3rem;
-    margin-bottom: 1.25rem;
+    gap: clamp(0.75rem, 2svh, 1.4rem);
+    padding: clamp(1rem, 3svh, 2rem) var(--gutter) 0;
   }
 
-  .summary .lead {
-    flex: 1 1 26rem;
+  .below .lead {
+    max-width: 38rem;
+    margin: 0;
+    font-size: clamp(0.95rem, min(2.2svh, 4vw), 1.2rem);
+  }
+
+  .tags {
+    justify-content: center;
     margin: 0;
   }
 
-  .cover {
-    margin-block: 2rem clamp(2.5rem, 7vw, 5rem);
+  .synth :global(.get) {
+    justify-content: center;
   }
 
-  /* The text is a column; its pictures and what it puts in a spotlight are wider */
-  .prose {
-    margin-bottom: clamp(2.5rem, 7vw, 5rem);
+  /*
+   * Its window: in the corners of a sight, shining in space. Without the script, or for a visitor who asked for less
+   * motion, it's under the rest
+   */
+  .emerge {
+    --sight: color-mix(in srgb, var(--accent) 50%, transparent);
+    --arm: 1.75rem;
+    --line: 1.5px;
+    --gap: clamp(0.5rem, 1.5vw, 0.9rem);
+    position: relative;
+    width: min(64rem, 100% - 2 * var(--gutter));
+    margin: 0 auto clamp(2rem, 6vw, 4rem);
+    padding: var(--gap);
   }
 
-  .prose :global(:is(p, ul, h2)) {
+  .emerge::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(var(--sight) 0 0) top left / var(--arm) var(--line),
+      linear-gradient(var(--sight) 0 0) top left / var(--line) var(--arm),
+      linear-gradient(var(--sight) 0 0) top right / var(--arm) var(--line),
+      linear-gradient(var(--sight) 0 0) top right / var(--line) var(--arm),
+      linear-gradient(var(--sight) 0 0) bottom left / var(--arm) var(--line),
+      linear-gradient(var(--sight) 0 0) bottom left / var(--line) var(--arm),
+      linear-gradient(var(--sight) 0 0) bottom right / var(--arm) var(--line),
+      linear-gradient(var(--sight) 0 0) bottom right / var(--line) var(--arm);
+    background-repeat: no-repeat;
+    transition: filter 0.6s;
+    pointer-events: none;
+  }
+
+  /* Its glow: violet light round it, yellow where the light falls from */
+  .emerge::after {
+    content: '';
+    position: absolute;
+    inset: -18% -12%;
+    z-index: -1;
+    background:
+      radial-gradient(30% 34% at 30% 26%, color-mix(in srgb, var(--highlight) 12%, transparent), transparent),
+      radial-gradient(closest-side, color-mix(in srgb, var(--accent) 30%, transparent), transparent);
+    pointer-events: none;
+  }
+
+  .sight {
+    position: relative;
+    display: block;
+  }
+
+  /* The light falling on its glass from the top left */
+  .sight::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--foreground) 16%, transparent), transparent 35%);
+    pointer-events: none;
+  }
+
+  .sight img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid color-mix(in srgb, var(--surface) 25%, transparent);
+    border-radius: var(--radius);
+    box-shadow:
+      0 2rem 4rem -2rem rgb(0 0 0 / 0.8),
+      0 0 5rem -1rem color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+
+  /*
+   * With the script, unless the visitor asked for less motion: the stage stays in view while the page scrolls through
+   * it (--travel), and as it does, what's under the planet fades away (--fade), the planet comes to the middle of the
+   * view and grows (--centre, by --grow), opens along its cracks (--burst: its chunks flying apart as the script sends
+   * them, its ring of pulses spreading out and fading; a few chunks settle round its window, --settle), its light
+   * flaring (--flare), and its window comes out of it (--emerge), turning to face the visitor, its sight lighting up
+   * once it's out
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    /* Under the site's header from the top of the page, so that the stage is the whole view all along */
+    .enhanced .stage {
+      --travel: 110svh;
+      --grow: 0.3;
+      height: calc(100svh + var(--travel));
+      margin-top: calc(-1 * var(--header));
+    }
+
+    .enhanced .frame {
+      position: sticky;
+      top: 0;
+      height: 100svh;
+      overflow: clip;
+    }
+
+    .enhanced .hero {
+      justify-content: center;
+      height: 100%;
+      padding-top: var(--header);
+    }
+
+    .enhanced .fades {
+      opacity: calc(1 - var(--fade, 0));
+      translate: 0 calc(var(--fade, 0) * -2.5rem);
+    }
+
+    .enhanced .faded .fades {
+      visibility: hidden;
+    }
+
+    /* Where the view is small, what it's made for is left for the end of the page, so that the rest fits */
+    @media (max-width: 36rem), (max-height: 42rem) {
+      .enhanced .below .tags {
+        display: none;
+      }
+    }
+
+    .enhanced .layer {
+      translate: 0 calc(var(--centre, 0) * var(--to-centre, 0px));
+      scale: calc(1 + var(--centre, 0) * var(--grow));
+    }
+
+    /* Of its chunks, the ones that fly away go with the burst, and the ones that stay settle with its window (--settle) */
+    .enhanced .layer :global(.shell .chunk) {
+      --by: calc(var(--burst, 0) * (1 - var(--stay, 0)) + var(--settle, 0) * var(--stay, 0));
+      translate: calc(var(--to-x, 0) * var(--by) * 1px) calc(var(--to-y, 0) * var(--by) * 1px);
+      rotate: calc(var(--turn, 0) * var(--by) * 1deg);
+      opacity: calc(1 - (1 - var(--stay, 0)) * clamp(0, var(--burst, 0) * 1.8 - 0.8, 1));
+    }
+
+    .enhanced .layer :global(.ring) {
+      scale: calc(1 + var(--burst, 0) * 0.9);
+      opacity: calc(1 - var(--burst, 0) * 1.8);
+    }
+
+    .enhanced .layer :global(.inside .core) {
+      scale: calc(1 + var(--burst, 0) * 0.6);
+      opacity: calc(1 - clamp(0, var(--emerge, 0) * 2.5 - 0.3, 1));
+    }
+
+    /* The light inside it, white-hot, bursting out of its cracks over its inside, under its chunks and its window */
+    .enhanced .bloom {
+      display: block;
+      position: absolute;
+      inset: -25%;
+      background: radial-gradient(
+        closest-side,
+        var(--foreground),
+        color-mix(in srgb, var(--foreground) 80%, var(--accent)) 22%,
+        color-mix(in srgb, var(--accent) 55%, transparent) 45%,
+        transparent 75%
+      );
+      opacity: var(--flare, 0);
+      scale: calc(0.45 + var(--flare, 0) * 0.9);
+    }
+
+    .enhanced .halo {
+      scale: calc(1 + var(--flare, 0) * 0.8);
+      opacity: calc(1 - var(--emerge, 0) * 0.6);
+    }
+
+    /* The light bursting out of it: rays of uneven width, turning as it opens */
+    .enhanced .rays {
+      display: block;
+      position: absolute;
+      inset: -120%;
+      background:
+        repeating-conic-gradient(from 3deg, transparent 0 5deg, color-mix(in srgb, var(--accent) 55%, transparent) 6.5deg, transparent 8deg 13deg),
+        repeating-conic-gradient(from 31deg, transparent 0 9deg, color-mix(in srgb, var(--foreground) 35%, transparent) 10deg, transparent 11deg 19deg);
+      mask-image: radial-gradient(closest-side, #000 15%, rgb(0 0 0 / 0.6) 40%, transparent 80%);
+      opacity: var(--flare, 0);
+      rotate: calc(var(--burst, 0) * 25deg);
+      scale: calc(0.6 + var(--flare, 0) * 0.6);
+    }
+
+    .enhanced .emerge {
+      position: absolute;
+      z-index: 2;
+      top: calc(var(--header) + (100% - var(--header)) / 2);
+      left: 50%;
+      width: min(64rem, 100% - 2 * var(--gutter), (100svh - var(--header) - 6rem) * 1.95);
+      margin: 0;
+      translate: -50% -50%;
+      transform: perspective(70rem) rotateX(calc((1 - var(--emerge, 0)) * 40deg)) scale(calc(0.04 + 0.96 * var(--emerge, 0)));
+      opacity: clamp(0, var(--emerge, 0) * 6, 1);
+      pointer-events: none;
+    }
+
+    .enhanced .emerge::after {
+      scale: calc(1 + var(--flare, 0) * 0.5);
+    }
+
+    .enhanced .opened .emerge {
+      --sight: color-mix(in srgb, var(--highlight) 90%, transparent);
+      pointer-events: auto;
+    }
+
+    .enhanced .opened .emerge::before {
+      filter: drop-shadow(0 0 3px color-mix(in srgb, var(--highlight) 50%, transparent));
+    }
+  }
+
+  /*
+   * Arriving, unless the visitor asked for less motion: out of the dark the ship dived into on the synths' page, the
+   * stars streaking past, the planet comes from far away and its light flares; its ring's pulses come on one by one,
+   * at random, as velvet noise's do; the horizon is drawn across the page, the sun rises over it, and what's under it
+   * comes up. Then the planet floats. Each part as it is once it's done, so the scroll takes over
+   */
+  @media (prefers-reduced-motion: no-preference) {
+    .warp {
+      display: block;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 240vmax;
+      aspect-ratio: 1;
+      translate: -50% -50%;
+    }
+
+    .warp::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: #03070d;
+      opacity: 0;
+      animation: lift 1.1s ease-in 0.15s backwards;
+    }
+
+    .warp svg {
+      position: absolute;
+      inset: 0;
+      overflow: visible;
+      visibility: hidden;
+      animation: warp 1.5s cubic-bezier(0.2, 0.6, 0.4, 1) backwards;
+    }
+
+    .warp path {
+      fill: none;
+      stroke: var(--foreground);
+      stroke-linecap: round;
+    }
+
+    .warp .accent {
+      stroke: var(--accent);
+    }
+
+    .arrive {
+      animation: arrive 2s cubic-bezier(0.16, 1, 0.3, 1) 0.1s backwards;
+    }
+
+    .flash {
+      display: block;
+      position: absolute;
+      inset: -30%;
+      background: radial-gradient(closest-side, color-mix(in srgb, var(--foreground) 70%, transparent), color-mix(in srgb, var(--accent) 45%, transparent) 40%, transparent);
+      opacity: 0;
+      animation: flash 1.4s ease-out 0.85s backwards;
+    }
+
+    .layer :global(.pulse) {
+      animation: appear 1ms backwards;
+      animation-delay: calc(1.1s + var(--n, 0) * 1.6s);
+    }
+
+    .float {
+      animation: float 9s ease-in-out infinite alternate;
+    }
+
+    .kicker {
+      animation: spaced 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) 0.4s backwards;
+    }
+
+    .hero .horizon::before {
+      animation: draw 1.3s cubic-bezier(0.6, 0, 0.2, 1) 1s backwards;
+    }
+
+    .hero .horizon::after {
+      animation: dawn 1.3s ease-out 1.2s backwards;
+    }
+
+    .title .logo {
+      animation: rise 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) 1.5s backwards;
+    }
+
+    .title::before {
+      animation: dawn 1.8s ease-out 1.5s backwards;
+    }
+
+    .below :is(.lead, .tags),
+    .below :global(.get) {
+      animation: come-up 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) 2s backwards;
+    }
+
+    .below :global(.get) {
+      animation-delay: 2.2s;
+    }
+
+    .below .tags {
+      animation-delay: 2.4s;
+    }
+  }
+
+  @keyframes lift {
+    from {
+      opacity: 1;
+    }
+  }
+
+  @keyframes warp {
+    from {
+      visibility: visible;
+      scale: 0.5;
+      opacity: 1;
+    }
+    to {
+      visibility: visible;
+      scale: 2.6;
+      opacity: 0;
+    }
+  }
+
+  @keyframes arrive {
+    from {
+      scale: 0.25;
+      opacity: 0;
+      filter: blur(12px) brightness(2.2);
+    }
+    35% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes flash {
+    from {
+      scale: 0.4;
+    }
+    20% {
+      opacity: 0.9;
+    }
+    to {
+      scale: 1.6;
+      opacity: 0;
+    }
+  }
+
+  @keyframes appear {
+    from,
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes float {
+    from {
+      translate: 0 -0.5rem;
+      rotate: -1.5deg;
+    }
+    to {
+      translate: 0 0.5rem;
+      rotate: 1.5deg;
+    }
+  }
+
+  @keyframes spaced {
+    from {
+      opacity: 0;
+      letter-spacing: 0.9em;
+    }
+  }
+
+  @keyframes draw {
+    from {
+      scale: 0 1;
+      opacity: 0;
+    }
+  }
+
+  @keyframes rise {
+    from {
+      translate: 0 100%;
+    }
+  }
+
+  @keyframes dawn {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes come-up {
+    from {
+      opacity: 0;
+      translate: 0 1.25rem;
+    }
+  }
+
+  /*
+   * The text: a voyage, a stop at each of its sections, each marked by a thing in space over its heading (SpaceObject,
+   * moving while the mouse is over its stop); its pictures in sights (SynthScreenshot). Its text in a column, its
+   * headings in the middle
+   */
+  .text {
+    width: 100%;
+    max-width: var(--width);
+    margin-inline: auto;
+    padding: clamp(2rem, 6vw, 4rem) var(--gutter) 0;
+  }
+
+  .stop {
+    --apart: clamp(2rem, 5vw, 4rem);
+    padding-block: var(--apart);
+  }
+
+  /*
+   * From each stop to the next, a beam of light, as the synths' page's are from SynthWorld's planet into its synths':
+   * a glow, the beam, its white-hot core, and where it goes in
+   */
+  .stop + .stop {
+    padding-top: 0;
+  }
+
+  .stop + .stop::before {
+    content: '';
+    display: block;
+    width: 1rem;
+    height: calc(var(--apart) * 1.6);
+    margin: 0 auto calc(var(--apart) * 0.4);
+    background:
+      radial-gradient(circle, var(--foreground) 0 1.5px, color-mix(in srgb, var(--highlight) 60%, transparent) 2.5px, transparent 7px) bottom / 1rem 1rem no-repeat,
+      linear-gradient(transparent, color-mix(in srgb, var(--foreground) 80%, transparent) 70%, transparent) center top / 1px calc(100% - 0.5rem) no-repeat,
+      linear-gradient(transparent, color-mix(in srgb, var(--accent) 70%, transparent) 60%, transparent) center top / 3px calc(100% - 0.5rem) no-repeat,
+      linear-gradient(transparent, color-mix(in srgb, var(--accent) 25%, transparent) 60%, transparent) center top / 9px calc(100% - 0.5rem) no-repeat;
+  }
+
+  .text :global(:is(p, ul, h3)) {
     max-width: 44rem;
+    margin-inline: auto;
   }
 
-  .prose :global(h2) {
-    margin-top: clamp(2.5rem, 6vw, 4rem);
+  .text :global(h2) {
+    max-width: 44rem;
+    margin: 0 auto 1.5rem;
+    font-size: clamp(1.75rem, 4.2vw, 2.6rem);
+    text-align: center;
+    scroll-margin-top: calc(var(--header) + 1.5rem);
   }
 
-  .prose :global(ul) {
+  .text :global(ul) {
     padding-left: 1.25rem;
   }
 
-  .prose :global(li) {
-    margin-bottom: 0.5rem;
+  .text :global(li) {
+    margin-bottom: 0.6rem;
   }
 
-  /* A part of the text that stands out: a panel of its own, its picture beside its text where there's room */
-  .prose :global(.spotlight) {
-    display: flow-root;
-    margin-block: clamp(2.5rem, 6vw, 4rem);
-    padding: clamp(1.5rem, 4vw, 3rem);
-    background: radial-gradient(ellipse at top right, color-mix(in srgb, var(--accent) 22%, transparent), transparent 65%),
-      var(--recess);
-    border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
-    border-radius: calc(var(--radius) * 2);
+  .text :global(li::marker) {
+    color: var(--accent);
   }
 
-  .prose :global(.spotlight h2) {
-    margin-top: 0;
-    font-size: clamp(2rem, 5vw, 3.25rem);
+  .text :global(strong) {
+    color: var(--foreground);
   }
 
-  .prose :global(.spotlight .kicker) {
-    margin-bottom: 0.5rem;
+  .text :global(.object) {
+    margin: 0 auto 1.25rem;
+    width: clamp(8.5rem, 22vw, 11rem);
+  }
+
+  /* Its thing in space moves while the mouse is anywhere over its stop, not only over what it's in */
+  .stop:hover :global(.object *) {
+    animation-play-state: running;
+  }
+
+  .text :global(.kicker) {
+    max-width: none;
+    margin-bottom: 0.6rem;
     color: var(--accent);
     font-family: var(--font-display);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     letter-spacing: 0.15em;
+    text-align: center;
     text-transform: uppercase;
   }
 
-  .prose :global(.spotlight > :last-child) {
-    margin-bottom: 0;
+  /* The first stop, before any heading: what the synth is, as a lead */
+  .stop:first-child {
+    padding-top: clamp(1rem, 3vw, 2rem);
   }
 
-  /* A tool of the synth, small: its picture beside what it does, in a card */
-  .prose :global(.feature) {
+  .stop:first-child :global(p) {
+    max-width: 40rem;
+    color: var(--surface);
+    font-size: clamp(1.1rem, 2.2vw, 1.3rem);
+    text-align: center;
+  }
+
+  /*
+   * A part set apart (EARL's velvet noise): a band across the whole page, darker than space, its pulses (VelvetNoise)
+   * thickening as it's scrolled through; its text beside its picture where there's room
+   */
+  .text :global(.spotlight) {
+    position: relative;
+    isolation: isolate;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
     align-items: center;
-    gap: 0 clamp(1.5rem, 4vw, 2.5rem);
-    margin-block: clamp(2.5rem, 6vw, 4rem);
-    padding: clamp(1.25rem, 3vw, 2rem);
-    background: var(--recess);
-    border: 1px solid color-mix(in srgb, var(--surface) 30%, transparent);
-    border-radius: calc(var(--radius) * 2);
+    column-gap: clamp(2rem, 5vw, 4rem);
+    margin-inline: calc(50% - 50vw);
+    padding: clamp(4rem, 10vw, 7rem) max(var(--gutter), 50vw - var(--width) / 2 + var(--gutter));
+    background: radial-gradient(ellipse 70% 60% at 50% 50%, rgb(0 0 0 / 0.6), rgb(0 0 0 / 0.35) 70%, transparent);
   }
 
-  .prose :global(.feature .screenshot) {
-    margin: 0;
-    justify-self: center;
+  .text :global(.spotlight :is(.kicker, h2)) {
+    text-align: left;
+    margin-inline: 0;
   }
 
-  .prose :global(.feature h2) {
-    margin-top: 0;
+  .text :global(.spotlight h2) {
+    font-size: clamp(2.2rem, 6vw, 3.75rem);
   }
 
-  .prose :global(.feature .kicker) {
-    margin-bottom: 0.5rem;
-    color: var(--accent);
-    font-family: var(--font-display);
-    font-size: 0.9rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
+  .text :global(.spotlight > :is(p, ul)) {
+    margin-inline: 0;
   }
 
-  .prose :global(.feature > div > :last-child) {
-    margin-bottom: 0;
-  }
-
-  /* Two things side by side, told apart: a card each, then what they make possible */
-  .prose :global(.versus) {
-    margin-block: clamp(2.5rem, 6vw, 4rem);
-    padding-top: clamp(1.5rem, 4vw, 2.5rem);
-    border-top: 2px solid var(--accent);
-  }
-
-  .prose :global(.versus h2) {
-    margin-top: 0;
-  }
-
-  .prose :global(.versus .kicker) {
-    margin-bottom: 0.5rem;
-    color: var(--accent);
-    font-family: var(--font-display);
-    font-size: 0.9rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-  }
-
-  .prose :global(.versus-columns) {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
-    gap: 1rem;
+  .text :global(.spotlight .screenshot) {
     margin-block: 1.5rem;
   }
 
-  .prose :global(.versus-columns > div) {
-    padding: clamp(1.25rem, 3vw, 1.75rem);
-    background: var(--recess);
-    border-radius: calc(var(--radius) * 2);
+  /* Its pulses fainter behind its text, so that they're not in the way of reading it */
+  .text :global(.spotlight .velvet-noise) {
+    mask-image:
+      linear-gradient(transparent, #000 18%, #000 82%, transparent),
+      linear-gradient(rgb(0 0 0 / 0.25), rgb(0 0 0 / 0.25));
+    mask-composite: intersect;
   }
 
-  .prose :global(.versus-columns h3) {
-    color: var(--accent);
+  @media (min-width: 52rem) {
+    .text :global(.spotlight) {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    }
+
+    .text :global(.spotlight > :not(.screenshot)) {
+      grid-column: 1;
+    }
+
+    .text :global(.spotlight .screenshot) {
+      grid-column: 2;
+      grid-row: 1 / span 5;
+      margin: 0;
+    }
+
+    .text :global(.spotlight .velvet-noise) {
+      mask-image:
+        linear-gradient(transparent, #000 18%, #000 82%, transparent),
+        linear-gradient(to right, #000 calc(50% - 36rem), rgb(0 0 0 / 0.18) calc(50% - 31rem) calc(50% + 1rem), #000 calc(50% + 6rem));
+    }
   }
 
-  .prose :global(.versus-columns .screenshot) {
+  /* Pictures of a part of the synth side by side (EARL's generators), as many to a row as there's room for, centred */
+  .text :global(.gallery) {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0 clamp(1rem, 3vw, 2rem);
+    margin-block: 1rem 2rem;
+  }
+
+  .text :global(.gallery .screenshot) {
+    flex: 0 1 20rem;
     margin: 1rem 0;
   }
 
-  .prose :global(.versus-columns > div > :last-child) {
+  /* Its wide pictures (EARL's filters and distortions, strips of its window), two to a row where there's room */
+  .text :global(.gallery.wide .screenshot) {
+    flex-basis: 30rem;
+  }
+
+  /* A tool of the synth (EARL's randomiser): a pane of glass, its picture beside what it does */
+  .text :global(.feature) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    align-items: center;
+    gap: 0 clamp(1.5rem, 4vw, 3rem);
+    max-width: 60rem;
+    margin-inline: auto;
+    padding: clamp(1.25rem, 4vw, 2.5rem);
+    background: color-mix(in srgb, var(--recess) 75%, transparent);
+    border: 1px solid color-mix(in srgb, var(--surface) 20%, transparent);
+    border-radius: calc(var(--radius) * 2);
+    box-shadow: 0 0 6rem -2rem color-mix(in srgb, var(--accent) 30%, transparent);
+    backdrop-filter: blur(6px);
+  }
+
+  .text :global(.feature .screenshot) {
+    margin: 0 auto;
+  }
+
+  .text :global(.feature :is(.object, .kicker, h2)) {
+    margin-inline: 0;
+    text-align: left;
+  }
+
+  .text :global(.feature .object) {
+    width: clamp(5.5rem, 12vw, 7rem);
+    margin-bottom: 0.5rem;
+  }
+
+  .text :global(.feature > div > :last-child) {
     margin-bottom: 0;
   }
 
-  .prose :global(.versus ul) {
+  /* Two things told apart (EARL's two unisons): a pane of glass each, side by side */
+  .text :global(.versus-columns) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+    gap: 1.25rem;
+    margin-top: 2rem;
+  }
+
+  .text :global(.versus-columns > div) {
+    padding: clamp(1.25rem, 3vw, 2rem);
+    background: color-mix(in srgb, var(--recess) 75%, transparent);
+    border: 1px solid color-mix(in srgb, var(--surface) 20%, transparent);
+    border-radius: calc(var(--radius) * 2);
+    backdrop-filter: blur(6px);
+  }
+
+  .text :global(.versus-columns h3) {
+    color: var(--accent);
+    font-size: 1.25rem;
+    text-align: center;
+  }
+
+  .text :global(.versus-columns .screenshot) {
+    margin: 1rem auto;
+  }
+
+  .text :global(.versus-columns > div > :last-child) {
+    margin-bottom: 0;
+  }
+
+  .text :global(.versus ul) {
     padding-left: 0;
     list-style: none;
   }
 
-  .prose :global(.versus li) {
+  .text :global(.versus li) {
     padding-left: 1.5rem;
-    background: linear-gradient(var(--accent), var(--accent)) 0 0.55em / 0.6rem 0.6rem no-repeat;
+    background: linear-gradient(var(--accent), var(--accent)) 0 0.55em / 0.55rem 0.55rem no-repeat;
   }
 
-  @media (min-width: 52rem) {
-    .prose :global(.spotlight .screenshot) {
-      float: right;
-      width: 45%;
-      margin: 0 0 1rem 2.5rem;
+  /* Its demos, on glass */
+  .text :global(.card) {
+    background: color-mix(in srgb, var(--recess) 75%, transparent);
+    border: 1px solid color-mix(in srgb, var(--surface) 20%, transparent);
+  }
+
+  /*
+   * The route: the sections as stops on a course down the side of the page, where there's room; the one the visitor is
+   * at lit, ringed by an orbit (as the header's page is), the course lit as far as they've come. With the script, it's
+   * there once the stage is past; each stop's name shows under the mouse, or focused
+   */
+  .route {
+    display: none;
+  }
+
+  @media (min-width: 64rem) {
+    .route {
+      display: block;
+      position: fixed;
+      z-index: 5;
+      top: 50%;
+      right: clamp(0.75rem, 2vw, 1.75rem);
+      translate: 0 -50%;
+      transition:
+        opacity 0.4s,
+        visibility 0s;
     }
+
+    .enhanced .route:not(.shown) {
+      visibility: hidden;
+      opacity: 0;
+      transition:
+        opacity 0.4s,
+        visibility 0s 0.4s;
+    }
+  }
+
+  .route ol {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 1.6rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* The course, through the stops' middles; lit as far as the visitor has come */
+  .route ol::before,
+  .route ol::after {
+    content: '';
+    position: absolute;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    right: calc(0.5rem - 0.5px);
+    width: 1px;
+  }
+
+  .route ol::before {
+    background: repeating-linear-gradient(color-mix(in srgb, var(--surface) 45%, transparent) 0 3px, transparent 3px 7px);
+  }
+
+  .route ol::after {
+    bottom: auto;
+    height: calc((100% - 1rem) * var(--route, 0));
+    background: var(--accent);
+    box-shadow: 0 0 0.4rem var(--accent);
+  }
+
+  .route a {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    color: var(--surface);
+    font-family: var(--font-display);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  /* A stop: a small planet, lit from the top left */
+  .route a::after {
+    content: '';
+    flex: none;
+    position: relative;
+    z-index: 1;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--foreground) 80%, transparent), transparent 55%),
+      radial-gradient(circle at 35% 30%, transparent 40%, color-mix(in srgb, var(--recess) 75%, transparent)),
+      var(--surface);
+    scale: 0.6;
+    transition:
+      scale 0.3s,
+      box-shadow 0.3s;
+  }
+
+  .route a[aria-current]::after {
+    background:
+      radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--foreground) 80%, transparent), transparent 55%),
+      radial-gradient(circle at 35% 30%, transparent 40%, color-mix(in srgb, var(--recess) 70%, transparent)),
+      var(--accent);
+    box-shadow:
+      0 0 0 0.3rem #03070d,
+      0 0 0 calc(0.3rem + 1px) color-mix(in srgb, var(--highlight) 65%, transparent),
+      0 0 0.8rem color-mix(in srgb, var(--highlight) 30%, transparent);
+    scale: 1;
+  }
+
+  .route a:is(:hover, :focus-visible)::after {
+    scale: 1;
+  }
+
+  .route a:focus-visible {
+    outline: none;
+  }
+
+  /* Its name, on glass, beside it */
+  .label {
+    padding: 0.2rem 0.65rem;
+    background: color-mix(in srgb, var(--recess) 80%, transparent);
+    border: 1px solid color-mix(in srgb, var(--surface) 20%, transparent);
+    border-radius: 1rem;
+    white-space: nowrap;
+    opacity: 0;
+    translate: 0.5rem 0;
+    transition:
+      opacity 0.25s,
+      translate 0.25s;
+    pointer-events: none;
+  }
+
+  .route a:is(:hover, :focus-visible) .label {
+    color: var(--foreground);
+    opacity: 1;
+    translate: 0;
+  }
+
+  /*
+   * Its end: where to get it, under its logo rising again over a horizon across the page, as the page scrolls to it;
+   * the night under the horizon
+   */
+  .launch {
+    --sun: min(5rem, (100vw - 2 * var(--gutter)) / 6.04);
+    position: relative;
+    isolation: isolate;
+    margin-top: clamp(3rem, 8vw, 6rem);
+    padding-top: clamp(3rem, 8vw, 6rem);
+    text-align: center;
+  }
+
+  .rise {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    clip-path: inset(-100vmax -100vmax 0 -100vmax);
+  }
+
+  .rise::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    left: calc(50% - var(--sun) * 5.52);
+    bottom: 0;
+    width: calc(var(--sun) * 7);
+    height: calc(var(--sun) * 2.8);
+    background: radial-gradient(50% 100% at 50% 100%, color-mix(in srgb, var(--accent) 40%, transparent), transparent);
+    opacity: calc(0.15 + 0.85 * var(--seen, 1));
+    pointer-events: none;
+  }
+
+  .rise .logo {
+    translate: 0 calc((1 - var(--seen, 1)) * 90%);
+  }
+
+  .ground {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    padding: clamp(2.5rem, 6vw, 4rem) var(--gutter) clamp(4rem, 10vw, 7rem);
+  }
+
+  .ground h2 {
+    margin: 0;
+    font-size: clamp(1.75rem, 4.2vw, 2.6rem);
   }
 </style>

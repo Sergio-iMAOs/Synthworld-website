@@ -46,6 +46,11 @@ const en = {
     listen: 'Listen',
     watch: 'Watch',
     sections: 'On this page',
+    /** Over a synth's name on its page: the first one made with SynthWorld, or another */
+    first: "SynthWorld's first synth",
+    another: 'A SynthWorld synth',
+    /** At the end of a synth's page, over where to get it */
+    getIt: (name: string) => `Get ${name}`,
     /** Its window in pairs of its skins, a light one by day and a dark one by night (SynthDayNight) */
     dayNight: {
       line: 'The line between day and night',
@@ -136,6 +141,9 @@ const es: typeof en = {
     listen: 'Escucha',
     watch: 'Mira',
     sections: 'En esta página',
+    first: 'El primer sinte de SynthWorld',
+    another: 'Un sinte de SynthWorld',
+    getIt: (name: string) => `Consigue ${name}`,
     dayNight: {
       line: 'La línea entre el día y la noche',
       hint: 'Arrastra la línea entre el día y la noche.',

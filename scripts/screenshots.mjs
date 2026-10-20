@@ -7,7 +7,8 @@
 // `npm run screenshots -- synthworld` SynthWorld's marks only.
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
@@ -24,7 +25,8 @@ const SCALE = 2;
 // Each synth's tool and shots. A shot's actions are the tool's (tests/snapshot/SnapshotScript.h in the framework:
 // click=x,y, wheel=x,y,n, wait=ms...), in the window's units at a scale of 1; its env, the tool's settings
 // (tests/snapshot/EarlSnapshot.cpp: SYNTHWORLD_SNAPSHOT_AUDIO to play a chord, SYNTHWORLD_SNAPSHOT_SKIN...); its
-// crop, [x, y, width, height] in the window's units, a part of the window alone; its scale, if not SCALE. A shot
+// crop, [x, y, width, height] in the window's units, a part of the window alone; its scale, if not SCALE; its patch, a
+// preset file's changed for it (see patchFile()), in place of SYNTHWORLD_SNAPSHOT_PATCH. A shot
 // with a tool of its own is drawn by it, with its args in place of the scale and the actions (the logo).
 // Its file is where synth.yaml looks for it, from the synth's folder.
 
@@ -32,21 +34,35 @@ const SCALE = 2;
 // on, Granular from its menu, its sample from its selector's, some POSITION and SPRAY). The sample is the one the tool
 // has, "Pluck", a stand-in for EARL's Click_01 until the tool has EARL's stock samples
 const earlOscillators = ['click=315,47', 'click=450,46', 'click=380,135', 'click=480,65', 'click=480,115', 'click=620,115', 'wheel=340,230,8', 'wheel=540,263,8'];
-// More of its panels on, for more of a skin's colours: the noise, the sub-oscillator, Filter 1 and the saturator
-const earlPanels = ['click=905,47', 'click=907,234', 'click=17,352', 'click=614,352'];
+// The voice's saturator's OUTPUT turned up from -12 dB, the default patch's, to 0 dB: a third of its travel, 0.15 of it a
+// wheel's unit of 0.3 notches (Slider.cpp)
+const earlSaturatorOutput = 'wheel=1083,406,7.408';
+// More of its panels on, for more of a skin's colours: the noise, the sub-oscillator, Filter 1 and the saturator (its
+// OUTPUT at 0 dB)
+const earlPanels = ['click=905,47', 'click=907,234', 'click=17,352', 'click=614,352', earlSaturatorOutput];
+// A page of its window alone, between the header (whose preset selector would name a patch from a file "Init") and the
+// macros under it
+const earlPage = [0, 31, 1200, 533];
+// A patch from the framework's benchmarks, which have more in them than the factory presets: "Everything" has every
+// processor on and the eight effects, "Modulation Matrix" its rows filled
+const earlBench = (name) => path.join(framework, 'synths/EARL/benchmarks/EARL Bench', `Bench ${name}.swpreset`);
 
 const synths = {
   earl: {
     tool: 'synthworld_earl_snapshot',
-    // The skin the site's colours are taken from (src/styles/palette.css), not EARL's own default (SW Light)
-    env: { SYNTHWORLD_SNAPSHOT_SKIN: 'SW Default' },
+    // EARL's own default skin, SW Light: its page's pictures, light in space
+    env: { SYNTHWORLD_SNAPSHOT_SKIN: 'SW Light' },
     // The pages' tabs, in the header: Synth (130,14), Global (180,14), Mod Matrix (252,14), Graph (297,14),
     // Notes (343,14), Tuning (393,14), Settings (447,14)
     shots: [
       // The header's logo (tests/snapshot/EarlHeaderSnapshot.cpp): the sun and the name, 480 pixels high, the sun's
       // radius; the page draws the horizon under it
       { file: 'logo.png', tool: 'synthworld_earl_header_snapshot', args: ['480'] },
-      { file: 'screenshots/synth.png', env: { SYNTHWORLD_SNAPSHOT_AUDIO: '1' }, actions: [...earlOscillators, 'move=600,620', 'wait=500'] },
+      {
+        file: 'screenshots/synth.png',
+        env: { SYNTHWORLD_SNAPSHOT_AUDIO: '1' },
+        actions: [...earlOscillators, earlSaturatorOutput, 'move=600,620', 'wait=500'],
+      },
       // Its skins, in the order it offers them (EarlUI.cpp; Tux is only on Linux): the Synth page in each, playing a
       // factory preset with its two oscillators and more of its panels on, and the mouse out of the window
       ...['SW Default', 'SW Light', 'Deep Sea', 'Riso', 'Starship', 'Tux'].map((skin) => ({
@@ -75,6 +91,54 @@ const synths = {
           'wait=500',
         ],
       })),
+      // Its generators, close up, each playing a factory preset's chord: the first oscillator as each of its four (from
+      // its menu: Wavetable Oscillator, Triple Oscillator, Sampler, Granular), and the noise as a coloured one with the
+      // sub-oscillator under it
+      ...[
+        // The Wavefolder wavetable (SynthWorld Wavetables, Digital, in its selector's menu), some POS
+        ['wavetable', ['click=150,65', 'click=150,137', 'click=320,181', 'click=420,269', 'wheel=258,228,6']],
+        // Its second and third simple oscillators on, a saw and a square
+        ['triple-oscillator', ['click=150,46', 'click=150,91', 'click=17,153', 'click=17,240', 'click=59,174', 'click=99,261']],
+        // The sample from its selector's arrow
+        ['sampler', ['click=150,46', 'click=150,113', 'click=230,65']],
+        // The sample from its selector's menu, some POSITION and SPRAY
+        ['granular', ['click=150,46', 'click=150,135', 'click=184,65', 'click=184,115', 'click=314,115', 'wheel=44,230,8', 'wheel=244,263,8']],
+      ].map(([name, actions]) => ({
+        file: `screenshots/${name}.png`,
+        scale: 3,
+        crop: [4, 34, 294, 281],
+        env: { SYNTHWORLD_SNAPSHOT_PATCH: 'EARL Factory/Soft Pad', SYNTHWORLD_SNAPSHOT_AUDIO: '1' },
+        actions: [...actions, 'move=600,620', 'wait=500'],
+      })),
+      // The noise turned on, Colour Noise from its menu, pink; the sub-oscillator turned on
+      {
+        file: 'screenshots/noise.png',
+        scale: 3,
+        crop: [892, 34, 304, 281],
+        env: { SYNTHWORLD_SNAPSHOT_PATCH: 'EARL Factory/Soft Pad', SYNTHWORLD_SNAPSHOT_AUDIO: '1' },
+        actions: ['click=905,47', 'click=1030,46', 'click=1000,91', 'click=948,132', 'click=907,234', 'move=600,620', 'wait=500'],
+      },
+      // What the voice's sound goes through, close up, each in its tab under the oscillators, playing the "Everything"
+      // benchmark's chord: its four filters, one of each kind (Filter 1 to 4: ladder, state variable, comb, formant), and
+      // its distortions, the saturator in TUBE with its OUTPUT at 0 dB, and the bitcrusher turned on, its RATE at 3000 Hz
+      ...[
+        ['filter-ladder', 'click=34,327', [3, 339, 597, 102]],
+        ['filter-state-variable', 'click=95,327', [3, 339, 597, 102]],
+        ['filter-comb', 'click=157,327', [3, 339, 597, 102]],
+        ['filter-formant', 'click=219,327', [3, 339, 597, 102]],
+        ['saturator', 'click=636,327', [600, 339, 597, 102]],
+        ['bitcrusher', 'click=712,327', [600, 339, 597, 102]],
+      ].map(([name, tab, crop]) => ({
+        file: `screenshots/${name}.png`,
+        scale: 3,
+        crop,
+        patch: {
+          from: earlBench('Everything'),
+          values: { 'Voice Saturator/function': 2, 'Voice Saturator/output': 0, 'Voice Bitcrusher/active': 1, 'Voice Bitcrusher/rate': 3000 },
+        },
+        env: { SYNTHWORLD_SNAPSHOT_AUDIO: '1' },
+        actions: [tab, 'move=600,620', 'wait=500'],
+      })),
       // The velvet noise's panel, turned on (its switch at its top left)
       { file: 'screenshots/velvet-noise.png', scale: 3, crop: [892, 34, 304, 184], actions: ['click=905,47'] },
       // The two unisons, close up: the first oscillator's (its unison button, 6 voices, some WT SPREAD), and the voice's
@@ -91,18 +155,57 @@ const synths = {
         crop: [816, 192, 382, 283],
         actions: ['click=343,14', 'click=977,323', 'click=960,478'],
       },
-      // The randomiser's panel, opened from the die in the header, with more than VALUES on
+      // The randomiser's panel, opened from the die in the header beside the window (which widens it), with CHOICES,
+      // MOD AMOUNTS and CONNECTIONS on besides VALUES
       {
         file: 'screenshots/randomiser.png',
         scale: 3,
-        crop: [412, 41, 339, 316],
-        actions: ['click=1062,14', 'click=561,160', 'click=561,195', 'click=561,301', 'move=700,500'],
+        crop: [1201, 1, 339, 312],
+        actions: ['click=1062,14', 'click=1350,120', 'click=1350,155', 'click=1350,225', 'move=700,500'],
       },
-      { file: 'screenshots/graph.png', actions: ['click=297,14'] },
-      { file: 'screenshots/mod-matrix.png', actions: ['click=252,14'] },
-      { file: 'screenshots/global.png', actions: ['click=180,14'] },
-      { file: 'screenshots/notes.png', actions: ['click=343,14'] },
-      { file: 'screenshots/tuning.png', actions: ['click=393,14'] },
+      // Its pages, each with something in it, a chord playing. The Graph of every processor, zoomed in a notch and
+      // dragged right to show the notes' nodes, its nodes alone
+      {
+        file: 'screenshots/graph.png',
+        crop: [14, 32, 1158, 390],
+        env: { SYNTHWORLD_SNAPSHOT_PATCH: earlBench('Everything'), SYNTHWORLD_SNAPSHOT_AUDIO: '1' },
+        actions: ['click=297,14', 'wheel=600,200,1', 'drag=700,470,790,480', 'move=600,620', 'wait=500'],
+      },
+      // The voice's matrix alone (the global one is empty)
+      {
+        file: 'screenshots/mod-matrix.png',
+        crop: [0, 31, 600, 533],
+        env: { SYNTHWORLD_SNAPSHOT_PATCH: earlBench('Modulation Matrix'), SYNTHWORLD_SNAPSHOT_AUDIO: '1' },
+        actions: ['click=252,14', 'move=900,620', 'wait=500'],
+      },
+      // The FX page's eight effects, with the global envelope and the audio input on. The chorus, the flanger, the phaser
+      // and the reverb as they are by default, but the chorus' DEPTH at its most (20 ms), and the reverb's WIDTH at its
+      // most and its DECAY at 0.5 s; the bitcrusher's RATE at 3000 Hz
+      {
+        file: 'screenshots/global.png',
+        crop: earlPage,
+        patch: {
+          from: earlBench('Everything'),
+          defaults: ['Chorus D', 'Flanger E', 'Phaser F', 'Reverb H'],
+          values: { 'Bitcrusher C/rate': 3000, 'Chorus D/depth': 20, 'Reverb H/width': 1, 'Reverb H/decay': 0.5 },
+        },
+        env: { SYNTHWORLD_SNAPSHOT_AUDIO: '1' },
+        actions: ['click=180,14', 'click=17,476', 'click=957,476', 'move=600,620', 'wait=500'],
+      },
+      // The transposition, the chord maker and the arpeggiator on, and five voices of unison (from its menu)
+      {
+        file: 'screenshots/notes.png',
+        crop: earlPage,
+        env: { SYNTHWORLD_SNAPSHOT_PATCH: 'EARL Factory/Soft Pad', SYNTHWORLD_SNAPSHOT_AUDIO: '1' },
+        actions: ['click=343,14', 'click=17,46', 'click=237,46', 'click=17,204', 'click=977,323', 'click=960,434', 'move=600,620', 'wait=500'],
+      },
+      // A microtonal preset's tuning, Bohlen-Pierce, chosen in the browser too (SynthWorld Tunings, Beyond the octave)
+      {
+        file: 'screenshots/tuning.png',
+        crop: earlPage,
+        env: { SYNTHWORLD_SNAPSHOT_PATCH: 'EARL Microtonal/Bohlen-Pierce Squares', SYNTHWORLD_SNAPSHOT_AUDIO: '1' },
+        actions: ['click=393,14', 'click=25,157', 'click=37,179', 'click=95,223', 'move=600,620', 'wait=500'],
+      },
     ],
   },
 };
@@ -317,6 +420,22 @@ async function takeMark() {
   console.log(`synthworld: ${MARK.favicon.file}`);
 }
 
+/**
+ * A shot's patch (its `patch`): a preset file's (`from`), with the parameters of the processors it names in `defaults`
+ * left out, so that they're as they are by default, and its `values` set (in the parameters' own units), in a file of
+ * its own in a temporary folder.
+ */
+async function patchFile({ from, defaults = [], values = {} }) {
+  const preset = JSON.parse(await readFile(from, 'utf8'));
+  const patch = preset.patch ?? preset;
+  for (const name of Object.keys(patch.parameters))
+    if (defaults.some((processor) => name.startsWith(`${processor}/`))) delete patch.parameters[name];
+  Object.assign(patch.parameters, values);
+  const file = path.join(await mkdtemp(path.join(os.tmpdir(), 'synthworld-site-patch-')), 'patch.json');
+  await writeFile(file, JSON.stringify(patch));
+  return file;
+}
+
 const only = process.argv.slice(2);
 if (only.length === 0 || only.includes('synthworld')) await takeMark();
 for (const [id, synth] of Object.entries(synths)) {
@@ -330,10 +449,12 @@ for (const [id, synth] of Object.entries(synths)) {
     const scale = shot.scale ?? SCALE;
     const drawn = shot.crop ? `${output}.whole.png` : output;
     const args = shot.tool ? (shot.args ?? []) : [`scale=${scale}`, ...(shot.actions ?? [])];
+    const patch = shot.patch && (await patchFile(shot.patch));
     execFileSync(tool, [drawn, ...args], {
-      env: { ...process.env, ...synth.env, ...shot.env },
+      env: { ...process.env, ...synth.env, ...shot.env, ...(patch && { SYNTHWORLD_SNAPSHOT_PATCH: patch }) },
       stdio: 'inherit',
     });
+    if (patch) await rm(path.dirname(patch), { recursive: true });
     if (shot.crop) {
       const [left, top, width, height] = shot.crop.map((units) => Math.round(units * scale));
       await sharp(drawn).extract({ left, top, width, height }).toFile(output);

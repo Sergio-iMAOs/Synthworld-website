@@ -2,16 +2,30 @@
 summary: A free polyphonic synthesizer of wavetables, samples, grains and velvet noise, with a patch you can rewire and a modulation matrix where anything modulates anything.
 ---
 
-EARL is SynthWorld's first synth: made with care and given freely, as a gift to music and to everyone who loves sound. It plays in your DAW as a CLAP, VST3 or LV2 plugin, or on its own as an application.
+<!-- object: satellite -->
+
+EARL is SynthWorld's first synth: made with care and given freely, as a gift to music and to everyone who loves sound. It plays in your DAW as a CLAP, VST3, LV2, or AU plugin, or on its own as an application.
+
+<!-- object: system -->
 
 ## Its sound
 
 - **Three oscillators**, each one of four: a wavetable oscillator, three simple oscillators together, a sampler that plays your audio files, or a granular, made of grains of a sample, a wavetable or the sound coming in. Each has a phase and a frequency modulation input.
 - **A noise**, the velvet noise or a coloured one, and **a sub-oscillator** under them.
-- **Four filters**, each a ladder, a state variable, a comb or a formant filter.
-- **A saturator and a bitcrusher on each voice**, so a chord through them is notes distorted one by one.
+
+<div class="gallery">
+
+<!-- screenshot: wavetable -->
+<!-- screenshot: triple-oscillator -->
+<!-- screenshot: sampler -->
+<!-- screenshot: granular -->
+<!-- screenshot: noise -->
+
+</div>
 
 <div class="spotlight">
+
+<!-- velvet-noise -->
 
 <p class="kicker">Velvet noise</p>
 
@@ -27,11 +41,39 @@ Velvet noise is silence with a pulse now and then, up or down at random. Most sy
 
 </div>
 
+<!-- object: comet -->
+
+## Shape it
+
+**Four filters**, each a ladder, a state variable, a comb or a formant filter.
+
+<div class="gallery wide">
+
+<!-- screenshot: filter-ladder -->
+<!-- screenshot: filter-state-variable -->
+<!-- screenshot: filter-comb -->
+<!-- screenshot: filter-formant -->
+
+</div>
+
+Then **a saturator and a bitcrusher on each voice**: each note is distorted on its own, before the notes are mixed. So you can push a chord hard and it's still that chord, not a muddy roar, because its notes don't distort one another.
+
+<div class="gallery wide">
+
+<!-- screenshot: saturator -->
+<!-- screenshot: bitcrusher -->
+
+</div>
+
+<!-- object: constellation -->
+
 ## Rewire it
 
 Every processor is a node in a graph you edit. Change the filters' order, split the sound's path and join it again, send a sound into a side chain.
 
 <!-- screenshot: graph -->
+
+<!-- object: binary -->
 
 ## Its modulation
 
@@ -40,6 +82,8 @@ Every processor is a node in a graph you edit. Change the filters' order, split 
 - **Eight macros**, for anything of the voices or of the effects.
 
 <!-- screenshot: mod-matrix -->
+
+<!-- object: blackhole -->
 
 ## Its effects
 
@@ -53,6 +97,8 @@ Every processor is a node in a graph you edit. Change the filters' order, split 
 
 <div>
 
+<!-- object: die -->
+
 <p class="kicker">Randomiser</p>
 
 ## Roll the dice
@@ -64,6 +110,8 @@ Each roll fades in without a click and is one step to undo: roll again until it'
 </div>
 </div>
 
+<!-- object: meteors -->
+
 ## Before the notes
 
 A transposition, a **chord maker** that plays a chord from each note, and an **arpeggiator** with grooves to swing it.
@@ -71,6 +119,8 @@ A transposition, a **chord maker** that plays a chord from each note, and an **a
 <!-- screenshot: notes -->
 
 <div class="versus">
+
+<!-- object: cluster -->
 
 <p class="kicker">Unison</p>
 
@@ -103,11 +153,15 @@ Up to 8 whole voices for each note, each with its own oscillators, filters, enve
 
 </div>
 
+<!-- object: rings -->
+
 ## Its tunings
 
 Play beyond twelve notes: scales of any number of notes, from EARL's own tunings or your Scala files, for microtonal and xenharmonic music. Even scales that don't repeat at the octave, like Bohlen-Pierce.
 
 <!-- screenshot: tuning -->
+
+<!-- object: phases -->
 
 ## Its skins
 

@@ -101,7 +101,7 @@ const en = {
   },
   contact: {
     title: 'Contact',
-    lead: 'Feel free to reach out, whether you have a project in mind, need a sound engineer, want to collaborate, or simply want to connect or ask me anything.',
+    lead: 'Feel free to reach out, whether you have a project in mind, want to collaborate, or simply want to connect or ask me anything.',
     email: 'Email',
   },
 };
@@ -206,7 +206,7 @@ const es: typeof en = {
   },
   contact: {
     title: 'Contacto',
-    lead: 'Escríbeme con toda libertad: si tienes un proyecto en mente, necesitas un técnico de sonido, quieres colaborar, o simplemente quieres conectar o preguntarme lo que sea.',
+    lead: 'Escríbeme con toda libertad: si tienes un proyecto en mente, quieres colaborar, o simplemente quieres conectar o preguntarme lo que sea.',
     email: 'Correo',
   },
 };

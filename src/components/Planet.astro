@@ -7,7 +7,8 @@
  * them, its middle in its `data-x` and `data-y`), which its parent's CSS can move apart. Round its SVG's centre, its
  * disc's radius ROOM of its units (a ringed one's smaller, its ring within REACH), its atmosphere's glow round it; its
  * CSS gives it its size. With `sight`, the ring of a sight round it, which the skin draws under the mouse: unseen until
- * its parent's CSS shows its `.sight`.
+ * its parent's CSS shows its `.sight`. Each pulse of a ring of them has a number of its own between 0 and 1 (`--n`, the
+ * same each time), for its parent's CSS to tell them apart.
  */
 import { chunkLayout, chunksPicture, planetPicture, PULSE_SIDE, PULSES_TO, ringOf, ringPulses, WORLD_DISC, type World } from '@/space';
 
@@ -50,10 +51,15 @@ const dust = (far: boolean) => [
 // A ring of pulses: the squares on its far half, behind the planet, and on its near half, in front
 const pulses = ring === 'pulses' ? ringPulses(world) : [];
 const PULSE = PULSE_SIDE * RADIUS;
+const numberOf = (index: number) => {
+  const wave = Math.sin(index * 12.9898 + 78.233) * 43758.5453;
+  return (wave - Math.floor(wave)).toFixed(3);
+};
 const pulsesOn = (near: boolean) =>
   pulses
+    .map((pulse, index) => ({ ...pulse, n: numberOf(index) }))
     .filter((pulse) => pulse.near === near)
-    .map(({ x, y, up }) => ({ up, x: (x * RADIUS - PULSE / 2).toFixed(1), y: (y * RADIUS - PULSE / 2).toFixed(1) }));
+    .map(({ x, y, up, n }) => ({ up, n, x: (x * RADIUS - PULSE / 2).toFixed(1), y: (y * RADIUS - PULSE / 2).toFixed(1) }));
 
 // The sight's ring: a gap from the disc, and a tick out of it at each quarter
 const SIGHT = RADIUS + 6;
@@ -92,8 +98,8 @@ const quarters = [0, 90, 180, 270];
         {ring && (
           <g class="ring">
             {ring === 'dust' && dust(far).map(({ class: kind, d, width }) => <path class={kind} d={d} stroke-width={width} transform={`rotate(${RING_TILT})`} />)}
-            {pulsesOn(!far).map(({ up, x, y }) => (
-              <rect class:list={['pulse', { far, up }]} x={x} y={y} width={PULSE} height={PULSE} />
+            {pulsesOn(!far).map(({ up, n, x, y }) => (
+              <rect class:list={['pulse', { far, up }]} x={x} y={y} width={PULSE} height={PULSE} style={`--n: ${n}`} />
             ))}
           </g>
         )}

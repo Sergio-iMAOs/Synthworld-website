@@ -3,11 +3,29 @@
  * A thing in space, drawn for one of the engine's features on the home page: two stars that move each other, matter
  * flowing between them (anything modulates anything); a constellation, one of its lines being rewired (a patch you can
  * rewire); a comet gliding (no clicks); a planet ringed with scales of 7, 12, 19, 24 and 31 notes, their steps going
- * round (any tuning); a satellite orbiting a planet, signalling (in your DAW or on its own). Lit from the top left, as
- * SynthWorld's planet, in the palette's colours. While the mouse is over it, or over what it's in, it moves, unless the
- * visitor asked for less motion.
+ * round (any tuning); a satellite orbiting a planet, signalling (in your DAW or on its own). Or for a part of a synth on
+ * its page: a star with three planets round it, one with a moon, in a dust of pulses (its sound: three oscillators, a
+ * sub-oscillator, a noise); a black hole, its disk of light in eight arcs going round it (its eight effect slots); a die
+ * tumbling, its pips craters (its randomiser); meteors falling one after another (what plays its notes in turn); a star
+ * and its copies spread to its sides, twinkling out of step (unison); a planet that turns from day to night, the line
+ * between them lit (its skins). Lit from the top left, as SynthWorld's planet, in the palette's colours. While the
+ * mouse is over it, or over what it's in, it moves, unless the visitor asked for less motion.
  */
-export type SpaceObjectKind = 'binary' | 'constellation' | 'comet' | 'rings' | 'satellite';
+export type SpaceObjectKind =
+  | 'binary'
+  | 'constellation'
+  | 'comet'
+  | 'rings'
+  | 'satellite'
+  | 'system'
+  | 'blackhole'
+  | 'die'
+  | 'meteors'
+  | 'cluster'
+  | 'phases';
+
+/** Every kind, for a page that names one in a text (<!-- object: <kind> -->) to check it's one. */
+export const spaceObjectKinds: SpaceObjectKind[] = ['binary', 'constellation', 'comet', 'rings', 'satellite', 'system', 'blackhole', 'die', 'meteors', 'cluster', 'phases'];
 
 interface Props {
   kind: SpaceObjectKind;
@@ -69,6 +87,59 @@ const signals = [5, 9, 13].map((radius) => {
   const side = radius * 0.7;
   return `M${-side} ${-8.5 - side}A${radius} ${radius} 0 0 1 ${side} ${-8.5 - side}`;
 });
+
+// The star's system, seen tilted as the satellite's orbit is (its inner orbit clear of the star): each planet's orbit,
+// size, colour, where on its orbit it rests (degrees from its right end), how long a turn takes it (seconds), and the
+// one with a moon; round them, a dust of pulses up and down, as a velvet noise's display draws them
+const SYSTEM_TILT = 0.42;
+const SYSTEM_PLANE = `translate(60 60) rotate(-12) scale(1 ${SYSTEM_TILT})`;
+const planets = [
+  { radius: 26, size: 3.2, colour: 'accent', start: 205, turn: 9, moon: false },
+  { radius: 38, size: 4.4, colour: 'highlight', start: 330, turn: 15, moon: true },
+  { radius: 50, size: 3.6, colour: 'foreground', start: 115, turn: 24, moon: false },
+];
+const dust: [number, number, boolean][] = [
+  [12, 30, true],
+  [22, 18, false],
+  [98, 20, true],
+  [108, 34, false],
+  [16, 92, false],
+  [30, 104, true],
+  [92, 100, false],
+  [106, 88, true],
+  [6, 62, true],
+  [114, 58, false],
+  [70, 8, false],
+  [48, 112, true],
+];
+
+// The black hole's disk, seen nearly edge on: its far half behind the hole, its near half over it; its eight arcs
+// (the circle less a gap between each)
+const DISK_PLANE = 'translate(60 61) rotate(-8) scale(1 0.26)';
+const DISK = 36;
+const slots = `${((2 * Math.PI * DISK) / 8 - 3.5).toFixed(2)} 3.5`;
+
+// The die, a cube seen from above its corner: each face a square drawn onto it (matrix: its sides' two ways and its
+// corner), the light falling from the top left; its pips, on the unit square (1 on top, 2 and 3 on its sides)
+const faces = [
+  { class: 'top', matrix: 'matrix(30 -17 30 17 30 45)', pips: [[0.5, 0.5]] },
+  { class: 'left', matrix: 'matrix(30 17 0 34 30 45)', pips: [[0.27, 0.27], [0.73, 0.73]] },
+  { class: 'right', matrix: 'matrix(30 -17 0 34 60 62)', pips: [[0.25, 0.25], [0.5, 0.5], [0.75, 0.75]] },
+];
+
+// The meteors, one after another: where each one's head is, and its trail's length
+const meteors = [
+  [22, 58, 28],
+  [44, 66, 36],
+  [66, 74, 30],
+  [88, 82, 24],
+];
+
+// The star and its copies (the unison's voices), spread from the middle: how far out each is
+const voices = [-3, -2, -1, 0, 1, 2, 3];
+
+// The planet that turns from day to night: its night, a shadow wider than it, going across it
+const PHASE_RADIUS = 26;
 ---
 
 <svg class="object" viewBox="0 0 120 120" aria-hidden="true">
@@ -256,6 +327,187 @@ const signals = [5, 9, 13].map((radius) => {
       </>
     )
   }
+
+  {
+    kind === 'system' && (
+      <>
+        <defs>
+          <radialGradient id={id('star')}>
+            <stop offset="0" class="core" />
+            <stop offset="0.55" class="highlight-stop" />
+          </radialGradient>
+        </defs>
+        <circle cx="60" cy="60" r="30" fill={url('glow-highlight')} />
+        <g transform={SYSTEM_PLANE}>
+          {planets.map(({ radius }) => (
+            <circle class="course" r={radius} />
+          ))}
+        </g>
+        {dust.map(([x, y, up]) => (
+          <rect class={up ? 'foreground' : 'accent'} x={x - 0.9} y={y - 0.9} width="1.8" height="1.8" />
+        ))}
+        <circle cx="60" cy="60" r="6.5" fill={url('star')} />
+        {/* Each planet round its orbit in the orbit's plane, turned back as much and its plane's squash undone, as the satellite */}
+        {planets.map(({ radius, size, colour, start, turn, moon }) => (
+          <g transform={SYSTEM_PLANE}>
+            <g transform={`rotate(${start})`}>
+              <g class="orbit" style={`animation-duration: ${turn}s`}>
+                <g transform={`translate(${radius} 0)`}>
+                  <g class="upright" style={`animation-duration: ${turn}s`}>
+                    <g transform={`rotate(${-start}) scale(1 ${1 / SYSTEM_TILT})`}>
+                      <circle class={colour} r={size} />
+                      <circle r={size} fill={url('shade')} />
+                      {moon && (
+                        <g transform="scale(1 0.45)">
+                          <g class="orbit" style="animation-duration: 5s">
+                            <circle class="foreground" cx={size + 3.6} r="1.2" />
+                          </g>
+                        </g>
+                      )}
+                    </g>
+                  </g>
+                </g>
+              </g>
+            </g>
+          </g>
+        ))}
+      </>
+    )
+  }
+
+  {
+    kind === 'blackhole' && (
+      <>
+        <defs>
+          <clipPath id={id('far')}>
+            <rect x="-60" y="-60" width="120" height="60" />
+          </clipPath>
+          <clipPath id={id('near')}>
+            <rect x="-60" y="0" width="120" height="60" />
+          </clipPath>
+        </defs>
+        <circle cx="60" cy="60" r="46" fill={url('glow-accent')} />
+        {/* The disk's far half, its light bent over the hole and under it, the hole in its ring of light, the near half */}
+        {['far', 'near'].map((half) => (
+          <>
+            {half === 'near' && (
+              <>
+                <path class="lens" d="M41 60A19 20 0 0 1 79 60" />
+                <path class="lens faint" d="M45 62A15 12 0 0 0 75 62" />
+                <circle class="hole" cx="60" cy="60" r="13" />
+                <circle class="photon" cx="60" cy="60" r="13.6" />
+              </>
+            )}
+            <g transform={DISK_PLANE}>
+              <g clip-path={url(half)}>
+                <g class="swirl">
+                  <circle class="disk-glow" r={DISK} />
+                  <circle class="disk" r={DISK} stroke-dasharray={slots} />
+                  <circle class="disk-hot" r={DISK - 9} />
+                </g>
+              </g>
+            </g>
+          </>
+        ))}
+      </>
+    )
+  }
+
+  {
+    kind === 'die' && (
+      <>
+        <circle cx="60" cy="62" r="40" fill={url('glow-accent')} />
+        <path class="highlight" d={GLINT} transform="translate(18 26) scale(0.55)" />
+        <path class="foreground" d={GLINT} transform="translate(102 98) scale(0.4)" />
+        <g class="tumble">
+          {faces.map(({ class: face, matrix, pips }) => (
+            <g transform={matrix}>
+              <rect class:list={['face', face]} width="1" height="1" />
+              {/* A crater: its far wall lit, its pit towards the light */}
+              {pips.map(([x, y]) => (
+                <>
+                  <circle class="rim" cx={x} cy={y} r={pips.length === 1 ? 0.14 : 0.1} />
+                  <circle class:list={['pip', { one: pips.length === 1 }]} cx={x - 0.018} cy={y - 0.022} r={pips.length === 1 ? 0.125 : 0.088} />
+                </>
+              ))}
+            </g>
+          ))}
+          <path class="edge" d="M30 45 60 28 90 45M60 62V96M30 45 60 62 90 45" />
+        </g>
+      </>
+    )
+  }
+
+  {
+    kind === 'meteors' && (
+      <>
+        <defs>
+          <linearGradient id={id('trail')} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="26" y2="-26">
+            <stop offset="0" class="tail-head" />
+            <stop offset="0.45" class="tail-middle" />
+            <stop offset="1" class="accent-none" />
+          </linearGradient>
+        </defs>
+        <path class="foreground" d={GLINT} transform="translate(26 22) scale(0.5)" />
+        <path class="highlight" d={GLINT} transform="translate(100 44) scale(0.4)" />
+        <path class="foreground" d={GLINT} transform="translate(30 100) scale(0.35)" />
+        {meteors.map(([x, y, length], index) => (
+          <g transform={`translate(${x} ${y})`}>
+            <g class="fall" style={`animation-delay: ${(index * 0.22).toFixed(2)}s`}>
+              <path class="trail" d={`M0 0L${length} ${-length}`} stroke={url('trail')} />
+              <circle r="6" fill={url('glow-highlight')} />
+              <circle class="foreground" r="1.8" />
+            </g>
+          </g>
+        ))}
+      </>
+    )
+  }
+
+  {
+    kind === 'cluster' && (
+      <>
+        <path class="field" d="M6 60H114" />
+        {voices.map((voice) => (
+          <g transform={`translate(${60 + voice * 15} ${60 + voice * voice * 1.6 - 6})`}>
+            <g class="spread" style={`--voice: ${voice}`}>
+              <g class="twinkle" style={`animation-duration: ${(1.6 + Math.abs(voice) * 0.13 + (voice < 0 ? 0.05 : 0)).toFixed(2)}s`}>
+                <g transform={`scale(${(1.25 - Math.abs(voice) * 0.17).toFixed(2)})`}>
+                  <circle r="10" fill={url(voice === 0 ? 'glow-highlight' : 'glow-accent')} />
+                  <path class={voice === 0 ? 'highlight' : 'foreground'} d={GLINT} />
+                </g>
+              </g>
+            </g>
+          </g>
+        ))}
+      </>
+    )
+  }
+
+  {
+    kind === 'phases' && (
+      <>
+        <defs>
+          <clipPath id={id('disc')}>
+            <circle cx="60" cy="60" r={PHASE_RADIUS} />
+          </clipPath>
+        </defs>
+        <circle cx="60" cy="60" r="40" fill={url('glow-accent')} />
+        <g clip-path={url('disc')}>
+          <circle class="day" cx="60" cy="60" r={PHASE_RADIUS} />
+          <g transform="rotate(-16 60 60)">
+            <rect class="band-dark" x="30" y="47" width="60" height="4" />
+            <rect class="band-light" x="30" y="56" width="60" height="5" />
+            <rect class="band-dark" x="30" y="66" width="60" height="3" />
+          </g>
+          <g class="phase">
+            <circle class="night" cx={60 + PHASE_RADIUS * 1.15} cy="60" r={PHASE_RADIUS * 1.3} />
+          </g>
+          <circle cx="60" cy="60" r={PHASE_RADIUS} fill={url('shade')} />
+        </g>
+      </>
+    )
+  }
 </svg>
 
 <style>
@@ -435,6 +687,118 @@ const signals = [5, 9, 13].map((radius) => {
     visibility: hidden;
   }
 
+  /* The black hole: darker than space, in its ring of light; its disk white-hot inside, the light bent round it */
+  .hole {
+    fill: #03070d;
+  }
+
+  .photon {
+    fill: none;
+    stroke: var(--foreground);
+    stroke-opacity: 0.85;
+    stroke-width: 0.9;
+  }
+
+  .disk-glow,
+  .disk,
+  .disk-hot {
+    fill: none;
+  }
+
+  .disk-glow {
+    stroke: var(--accent);
+    stroke-opacity: 0.35;
+    stroke-width: 18;
+  }
+
+  .disk {
+    stroke: var(--highlight);
+    stroke-opacity: 0.85;
+    stroke-width: 6;
+  }
+
+  .disk-hot {
+    stroke: var(--foreground);
+    stroke-opacity: 0.8;
+    stroke-width: 2.5;
+  }
+
+  .lens {
+    fill: none;
+    stroke: var(--highlight);
+    stroke-opacity: 0.75;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+  }
+
+  .lens.faint {
+    stroke: var(--accent);
+    stroke-width: 1.2;
+  }
+
+  /* The die's faces, lit from the top left: its top, its left side in half light, its right side in the shade */
+  .face.top {
+    fill: var(--foreground);
+  }
+
+  .face.left {
+    fill: color-mix(in srgb, var(--foreground) 55%, var(--surface));
+  }
+
+  .face.right {
+    fill: color-mix(in srgb, var(--surface) 55%, var(--recess));
+  }
+
+  .pip {
+    fill: var(--recess);
+    fill-opacity: 0.85;
+  }
+
+  .pip.one {
+    fill: var(--accent);
+    fill-opacity: 1;
+  }
+
+  .rim {
+    fill: var(--foreground);
+    fill-opacity: 0.9;
+  }
+
+  .edge {
+    fill: none;
+    stroke: var(--foreground);
+    stroke-width: 0.8;
+    stroke-linejoin: round;
+    stroke-opacity: 0.6;
+  }
+
+  .trail {
+    fill: none;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+  }
+
+  /* The unison's field, from left to right */
+  .field {
+    fill: none;
+    stroke: var(--surface);
+    stroke-opacity: 0.35;
+    stroke-width: 0.8;
+    stroke-dasharray: 2 3;
+  }
+
+  /* The planet by day, pale as SynthWorld's light skin, and its night, dark as its own, the line between them lit */
+  .day {
+    fill: color-mix(in srgb, var(--foreground) 70%, var(--accent));
+  }
+
+  .night {
+    fill: var(--recess);
+    fill-opacity: 0.92;
+    stroke: var(--highlight);
+    stroke-width: 1.2;
+  }
+
   .signal {
     fill: none;
     stroke: var(--highlight);
@@ -486,6 +850,36 @@ const signals = [5, 9, 13].map((radius) => {
       animation: signal 1.5s ease-out infinite paused;
     }
 
+    /* The disk's arcs going round the hole */
+    .swirl {
+      animation: turn 14s linear infinite paused;
+    }
+
+    /* The die tumbling, and drifting a little as it does */
+    .tumble {
+      transform-origin: 60px 62px;
+      animation: tumble 6s cubic-bezier(0.45, 0, 0.55, 1) infinite paused;
+    }
+
+    /* Each meteor falling, then back where it rests, one after another */
+    .fall {
+      animation: fall 3s ease-in infinite paused;
+    }
+
+    /* The voices spreading out and back, each twinkling at its own pace: out of tune with the others */
+    .spread {
+      animation: spread 4s ease-in-out infinite alternate paused;
+    }
+
+    .twinkle {
+      animation: twinkle 1.6s ease-in-out infinite alternate paused;
+    }
+
+    /* The night going across the planet, the day coming back behind it */
+    .phase {
+      animation: phase 12s linear infinite paused;
+    }
+
     :global(:hover) > .object * {
       animation-play-state: running;
     }
@@ -522,6 +916,52 @@ const signals = [5, 9, 13].map((radius) => {
   @keyframes signal {
     50% {
       opacity: 1;
+    }
+  }
+
+  @keyframes tumble {
+    50% {
+      translate: 4px -5px;
+    }
+
+    to {
+      rotate: 1turn;
+    }
+  }
+
+  /* Gone by two fifths of the way, back from where it came, unseen, then in where it rests */
+  @keyframes fall {
+    40% {
+      translate: -16px 16px;
+      opacity: 0;
+    }
+
+    41% {
+      translate: 14px -14px;
+      opacity: 0;
+    }
+  }
+
+  @keyframes spread {
+    to {
+      translate: calc(var(--voice) * 3.5px) 0;
+    }
+  }
+
+  @keyframes twinkle {
+    to {
+      opacity: 0.45;
+    }
+  }
+
+  /* Across, and gone out of its left; then, unseen as the planet's all day, back in from its right */
+  @keyframes phase {
+    70% {
+      translate: -96px 0;
+    }
+
+    70.01% {
+      translate: 32px 0;
     }
   }
 </style>

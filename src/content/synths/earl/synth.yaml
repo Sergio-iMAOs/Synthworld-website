@@ -36,6 +36,96 @@ home:
       en: "EARL's Synth page in the SW Default skin: a wavetable oscillator, a granular one playing a sample, and a third oscillator showing its unison, nine voices spread between left and right"
       es: "La página Synth de EARL con la skin SW Default: un oscilador de tablas de ondas, uno granular tocando una muestra, y un tercer oscilador mostrando su unísono, nueve voces repartidas entre izquierda y derecha"
 screenshots:
+  # Its generators, close up: the first oscillator as each of its four, and the noise with the sub-oscillator under it
+  - id: wavetable
+    image: ./screenshots/wavetable.png
+    alt:
+      en: "A wavetable oscillator playing the Wavefolder wavetable: its frames drawn one behind the other, the one it's at in front, over its COARSE, ST and CT fields and its PHASE, RANDOM, FM, POS, SYNC, PAN and GAIN knobs"
+      es: "Un oscilador de tablas de ondas tocando la tabla Wavefolder: sus fotogramas dibujados uno detrás de otro, con el que está sonando delante, sobre sus campos COARSE, ST y CT y sus perillas PHASE, RANDOM, FM, POS, SYNC, PAN y GAIN"
+    caption:
+      en: "A wavetable oscillator, moving through its wavetable."
+      es: "Un oscilador de tablas de ondas, que recorre su tabla."
+  - id: triple-oscillator
+    image: ./screenshots/triple-oscillator.png
+    alt:
+      en: "The Triple Oscillator: three simple oscillators one above the other, playing a sine, a saw and a square, each with its wave's buttons, its pitch, phase, pulse width, pan and gain"
+      es: "El Triple Oscillator: tres osciladores simples uno encima de otro, tocando una senoidal, una diente de sierra y una cuadrada, cada uno con los botones de su onda, su afinación, fase, ancho de pulso, paneo y ganancia"
+    caption:
+      en: "Three simple oscillators together, each a wave of its own."
+      es: "Tres osciladores simples juntos, cada uno con su propia onda."
+  - id: sampler
+    image: ./screenshots/sampler.png
+    alt:
+      en: "The Sampler: a stereo sample's waveform between its start and end marks, the buttons of how it plays beside it, and its pitch, root key, release, pan and gain under it"
+      es: "El Sampler: la forma de onda de un sample estéreo entre sus marcas de inicio y fin, los botones de cómo se toca a su lado, y debajo su afinación, nota raíz, release, paneo y ganancia"
+    caption:
+      en: "A sampler, playing your audio files."
+      es: "Un sampler, que toca tus archivos de audio."
+  - id: granular
+    image: ./screenshots/granular.png
+    alt:
+      en: "The Granular: a sample's waveform with the part its grains are taken from lit, where it's at marked, and how many grains are playing; its SOURCE, SCAN, TIME, GRAIN, PITCH and MIX tabs, and its position, spray, pan and gain"
+      es: "El Granular: la forma de onda de un sample con la parte de la que toma sus granos iluminada, el punto en el que está marcado, y cuántos granos suenan; sus pestañas SOURCE, SCAN, TIME, GRAIN, PITCH y MIX, y su posición, dispersión, paneo y ganancia"
+    caption:
+      en: "A granular, made of grains of a sample."
+      es: "Un granular, hecho de granos de un sample."
+  - id: noise
+    image: ./screenshots/noise.png
+    alt:
+      en: "The Colour Noise playing pink noise, its colours' buttons under its display, and the Sub Oscillator under it with its wave's buttons, its pitch, phase, pan and gain"
+      es: "El Colour Noise tocando ruido rosa, con los botones de sus colores bajo su pantalla, y debajo el Sub Oscillator con los botones de su onda, su afinación, fase, paneo y ganancia"
+    caption:
+      en: "A coloured noise, here pink, and the sub-oscillator under it."
+      es: "Un ruido de color, aquí rosa, y el suboscilador debajo."
+  # What the voice's sound goes through, close up: its four filters, one of each kind, and its saturator and bitcrusher
+  - id: filter-ladder
+    image: ./screenshots/filter-ladder.png
+    alt:
+      en: "The Ladder Filter: its curve, low-pass at 24 dB, beside its CUTOFF, RES, DRIVE and MIX knobs, and the buttons of the sources going into it"
+      es: "El Ladder Filter: su curva, paso bajo de 24 dB, junto a sus perillas CUTOFF, RES, DRIVE y MIX, y los botones de las fuentes que entran en él"
+    caption:
+      en: "A ladder filter, low-pass or high-pass, with a drive of its own."
+      es: "Un filtro ladder, paso bajo o paso alto, con su propia saturación."
+  - id: filter-state-variable
+    image: ./screenshots/filter-state-variable.png
+    alt:
+      en: "The State Variable Filter: its curve beside its CUTOFF, Q, TYPE, DRIVE and MIX knobs and its slope, 12 dB"
+      es: "El State Variable Filter: su curva junto a sus perillas CUTOFF, Q, TYPE, DRIVE y MIX y su pendiente, 12 dB"
+    caption:
+      en: "A state variable filter, morphing from low-pass to band-pass to high-pass."
+      es: "Un filtro de variable de estado, que pasa de paso bajo a paso banda y a paso alto."
+  - id: filter-comb
+    image: ./screenshots/filter-comb.png
+    alt:
+      en: "The Comb Filter: its comb of peaks across the frequencies beside its FREQ, FEEDBACK, DAMP and MIX knobs, its key tracking on"
+      es: "El Comb Filter: su peine de picos a lo largo de las frecuencias junto a sus perillas FREQ, FEEDBACK, DAMP y MIX, con su seguimiento de teclado activado"
+    caption:
+      en: "A comb filter, ringing like a string or a tube at the note you play."
+      es: "Un filtro comb, que resuena como una cuerda o un tubo en la nota que tocas."
+  - id: filter-formant
+    image: ./screenshots/filter-formant.png
+    alt:
+      en: "The Formant Filter: a vowel's peaks beside its voice, TENOR, and its VOWEL, SHIFT, Q and MIX knobs"
+      es: "El Formant Filter: los picos de una vocal junto a su voz, TENOR, y sus perillas VOWEL, SHIFT, Q y MIX"
+    caption:
+      en: "A formant filter, making the sound talk in a bass's, tenor's, alto's or soprano's vowels."
+      es: "Un filtro de formantes, que hace hablar al sonido con las vocales de un bajo, un tenor, una contralto o una soprano."
+  - id: saturator
+    image: ./screenshots/saturator.png
+    alt:
+      en: "The Voice Saturator in TUBE: its curve beside its high-pass and low-pass filters, and its DRIVE, OUTPUT and MIX knobs"
+      es: "El Voice Saturator en TUBE: su curva junto a sus filtros paso alto y paso bajo, y sus perillas DRIVE, OUTPUT y MIX"
+    caption:
+      en: "The voice's saturator, here a tube's warmth: one of six curves."
+      es: "El saturador de la voz, aquí con la calidez de un tubo: una de seis curvas."
+  - id: bitcrusher
+    image: ./screenshots/bitcrusher.png
+    alt:
+      en: "The Voice Bitcrusher at 3000 Hz: a wave cut into steps beside its BITS, RATE, DITHER and MIX knobs"
+      es: "El Voice Bitcrusher a 3000 Hz: una onda cortada en escalones junto a sus perillas BITS, RATE, DITHER y MIX"
+    caption:
+      en: "The voice's bitcrusher, fewer bits and a lower rate for a grainier sound."
+      es: "El bitcrusher de la voz: menos bits y menos frecuencia de muestreo para un sonido más granulado."
   - id: velvet-noise
     image: ./screenshots/velvet-noise.png
     alt:
@@ -47,27 +137,27 @@ screenshots:
   - id: graph
     image: ./screenshots/graph.png
     alt:
-      en: "EARL's Graph page: the patch's processors as nodes joined by cables, the voice's on the left and the global effects on the right"
-      es: "La página Graph de EARL: los procesadores del patch como nodos unidos por cables, los de la voz a la izquierda y los efectos globales a la derecha"
+      en: "EARL's Graph page with every processor on: the notes' nodes on the left; the voice's oscillators, noise and sub-oscillator cabled into four filters, then the saturator and the VCA, its LFOs, envelopes and what you play under them; and the effects in a chain on the right"
+      es: "La página Graph de EARL con todos los procesadores encendidos: los nodos de las notas a la izquierda; los osciladores, el ruido y el suboscilador de la voz cableados a cuatro filtros, luego el saturador y el VCA, y debajo sus LFO, envolventes y lo que tocas; y los efectos en cadena a la derecha"
     caption:
       en: "The Graph page: each voice on the left, the effects on the right."
       es: "La página Graph: cada voz a la izquierda, los efectos a la derecha."
   - id: mod-matrix
     image: ./screenshots/mod-matrix.png
     alt:
-      en: "EARL's Mod Matrix page: a row for each modulation, with its source, its target, its amount and its curve"
-      es: "La página Mod Matrix de EARL: una fila por modulación, con su fuente, su destino, su cantidad y su curva"
+      en: "The voice's modulation matrix: a row for each modulation, the Amp Envelope on the VCA's gain, LFOs on a wavetable's position, pan and pitch, the mod wheel on another modulation's amount, each with its amount and its curve"
+      es: "La matriz de modulación de la voz: una fila por modulación, la Amp Envelope sobre la ganancia del VCA, LFO sobre la posición, el paneo y la afinación de una tabla de ondas, la rueda de modulación sobre la cantidad de otra modulación, cada una con su cantidad y su curva"
     caption:
-      en: "The Mod Matrix page: each modulation with its amount and its curve."
-      es: "La página Mod Matrix: cada modulación con su cantidad y su curva."
+      en: "The Mod Matrix page: each modulation with its amount and its curve, even of another one."
+      es: "La página Mod Matrix: cada modulación con su cantidad y su curva, incluso de otra."
   - id: global
     image: ./screenshots/global.png
     alt:
-      en: "EARL's Global page: eight effect slots in two columns, and the global envelopes, LFOs and audio input under them"
-      es: "La página Global de EARL: ocho ranuras de efectos en dos columnas, y debajo las envolventes, los LFO y la entrada de audio globales"
+      en: "EARL's FX page: eight effects in two columns, a filter, a saturator, a bitcrusher, a chorus, a flanger, a phaser, a delay and a reverb, each with its display; the global envelope, LFO and audio input under them"
+      es: "La página FX de EARL: ocho efectos en dos columnas, un filtro, un saturador, un bitcrusher, un chorus, un flanger, un phaser, un delay y una reverb, cada uno con su pantalla; y debajo la envolvente, el LFO y la entrada de audio globales"
     caption:
-      en: "The Global page: the eight effect slots, and the effects' own modulators."
-      es: "La página Global: las ocho ranuras de efectos y los moduladores propios de los efectos."
+      en: "The FX page: the eight effect slots, and the effects' own modulators."
+      es: "La página FX: las ocho ranuras de efectos y los moduladores propios de los efectos."
   - id: randomiser
     image: ./screenshots/randomiser.png
     alt:
@@ -79,8 +169,8 @@ screenshots:
   - id: notes
     image: ./screenshots/notes.png
     alt:
-      en: "EARL's Notes page: the transposition, the chord maker and the arpeggiator at the top, the voices' and the unison's settings under them"
-      es: "La página Notes de EARL: la transposición, el generador de acordes y el arpegiador arriba, y debajo los ajustes de las voces y del unísono"
+      en: "EARL's Notes page: the transposition, the chord maker and the arpeggiator, all three on, at the top; the voices' settings under them, and the unison's, five voices drawn between left and right"
+      es: "La página Notes de EARL: la transposición, el generador de acordes y el arpegiador, los tres encendidos, arriba; debajo los ajustes de las voces, y los del unísono, cinco voces dibujadas entre izquierda y derecha"
     caption:
       en: "The Notes page: what changes the notes, and the voices, glide and unison."
       es: "La página Notes: lo que cambia las notas, y las voces, el glide y el unísono."
@@ -103,11 +193,11 @@ screenshots:
   - id: tuning
     image: ./screenshots/tuning.png
     alt:
-      en: "EARL's Tuning page"
-      es: "La página Tuning de EARL"
+      en: "EARL's Tuning page playing Bohlen-Pierce: EARL's tunings to choose from on the left, Bohlen-Pierce's description and its 13 notes drawn across its period of 1902 cents in the middle, and its settings on the right: A's pitch, its reference and root keys, where it repeats, and each of its notes in cents"
+      es: "La página Tuning de EARL tocando Bohlen-Pierce: las afinaciones de EARL entre las que elegir a la izquierda, la descripción de Bohlen-Pierce y sus 13 notas dibujadas a lo largo de su periodo de 1902 cents en el centro, y sus ajustes a la derecha: la altura del La, sus notas de referencia y raíz, dónde se repite y cada una de sus notas en cents"
     caption:
-      en: "The Tuning page."
-      es: "La página Tuning."
+      en: "The Tuning page, in Bohlen-Pierce: 13 notes to a tritave."
+      es: "La página Tuning, en Bohlen-Pierce: 13 notas por tritava."
 # Its skins, in the order it offers them (Tux is only on Linux): the Synth page in each, taken the same way
 skins:
   - name: SW Default

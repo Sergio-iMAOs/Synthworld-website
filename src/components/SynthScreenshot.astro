@@ -1,4 +1,10 @@
 ---
+/**
+ * A picture of a synth's window, or of a part of it, on its page: in the corners of a sight (as the synths' page's
+ * nodes are), shining in space, lit from the top left, its line under it. As it comes into view, it turns from lying
+ * back in space to facing the visitor: by how far into view it is (`--seen`, 0 to 1, which the page's script gives
+ * what has `data-seen`); without it, it faces them.
+ */
 import { Image } from 'astro:assets';
 import { langOf } from '@/i18n';
 import type { Synth } from '@/synths';
@@ -13,19 +19,90 @@ const lang = langOf(Astro.url);
 const width = image.width / 2;
 ---
 
-<figure class="screenshot" style={`max-width: ${width}px`}>
-  <Image class="window" src={image} alt={alt[lang]} widths={[width, width * 2].filter((w) => w >= 400)} sizes={`(min-width: ${width}px) ${width}px, 100vw`} />
+<figure class="screenshot" style={`max-width: calc(${width}px + 2 * var(--gap))`} data-seen>
+  <span class="sight">
+    <span class="glass">
+      <Image class="window" src={image} alt={alt[lang]} widths={[width, width * 2].filter((w) => w >= 400)} sizes={`(min-width: ${width}px) ${width}px, 100vw`} />
+    </span>
+  </span>
   <figcaption>{caption[lang]}</figcaption>
 </figure>
 
 <style>
   figure {
-    margin: 2rem 0 2.5rem;
+    --gap: clamp(0.45rem, 1.2vw, 0.75rem);
+    margin: 2.5rem auto 3rem;
+  }
+
+  /* The sight, a little out from the picture all round, turned by how far into view it is */
+  .sight {
+    --sight: color-mix(in srgb, var(--accent) 50%, transparent);
+    --arm: 1.25rem;
+    --line: 1.5px;
+    position: relative;
+    display: block;
+    padding: var(--gap);
+    transform: perspective(70rem) rotateX(calc((1 - var(--seen, 1)) * 24deg)) scale(calc(1 - (1 - var(--seen, 1)) * 0.08));
+    opacity: calc(0.35 + 0.65 * var(--seen, 1));
+  }
+
+  .sight::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(var(--sight) 0 0) top left / var(--arm) var(--line),
+      linear-gradient(var(--sight) 0 0) top left / var(--line) var(--arm),
+      linear-gradient(var(--sight) 0 0) top right / var(--arm) var(--line),
+      linear-gradient(var(--sight) 0 0) top right / var(--line) var(--arm),
+      linear-gradient(var(--sight) 0 0) bottom left / var(--arm) var(--line),
+      linear-gradient(var(--sight) 0 0) bottom left / var(--line) var(--arm),
+      linear-gradient(var(--sight) 0 0) bottom right / var(--arm) var(--line),
+      linear-gradient(var(--sight) 0 0) bottom right / var(--line) var(--arm);
+    background-repeat: no-repeat;
+    pointer-events: none;
+  }
+
+  /* Its glow: violet light round it */
+  .sight::after {
+    content: '';
+    position: absolute;
+    inset: -14% -10%;
+    z-index: -1;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 22%, transparent), transparent);
+    pointer-events: none;
+  }
+
+  /* The light falling on its glass from the top left */
+  .glass {
+    position: relative;
+    display: block;
+  }
+
+  .glass::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--foreground) 14%, transparent), transparent 35%);
+    pointer-events: none;
+  }
+
+  .window {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid color-mix(in srgb, var(--surface) 25%, transparent);
+    border-radius: var(--radius);
+    box-shadow:
+      0 2rem 4rem -2rem rgb(0 0 0 / 0.8),
+      0 0 4rem -1rem color-mix(in srgb, var(--accent) 35%, transparent);
   }
 
   figcaption {
     margin-top: 0.75rem;
-    font-size: 0.9rem;
     color: var(--surface);
+    font-size: 0.9rem;
+    text-align: center;
   }
 </style>

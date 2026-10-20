@@ -1,30 +1,39 @@
 
 
+Optimize performance
+
 ## EARL
 
-Remake EARL page to better fit the style of main and Synths page. Make it look cosmically cool and creative. Add animations, integrate the different parts and sections into space elements.
-The first showcase of EARL at the beginning of the page has to be cosmically epic.
+EARL page "Its skins" section: The image should show EARL main image (oscillator 3 in unison, saturator ouptut at 0dB) but with oscillator 3 deactivated
+
+Synths page: Change EARL node synth image for EARL main image (the synth page with Synthworld White skin)
+
+Add EARL's user manual?
 
 Music samples section
 Turn images into animations.
 
 Web version to demo it
 
+## About page
+
+
 ## Portfolio
 Adjust pictures size. Some of them have unnecesarily high resolution, which takes space
+
+Portfolio Music section Remove "The studio" Section
+
+Portfolio About section: Remove the keyboard picture
+
+Portfolio Landing page: Replace about picture to aalto_lab_2 (crop accordingly). You can modify the file itself, it's not the original
 
 Update my email when I have the domain
 
 
 ## EARL's screenshots
 
-Its page and card show placeholders (`src/content/synths/earl/screenshots/`). Next: take the real ones with
-`npm run screenshots` (the script already works: it draws six pages of the Init patch, and close-ups of
-the velvet noise's panel, the two unisons and the randomiser) and make them worth
-showing:
-- A patch with something in it: the snapshot tool can't load a preset yet ("Loading one does nothing here",
-  `tests/snapshot/EarlSnapshot.cpp`), so it needs that in the framework, or the patch built by clicks.
-- Sound playing where it shows (`SYNTHWORLD_SNAPSHOT_AUDIO`, already on for the cover), and maybe details
-  cropped from the window besides whole pages.
-- Check each one's `alt` and `caption` in `synth.yaml` against what it ends up showing (the Tuning page's alt
-  is only its name).
+Taken in SW Light with `npm run screenshots`, each with a patch in it: Soft Pad, Bohlen-Pierce Squares, or the
+framework's benchmarks (Everything, Modulation Matrix) for the Graph, Mod Matrix and FX pages, cropped to the page
+since a patch from a file shows as "Init" in the header:
+- A showcase factory preset in the framework would let the whole window show, header and all, with its name.
+- The samplers play the snapshot tool's stand-in sample, "Pluck", until it has EARL's stock samples.
