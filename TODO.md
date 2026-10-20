@@ -1,5 +1,5 @@
 
-
+Add the sine wave squiggle mouse animation to all the main page (drawn behind elements but over teh background)
 
 
 ## EARL

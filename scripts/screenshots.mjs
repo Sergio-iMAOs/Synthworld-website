@@ -42,7 +42,7 @@ const synths = {
       // Its skins, in the order it offers them (EarlUI.cpp; Tux is only on Linux): the Synth page in each, playing a
       // factory preset with more of its panels on (the second oscillator, the noise, the sub-oscillator, Filter 1 and
       // the saturator) for more of each skin's colours, and the mouse out of the window
-      ...['SW Default', 'SW Light', 'Deep Sea', 'Riso', 'Tux'].map((skin) => ({
+      ...['SW Default', 'SW Light', 'Deep Sea', 'Riso', 'Starship', 'Tux'].map((skin) => ({
         file: `skins/${skin.toLowerCase().replaceAll(' ', '-')}.png`,
         env: { SYNTHWORLD_SNAPSHOT_SKIN: skin, SYNTHWORLD_SNAPSHOT_PATCH: 'EARL Factory/Soft Pad', SYNTHWORLD_SNAPSHOT_AUDIO: '1' },
         actions: ['click=315,47', 'click=905,47', 'click=907,234', 'click=17,352', 'click=614,352', 'move=600,620', 'wait=500'],

@@ -13,8 +13,14 @@ const en = {
     construction: 'This site is under construction: nothing has been released yet, and what you read here may still change.',
     lead: 'Synthesizers on an engine of their own, where anything can be routed into anything and anything can modulate anything.',
     cta: 'See the synths',
-    first: 'The first synth →',
-    synths: 'The synths',
+    first: 'The first synth',
+    discover: (name: string) => `Discover ${name}`,
+    /** A synth's window in SynthWorld's two skins, the light one by day and the dark one by night (SynthDayNight) */
+    dayNight: {
+      line: 'The line between day and night',
+      hint: 'Drag the line between day and night.',
+      show: (day: string, night: string) => `Show ${day} and ${night}`,
+    },
     engine: 'In every SynthWorld synth',
     features: [
       {
@@ -34,12 +40,8 @@ const en = {
         text: 'Scales of any number of notes, Scala files, and MTS-ESP. MPE, for a bend, pressure and timbre of each note.',
       },
       {
-        title: 'Your own material',
-        text: 'Import your wavetables (pictures too) and your samples, and keep them with your presets.',
-      },
-      {
         title: 'In your DAW or on its own',
-        text: 'CLAP and VST3 plugins, and a standalone application.',
+        text: 'CLAP, VST3, LV2 and AU (on macOS) plugins, and a standalone application.',
       },
     ],
   },
@@ -90,8 +92,13 @@ const es: typeof en = {
     construction: 'Este sitio está en construcción: aún no se ha publicado nada, y lo que lees aquí todavía puede cambiar.',
     lead: 'Sintetizadores sobre un motor propio, en los que cualquier cosa puede enrutarse a cualquier otra y cualquier cosa puede modular cualquier otra.',
     cta: 'Ver los sintes',
-    first: 'El primer sinte →',
-    synths: 'Los sintes',
+    first: 'El primer sinte',
+    discover: (name: string) => `Descubre ${name}`,
+    dayNight: {
+      line: 'La línea entre el día y la noche',
+      hint: 'Arrastra la línea entre el día y la noche.',
+      show: (day: string, night: string) => `Ver ${day} y ${night}`,
+    },
     engine: 'En todos los sintes de SynthWorld',
     features: [
       {
@@ -111,12 +118,8 @@ const es: typeof en = {
         text: 'Escalas de cualquier número de notas, archivos Scala y MTS-ESP. MPE, para la inflexión, la presión y el timbre de cada nota.',
       },
       {
-        title: 'Tu propio material',
-        text: 'Importa tus tablas de ondas (también desde imágenes) y tus samples, y guárdalos con tus presets.',
-      },
-      {
         title: 'En tu DAW o por sí solo',
-        text: 'Plugins CLAP y VST3, y una aplicación independiente.',
+        text: 'Plugins CLAP, VST3, LV2 y AU (en macOS), y una aplicación independiente.',
       },
     ],
   },

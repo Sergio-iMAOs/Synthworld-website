@@ -1,0 +1,500 @@
+---
+/**
+ * A thing in space, drawn for one of the engine's features on the home page: two stars that move each other, matter
+ * flowing between them (anything modulates anything); a constellation, one of its lines being rewired (a patch you can
+ * rewire); a comet gliding (no clicks); a planet ringed with scales of 7, 12, 19, 24 and 31 notes, their steps going
+ * round (any tuning); a satellite orbiting a planet, signalling (in your DAW or on its own). Lit from the top left, as
+ * SynthWorld's planet, in the palette's colours. While the mouse is over it, or over what it's in, it moves, unless the
+ * visitor asked for less motion.
+ */
+export type SpaceObjectKind = 'binary' | 'constellation' | 'comet' | 'rings' | 'satellite';
+
+interface Props {
+  kind: SpaceObjectKind;
+}
+
+const { kind } = Astro.props;
+// Its gradients' and clips' ids, unique in the page: every SVG of a page shares them
+const id = (name: string) => `space-object-${kind}-${name}`;
+const url = (name: string) => `url(#${id(name)})`;
+
+/** A star's glint, round 0, 0 */
+const GLINT = 'M0-7C.7-.7.7-.7 7 0C.7.7.7.7 0 7C-.7.7-.7.7-7 0C-.7-.7-.7-.7 0-7Z';
+
+// The tuning's rings, each a scale of so many notes: a ring of so many steps, turning in so many seconds
+const rings = [
+  { radius: 31, notes: 7 },
+  { radius: 36, notes: 12 },
+  { radius: 41, notes: 19 },
+  { radius: 46, notes: 24 },
+  { radius: 51, notes: 31 },
+].map(({ radius, notes }, index) => {
+  const length = 2 * Math.PI * radius;
+  return { radius, notes, dash: `${(length / notes - 2).toFixed(2)} 2`, turn: 12 + index * 3.5 };
+});
+/** Seen tilted: a ring's plane, round the planet's centre */
+const RING_PLANE = 'translate(60 60) rotate(-16) scale(1 0.3)';
+
+// The constellation: its stars (x, y, size, lit), the lines between them, and the one being rewired
+const stars: [number, number, number, boolean][] = [
+  [16, 42, 0.8, false],
+  [40, 22, 1.1, false],
+  [72, 30, 0.9, false],
+  [102, 16, 0.7, false],
+  [56, 60, 1.3, true],
+  [24, 86, 0.8, false],
+  [90, 74, 1, true],
+  [62, 102, 0.7, false],
+];
+const lines = [
+  [0, 1],
+  [1, 2],
+  [2, 3],
+  [1, 4],
+  [4, 5],
+  [4, 6],
+  [6, 7],
+];
+const rewired = [2, 6];
+
+// The satellite's orbit, seen tilted round the planet's centre (a circle squashed to so much of its height), where on
+// it the satellite rests (degrees from its right end: on its far side, clear of the planet), and its signal's arcs over
+// its antenna
+const ORBIT_TILT = 0.28;
+const ORBIT_PLANE = `translate(50 66) rotate(-14) scale(1 ${ORBIT_TILT})`;
+const ORBIT_START = -35;
+const signals = [5, 9, 13].map((radius) => {
+  const side = radius * 0.7;
+  return `M${-side} ${-8.5 - side}A${radius} ${radius} 0 0 1 ${side} ${-8.5 - side}`;
+});
+---
+
+<svg class="object" viewBox="0 0 120 120" aria-hidden="true">
+  <defs>
+    <radialGradient id={id('shade')} cx="0.32" cy="0.28" r="0.95">
+      <stop offset="0" class="lit"></stop>
+      <stop offset="0.32" class="clear"></stop>
+      <stop offset="0.32" class="unlit"></stop>
+      <stop offset="0.75" class="dark"></stop>
+      <stop offset="1" class="night"></stop>
+    </radialGradient>
+    <radialGradient id={id('glow-highlight')}>
+      <stop offset="0" class="highlight-glow"></stop>
+      <stop offset="1" class="highlight-none"></stop>
+    </radialGradient>
+    <radialGradient id={id('glow-accent')}>
+      <stop offset="0" class="accent-glow"></stop>
+      <stop offset="1" class="accent-none"></stop>
+    </radialGradient>
+    <radialGradient id={id('glow-foreground')}>
+      <stop offset="0" class="foreground-glow"></stop>
+      <stop offset="1" class="foreground-none"></stop>
+    </radialGradient>
+  </defs>
+
+  {
+    kind === 'binary' && (
+      <>
+        <defs>
+          <radialGradient id={id('star-highlight')}>
+            <stop offset="0" class="core" />
+            <stop offset="0.55" class="highlight-stop" />
+          </radialGradient>
+          <radialGradient id={id('star-accent')}>
+            <stop offset="0" class="core" />
+            <stop offset="0.55" class="accent-stop" />
+          </radialGradient>
+        </defs>
+        <circle class="course" cx="60" cy="60" r="16" />
+        <circle class="course" cx="60" cy="60" r="38" />
+        <g class="turn">
+          <circle cx="44" cy="60" r="32" fill={url('glow-highlight')} />
+          <circle cx="98" cy="60" r="21" fill={url('glow-accent')} />
+          <path class="flow" d="M89 55Q76 40 58 52" />
+          <circle cx="44" cy="60" r="14" fill={url('star-highlight')} />
+          <circle cx="98" cy="60" r="9" fill={url('star-accent')} />
+        </g>
+      </>
+    )
+  }
+
+  {
+    kind === 'constellation' && (
+      <>
+        {lines.map(([a, b]) => (
+          <line class="link" x1={stars[a][0]} y1={stars[a][1]} x2={stars[b][0]} y2={stars[b][1]} />
+        ))}
+        <line class="flow rewire" x1={stars[rewired[0]][0]} y1={stars[rewired[0]][1]} x2={stars[rewired[1]][0]} y2={stars[rewired[1]][1]} />
+        {stars.map(([x, y, size, lit]) => (
+          <g transform={`translate(${x} ${y}) scale(${size})`}>
+            <circle r="9" fill={url(lit ? 'glow-highlight' : 'glow-foreground')} />
+            <path class={lit ? 'highlight' : 'foreground'} d={GLINT} />
+          </g>
+        ))}
+      </>
+    )
+  }
+
+  {
+    kind === 'comet' && (
+      <>
+        <defs>
+          <linearGradient id={id('tail')} gradientUnits="userSpaceOnUse" x1="88" y1="32" x2="16" y2="102">
+            <stop offset="0" class="tail-head" />
+            <stop offset="0.45" class="tail-middle" />
+            <stop offset="1" class="accent-none" />
+          </linearGradient>
+          <linearGradient id={id('core')} gradientUnits="userSpaceOnUse" x1="88" y1="32" x2="16" y2="102">
+            <stop offset="0" class="core" />
+            <stop offset="0.6" class="foreground-none" />
+          </linearGradient>
+        </defs>
+        <g class="glide">
+          <path class="ion" d="M88 32 18 88" stroke={url('core')} />
+          <path d="M82 26Q44 48 12 106Q54 70 94 38Z" fill={url('tail')} />
+          <path d="M85 31Q54 54 32 92Q60 64 91 37Z" fill={url('core')} />
+          <circle cx="88" cy="32" r="15" fill={url('glow-highlight')} />
+          <circle class="foreground" cx="88" cy="32" r="4.5" />
+        </g>
+      </>
+    )
+  }
+
+  {
+    kind === 'rings' && (
+      <>
+        <defs>
+          <clipPath id={id('front')}>
+            <rect x="-60" y="0" width="120" height="60" />
+          </clipPath>
+          <clipPath id={id('globe')}>
+            <circle cx="60" cy="60" r="22" />
+          </clipPath>
+        </defs>
+        <circle cx="60" cy="60" r="34" fill={url('glow-accent')} />
+        {/* The rings behind the planet, the planet, then the rings' near half over it */}
+        <g transform={RING_PLANE}>
+          {rings.map(({ radius, notes, dash, turn }, index) => (
+            <circle class:list={['ring', { lit: notes === 12, backward: index % 2 === 1 }]} r={radius} stroke-dasharray={dash} style={`animation-duration: ${turn}s`} />
+          ))}
+        </g>
+        <g clip-path={url('globe')}>
+          <circle class="accent" cx="60" cy="60" r="22" />
+          <g transform="rotate(-16 60 60)">
+            <rect class="band-dark" x="30" y="45" width="60" height="4" />
+            <rect class="band-light" x="30" y="54" width="60" height="6" />
+            <rect class="band-dark" x="30" y="65" width="60" height="3" />
+            <rect class="band-light" x="30" y="71" width="60" height="5" />
+          </g>
+          <circle cx="60" cy="60" r="22" fill={url('shade')} />
+        </g>
+        <g transform={RING_PLANE}>
+          <g clip-path={url('front')}>
+            {rings.map(({ radius, notes, dash, turn }, index) => (
+              <circle class:list={['ring', { lit: notes === 12, backward: index % 2 === 1 }]} r={radius} stroke-dasharray={dash} style={`animation-duration: ${turn}s`} />
+            ))}
+          </g>
+        </g>
+      </>
+    )
+  }
+
+  {
+    kind === 'satellite' && (
+      <>
+        <defs>
+          <clipPath id={id('front')}>
+            <rect x="-60" y="0" width="120" height="60" />
+          </clipPath>
+        </defs>
+        <circle cx="50" cy="66" r="38" fill={url('glow-accent')} />
+        {/*
+         * The orbit and the satellite twice: whole behind the planet, then the near half over it. The satellite goes
+         * round in the orbit's plane, turned back as much as it goes round, and its plane's squash undone: it stays as
+         * it's drawn, only tilted as the orbit is
+         */}
+        {['behind', 'over'].map((layer) => (
+          <>
+            {layer === 'over' && (
+              <>
+                <circle class="accent" cx="50" cy="66" r="26" />
+                <circle cx="50" cy="66" r="26" fill={url('shade')} />
+              </>
+            )}
+            <g transform={ORBIT_PLANE}>
+              <g clip-path={layer === 'over' ? url('front') : undefined}>
+                <circle class="course" r="46" />
+                <g transform={`rotate(${ORBIT_START})`}>
+                  <g class="orbit">
+                    <g transform="translate(46 0)">
+                      <g class="upright">
+                        <g transform={`rotate(${-ORBIT_START}) scale(1 ${1 / ORBIT_TILT})`}>
+                          <rect class="panel" x="-16" y="-2.5" width="11" height="5" />
+                          <rect class="panel" x="5" y="-2.5" width="11" height="5" />
+                          <path class="panel-lines" d="M-12.3-2.5v5M-8.7-2.5v5M8.7-2.5v5M12.3-2.5v5" />
+                          <path class="mast" d="M0-3.5v-4" />
+                          <rect class="foreground" x="-3.5" y="-3.5" width="7" height="7" rx="1" />
+                          <circle class="foreground" cy="-8.5" r="1.3" />
+                          {signals.map((d, index) => (
+                            <path class="signal" d={d} style={`--rest: ${0.75 - index * 0.2}; animation-delay: ${index * 0.25}s`} />
+                          ))}
+                        </g>
+                      </g>
+                    </g>
+                  </g>
+                </g>
+              </g>
+            </g>
+          </>
+        ))}
+      </>
+    )
+  }
+</svg>
+
+<style>
+  .object {
+    display: block;
+    width: clamp(8.5rem, 22vw, 10.5rem);
+    height: auto;
+    overflow: visible;
+  }
+
+  .foreground {
+    fill: var(--foreground);
+  }
+
+  .highlight {
+    fill: var(--highlight);
+  }
+
+  .accent {
+    fill: var(--accent);
+  }
+
+  /*
+   * The gradients' stops: light and shade on a sphere (the light fading out and the shade in each in its own colour, as
+   * a gradient between the two would go through grey), glows, stars' white-hot cores
+   */
+  .lit {
+    stop-color: var(--foreground);
+    stop-opacity: 0.45;
+  }
+
+  .clear {
+    stop-color: var(--foreground);
+    stop-opacity: 0;
+  }
+
+  .unlit {
+    stop-color: var(--recess);
+    stop-opacity: 0;
+  }
+
+  .dark {
+    stop-color: var(--recess);
+    stop-opacity: 0.7;
+  }
+
+  .night {
+    stop-color: var(--recess);
+    stop-opacity: 0.95;
+  }
+
+  .highlight-glow {
+    stop-color: var(--highlight);
+    stop-opacity: 0.5;
+  }
+
+  .highlight-none {
+    stop-color: var(--highlight);
+    stop-opacity: 0;
+  }
+
+  .accent-glow {
+    stop-color: var(--accent);
+    stop-opacity: 0.4;
+  }
+
+  .accent-none {
+    stop-color: var(--accent);
+    stop-opacity: 0;
+  }
+
+  .foreground-glow {
+    stop-color: var(--foreground);
+    stop-opacity: 0.35;
+  }
+
+  .foreground-none {
+    stop-color: var(--foreground);
+    stop-opacity: 0;
+  }
+
+  .core {
+    stop-color: var(--foreground);
+  }
+
+  .highlight-stop {
+    stop-color: var(--highlight);
+  }
+
+  .accent-stop {
+    stop-color: var(--accent);
+  }
+
+  .tail-head {
+    stop-color: var(--highlight);
+    stop-opacity: 0.9;
+  }
+
+  .tail-middle {
+    stop-color: var(--accent);
+    stop-opacity: 0.45;
+  }
+
+  /* Courses, the lines between stars, and what flows along them */
+  .course {
+    fill: none;
+    stroke: var(--surface);
+    stroke-opacity: 0.45;
+    stroke-width: 0.8;
+    stroke-dasharray: 2 3;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .link {
+    stroke: var(--surface);
+    stroke-opacity: 0.5;
+    stroke-width: 0.8;
+  }
+
+  .flow {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1.5;
+    stroke-dasharray: 2 3;
+    stroke-linecap: round;
+  }
+
+  .rewire {
+    stroke-width: 1.2;
+  }
+
+  .ion {
+    stroke-width: 1;
+  }
+
+  /* The tuning's rings, the one of 12 notes lit */
+  .ring {
+    fill: none;
+    stroke: var(--foreground);
+    stroke-opacity: 0.5;
+    stroke-width: 2.4;
+  }
+
+  .ring.lit {
+    stroke: var(--highlight);
+    stroke-opacity: 0.9;
+  }
+
+  .band-dark {
+    fill: var(--recess);
+    fill-opacity: 0.3;
+  }
+
+  .band-light {
+    fill: var(--foreground);
+    fill-opacity: 0.14;
+  }
+
+  .panel {
+    fill: var(--highlight);
+    fill-opacity: 0.85;
+  }
+
+  .panel-lines {
+    stroke: var(--recess);
+    stroke-opacity: 0.6;
+    stroke-width: 0.5;
+  }
+
+  .mast {
+    stroke: var(--foreground);
+    stroke-width: 0.8;
+  }
+
+  .signal {
+    fill: none;
+    stroke: var(--highlight);
+    stroke-width: 1.2;
+    stroke-linecap: round;
+    opacity: var(--rest);
+  }
+
+  /* What moves, paused until the mouse is over it, or over what it's in; each where it rests at its start */
+  @media (prefers-reduced-motion: no-preference) {
+    .turn {
+      transform-origin: 60px 60px;
+      animation: turn 10s linear infinite paused;
+    }
+
+    .flow {
+      animation: flow 1s linear infinite paused;
+    }
+
+    .glide {
+      animation: glide 1.8s ease-in-out infinite paused;
+    }
+
+    /* Each ring's steps go round, every other ring the other way */
+    .ring {
+      animation: turn 6s linear infinite paused;
+    }
+
+    .ring.backward {
+      animation-direction: reverse;
+    }
+
+    /* The satellite round its orbit, turned back as much */
+    .orbit {
+      animation: turn 7s linear infinite paused;
+    }
+
+    .upright {
+      animation: turn 7s linear infinite reverse paused;
+    }
+
+    .signal {
+      animation: signal 1.5s ease-out infinite paused;
+    }
+
+    :global(:hover) > .object * {
+      animation-play-state: running;
+    }
+  }
+
+  @keyframes turn {
+    to {
+      rotate: 1turn;
+    }
+  }
+
+  @keyframes flow {
+    to {
+      stroke-dashoffset: -10;
+    }
+  }
+
+  @keyframes glide {
+    50% {
+      translate: 3px -3px;
+    }
+  }
+
+  @keyframes signal {
+    50% {
+      opacity: 1;
+    }
+  }
+</style>

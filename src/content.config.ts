@@ -65,6 +65,11 @@ const synths = defineCollection({
       skins: z
         .array(z.object({ name: z.string(), image: image(), alt: inEveryLanguage, caption: inEveryLanguage }))
         .default([]),
+      /**
+       * Pairs of its skins (their names) its window is shown in by day and by night on the home page, after SynthWorld's
+       * own two: the light one by day.
+       */
+      nightAndDay: z.array(z.object({ day: z.string(), night: z.string() })).default([]),
     }),
 });
 

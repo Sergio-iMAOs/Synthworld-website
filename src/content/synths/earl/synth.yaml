@@ -127,6 +127,14 @@ skins:
     caption:
       en: "EARL's own, a riso poster: paper, inks and shapes of its own."
       es: "La de EARL, un póster de risografía: papel, tintas y formas propias."
+  - name: Starship
+    image: ./skins/starship.png
+    alt:
+      en: "EARL's Synth page in the Starship skin: screens of dark glass with cut corners outlined in cyan light, dials lit up to their values, its waves and switches in cyan, their points in amber"
+      es: "La página Synth de EARL con la skin Starship: pantallas de cristal oscuro con las esquinas cortadas y perfiladas en luz cian, diales iluminados hasta su valor, sus ondas e interruptores en cian y sus puntos en ámbar"
+    caption:
+      en: "EARL's own, a starship's cockpit: screens of glass lit in cyan."
+      es: "La de EARL, la cabina de una nave: pantallas de cristal iluminadas en cian."
   - name: Tux
     image: ./skins/tux.png
     alt:
@@ -135,3 +143,6 @@ skins:
     caption:
       en: "Only on Linux: near black, with Tux's yellow and a terminal's green."
       es: "Solo en Linux: casi negra, con el amarillo de Tux y el verde de una terminal."
+# On the home page, its window by day and by night in more of its skins than SynthWorld's two: the light one by day
+nightAndDay:
+  - { day: Riso, night: Starship }

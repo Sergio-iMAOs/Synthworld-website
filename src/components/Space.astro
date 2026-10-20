@@ -1,0 +1,81 @@
+---
+/**
+ * Space, behind the whole page: the space of EARL's Starship skin's graph (EarlStarshipSkin::drawProcessorGraphBody()
+ * in the framework), without the rest of its UI. A nebula and two fields of stars on near black, its pictures made as
+ * the skin makes them (src/space.ts), drawn as it draws them: the nebula five times larger than its picture (a larger
+ * piece of it than the skin's, which repeats less), the nearer stars 1.6 times. As the page scrolls, each moves at its own pace, as they do there as the graph's view is panned, the
+ * page's content being the graph's nodes. Only a decoration: without JavaScript, or for a visitor who asked for less
+ * motion, it stays still.
+ */
+
+// Its pictures' addresses (src/pages/space/), given to its CSS as they are: they're made by the build, not found by it
+const pictures = `--stars: url('/space/stars.png'); --nebula: url('/space/nebula.webp')`;
+---
+
+<div class="space" style={pictures} aria-hidden="true" data-space>
+  <div class="layer nebula"></div>
+  <div class="layer far"></div>
+  <div class="layer near"></div>
+</div>
+
+<style>
+  .space {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+    /* Lights::SPACE, the skin's */
+    background: #03070d;
+  }
+
+  /* Each layer a tile taller than the window, moved up by how far it has drifted with the page, less whole tiles */
+  .layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: calc(100% + var(--tile));
+    background: var(--stars) 0 0 / var(--tile) repeat;
+    translate: 0 calc(-1 * mod(var(--pan, 0) * var(--drift) * 1px, var(--tile)));
+    will-change: translate;
+  }
+
+  /* How far each moves, of how far the page does, and how opaque it is: the skin's */
+  .nebula {
+    --tile: 1280px;
+    --drift: 0.2;
+    opacity: 0.9;
+    background-image: var(--nebula);
+  }
+
+  .far {
+    --tile: 256px;
+    --drift: 0.35;
+    opacity: 0.5;
+  }
+
+  /* Offset, so the two fields don't line up */
+  .near {
+    --tile: 409.6px;
+    --drift: 0.7;
+    opacity: 0.7;
+    background-position: 97px 97px;
+  }
+</style>
+
+<script>
+  // The script gives the layers how far the page has scrolled, at most once a frame
+  const lessMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+  for (const space of document.querySelectorAll<HTMLElement>('[data-space]')) {
+    let frame = 0;
+    const pan = () => {
+      frame = 0;
+      space.style.setProperty('--pan', lessMotion.matches ? '0' : String(scrollY));
+    };
+    addEventListener('scroll', () => (frame ||= requestAnimationFrame(pan)), { passive: true });
+    lessMotion.addEventListener('change', pan);
+    pan();
+  }
+</script>
