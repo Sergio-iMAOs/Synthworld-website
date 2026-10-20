@@ -35,16 +35,15 @@ interface Point {
   y: number;
 }
 
-// In the graph's units (CSS pixels at a zoom of 1). A node's planet's centre, from its box's top left: its name along
-// its top, its planet under it. A beam comes into its left edge, level with its planet's centre
-const PLANET: Point = { x: 100, y: 132 };
+// In the graph's units (CSS pixels at a zoom of 1). A node's planet's centre, from its box's top left (its box 240 by
+// 236: its name along its top, its planet under it, a ring round it included). A beam comes into its left edge, level
+// with its planet's centre
+const PLANET: Point = { x: 120, y: 132 };
 
-// SynthWorld's node: its logo as wide as its box, its planet's disc so wide round the logo's centre
-const ENGINE = { width: 240, disc: 78 };
-
-// The planets' centres: SynthWorld's at the origin, its beams leaving the right edge of its disc; then the synths', in
-// their order, and the uncharted ones. Only the first is in reach of a beam that crosses nothing
-const OUTPUT: Point = { x: ENGINE.disc, y: 0 };
+// The planets' centres: SynthWorld's at the origin (its logo as wide as a node's box, its planet's disc 78 round its
+// centre), its beams leaving the right edge of its disc; then the synths', in their order, and the uncharted ones. Only
+// the first is in reach of a beam that crosses nothing
+const OUTPUT: Point = { x: 78, y: 0 };
 const places: Point[] = [
   { x: 520, y: 60 },
   { x: 1040, y: -300 },
@@ -101,10 +100,17 @@ const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted
         }
       </svg>
 
-      <div class="node box engine" style={`left: ${-ENGINE.width / 2}px; top: ${-PLANET.y}px`} aria-hidden="true" data-box>
+      <a
+        class="node box engine"
+        href={pathIn(lang, '/')}
+        title={g.home}
+        style={boxAt({ x: 0, y: 0 })}
+        draggable="false"
+        data-box
+      >
         <span class="name">{site.name}</span>
-        <Image class="logo" src={logo} alt="" widths={[480, 960]} sizes="480px" />
-      </div>
+        <Image class="logo" src={logo} alt="" widths={[480, 960]} sizes="480px" draggable="false" />
+      </a>
 
       <ul class="planets">
         {
@@ -443,7 +449,7 @@ const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted
 
   .enhanced .node {
     position: absolute;
-    width: 200px;
+    width: 240px;
     height: 236px;
   }
 
@@ -453,7 +459,7 @@ const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted
     --line: 1px;
     position: relative;
     display: block;
-    width: 200px;
+    width: 240px;
     height: 236px;
   }
 
@@ -492,15 +498,19 @@ const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted
 
   .box :global(.globe) {
     position: absolute;
-    left: 6.25px;
+    left: 26.25px;
     top: 38.25px;
     width: 187.5px;
     height: 187.5px;
   }
 
-  /* SynthWorld's planet: its logo (ENGINE), its planet's centre as high as a node's */
-  .enhanced .engine {
-    width: 240px;
+  /* SynthWorld's planet: its logo, its planet's centre where a node's is; the way back to the home page */
+  .engine {
+    text-decoration: none;
+  }
+
+  .engine:is(:hover, :focus-visible) .logo {
+    filter: drop-shadow(0 0 0.75rem color-mix(in srgb, var(--accent) 60%, transparent));
   }
 
   .engine .logo {
@@ -520,17 +530,17 @@ const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted
     cursor: pointer;
   }
 
-  .toggle:focus-visible {
+  :is(.toggle, .engine):focus-visible {
     outline: none;
   }
 
-  .toggle:is(:hover, :focus-visible),
+  :is(.toggle, .engine):is(:hover, :focus-visible),
   .arrival .toggle {
     --sight: color-mix(in srgb, var(--highlight) 90%, transparent);
     --line: 1.5px;
   }
 
-  .toggle:is(:hover, :focus-visible)::before,
+  :is(.toggle, .engine):is(:hover, :focus-visible)::before,
   .arrival .toggle::before {
     filter: drop-shadow(0 0 3px color-mix(in srgb, var(--highlight) 50%, transparent));
   }
@@ -678,7 +688,7 @@ const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted
     top: 0;
     left: 0;
     max-width: none;
-    transform-origin: 100px 132px;
+    transform-origin: 120px 132px;
     visibility: hidden;
     opacity: 0;
     cursor: auto;

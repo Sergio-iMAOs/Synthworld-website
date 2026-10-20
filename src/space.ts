@@ -207,7 +207,10 @@ export function makeNebula(cells = NEBULA_CELLS): Tile {
   return tile;
 }
 
-/** The kinds of planet the skin draws a graph's nodes as, each telling what its processor is (its World). */
+/**
+ * The kinds of planet: the ones the skin draws a graph's nodes as, each telling what its processor is (its World), then
+ * each synth's own, which looks like it.
+ */
 export const worlds = [
   /** Seas, land and clouds: a source */
   'ocean',
@@ -225,34 +228,49 @@ export const worlds = [
   'verdant',
   /** Grey craters: a gain, a panner, anything else */
   'moon',
+  /**
+   * EARL's: the sun of its logo as a planet, its violet striped by dark gaps that widen to its south as the logo's do
+   * to the horizon, each band's edge a wave of a wavetable, drawn in white over the violet as its oscillators draw
+   * theirs; ringed with its velvet noise, pulses up and down
+   */
+  'earl',
 ] as const;
 export type World = (typeof worlds)[number];
 
 /**
+ * A planet's ring, drawn round its picture (Planet): the skin's, a band of dust; or pulses, as a velvet noise's
+ * display draws them.
+ */
+export type Ring = 'dust' | 'pulses';
+
+/**
  * What's the same over a kind of planet: its atmosphere's colour, how much of it there is at its edge and round it
- * (0 to 1), its bands' slant (radians), its craters, and whether it's ringed (its ring is drawn round its picture).
+ * (0 to 1), its bands' slant (radians), how far its north pole leans towards us (radians: the skin's are seen side
+ * on), its craters, and its ring.
  */
 interface WorldLook {
   atmosphere: Vec3;
   haze: number;
   tilt: number;
+  pitch?: number;
   craters: number;
-  ringed: boolean;
+  ring?: Ring;
 }
 
 const looks: Record<World, WorldLook> = {
-  ocean: { atmosphere: rgb(0x63d2ff), haze: 0.9, tilt: -0.35, craters: 0, ringed: false },
-  giant: { atmosphere: rgb(0xffd08f), haze: 0.55, tilt: -0.25, craters: 0, ringed: false },
-  rust: { atmosphere: rgb(0xff8f6b), haze: 0.35, tilt: 0.2, craters: 14, ringed: false },
-  ice: { atmosphere: rgb(0xc8f1ff), haze: 0.55, tilt: 0.4, craters: 6, ringed: false },
-  violet: { atmosphere: rgb(0xe58dff), haze: 0.7, tilt: -0.3, craters: 0, ringed: true },
-  lava: { atmosphere: rgb(0xff7b35), haze: 0.4, tilt: 0.1, craters: 8, ringed: false },
-  verdant: { atmosphere: rgb(0x8dffbe), haze: 0.7, tilt: -0.15, craters: 0, ringed: false },
-  moon: { atmosphere: rgb(0xa9c4e8), haze: 0.15, tilt: 0, craters: 26, ringed: false },
+  ocean: { atmosphere: rgb(0x63d2ff), haze: 0.9, tilt: -0.35, craters: 0 },
+  giant: { atmosphere: rgb(0xffd08f), haze: 0.55, tilt: -0.25, craters: 0 },
+  rust: { atmosphere: rgb(0xff8f6b), haze: 0.35, tilt: 0.2, craters: 14 },
+  ice: { atmosphere: rgb(0xc8f1ff), haze: 0.55, tilt: 0.4, craters: 6 },
+  violet: { atmosphere: rgb(0xe58dff), haze: 0.7, tilt: -0.3, craters: 0, ring: 'dust' },
+  lava: { atmosphere: rgb(0xff7b35), haze: 0.4, tilt: 0.1, craters: 8 },
+  verdant: { atmosphere: rgb(0x8dffbe), haze: 0.7, tilt: -0.15, craters: 0 },
+  moon: { atmosphere: rgb(0xa9c4e8), haze: 0.15, tilt: 0, craters: 26 },
+  earl: { atmosphere: rgb(0xb894f0), haze: 0.65, tilt: -0.12, pitch: 0.3, craters: 0, ring: 'pulses' },
 };
 
-/** Whether a kind of planet has a ring. */
-export const isRinged = (world: World) => looks[world].ringed;
+/** A kind of planet's ring, if it has one. */
+export const ringOf = (world: World) => looks[world].ring;
 
 /** A planet's picture's address (src/pages/space/[picture].ts): lit by the sun, or uncharted, against the light. */
 export const planetPicture = (world: World, uncharted = false) => `/space/${uncharted ? 'uncharted' : 'world'}-${world}.webp`;
@@ -285,6 +303,23 @@ function craterise(colour: Vec3, p: Vec3, craters: Crater[]) {
   }
   return colour;
 }
+
+/**
+ * EARL's dark gaps, from its north (-1) to its south (1): its logo's three, where its sun's are (the logo's half of a sun
+ * being the planet's north), then wider and wider ones, as if the sun went on setting. Each's edges are a wave going
+ * round the planet so many times, of so much of its radius; an edge is so soft
+ */
+const EARL_GAPS: [number, number][] = [
+  [-0.62, -0.55],
+  [-0.38, -0.3],
+  [-0.18, -0.08],
+  [0.03, 0.17],
+  [0.3, 0.5],
+  [0.64, 1.1],
+];
+const EARL_WAVES = 4;
+const EARL_WAVE = 0.032;
+const EARL_EDGE = 0.006;
 
 /** A planet's ground at `p`, a point of its sphere: its colour, its own light, its shine (0 to 1). */
 interface Ground {
@@ -356,6 +391,26 @@ function getGround(world: World, p: Vec3, craters: Crater[]): Ground {
       const colour = ramp([rgb(0x41464f), rgb(0x767c88), rgb(0xb7bcc6)], (height - 0.5) * 2 + 0.55);
       return { colour: craterise(colour, p, craters) };
     }
+    case 'earl': {
+      // Its violet streaked and swirled, as a gas giant's clouds are
+      const swirl = fbm(scale(p, 1.6), 91, 4);
+      const streaks = fbm([p[0] * 2, p[1] * 10 + swirl * 2, p[2] * 2], 92, 4);
+      let colour = ramp([rgb(0x3d2466), rgb(0x7a55b8), rgb(0xa57edb), rgb(0xdccbf7)], 0.5 + (streaks - 0.5) * 1.3);
+
+      // Its gaps, dark as its windows' panels, each's edges a wave from a sine (the first) to a triangle (the last), as
+      // a wavetable's frames go; the band under each, its wave drawn along its top in white
+      const around = Math.atan2(p[0], p[2]);
+      EARL_GAPS.forEach(([from, to], index) => {
+        const morph = index / (EARL_GAPS.length - 1);
+        const phase = around * EARL_WAVES + index * 1.3;
+        const wave = (1 - morph) * Math.sin(phase) + morph * (2 / Math.PI) * Math.asin(Math.sin(phase));
+        const y = p[1] - wave * EARL_WAVE;
+        const gap = smoothstep(from - EARL_EDGE, from + EARL_EDGE, y) * (1 - smoothstep(to - EARL_EDGE, to + EARL_EDGE, y));
+        const curve = 1 - smoothstep(EARL_EDGE, EARL_EDGE * 3, Math.abs(y - to - EARL_EDGE * 2));
+        colour = mix(mix(colour, rgb(0x1d1b21), gap), rgb(0xf7f6fa), curve * 0.8);
+      });
+      return { colour };
+    }
   }
 }
 
@@ -378,6 +433,7 @@ export function makeWorld(world: World, rim: number, uncharted = false): Tile {
   const light = uncharted ? BACKLIGHT : SUNLIGHT;
   const lightAcross = Math.hypot(light[0], light[1]);
   const [cosTilt, sinTilt] = [Math.cos(look.tilt), Math.sin(look.tilt)];
+  const [cosPitch, sinPitch] = [Math.cos(look.pitch ?? 0), Math.sin(look.pitch ?? 0)];
   const cockpit = rgb(rim);
   const halfway = normalise(add(light, [0, 0, 1]));
 
@@ -399,10 +455,11 @@ export function makeWorld(world: World, rim: number, uncharted = false): Tile {
         continue;
       }
 
-      // Its ground, the sphere turned by its tilt
+      // Its ground, the sphere turned by its tilt, its pole leant towards us by its pitch
       const z = Math.sqrt(Math.max(0, 1 - distance * distance));
       const normal: Vec3 = [nx, ny, z];
-      const ground = getGround(world, [nx * cosTilt - ny * sinTilt, nx * sinTilt + ny * cosTilt, z], craters);
+      const [sideways, down] = [nx * cosTilt - ny * sinTilt, nx * sinTilt + ny * cosTilt];
+      const ground = getGround(world, [sideways, down * cosPitch - z * sinPitch, down * sinPitch + z * cosPitch], craters);
 
       // Lit by the sun, the night side dark
       const lit = smoothstep(WORLD_TERMINATOR_FROM, WORLD_TERMINATOR_TO, dot(normal, light));
@@ -421,4 +478,48 @@ export function makeWorld(world: World, rim: number, uncharted = false): Tile {
       setPixel(tile, x, y, scale(add(scale(colour, cover), scale(look.atmosphere, halo * (1 - cover))), 1 / alpha), alpha);
     }
   return tile;
+}
+
+/**
+ * A ring of pulses round a planet, as velvet noise's display draws them: so many round it and across it, from and to
+ * so far out (of the planet's radius), each strayed so far from its place in their grid (0 to 1), each a square so
+ * wide (of the radius)
+ */
+const PULSES_AROUND = 56;
+const PULSES_ACROSS = 3;
+const PULSES_FROM = 1.28;
+export const PULSES_TO = 1.62;
+const PULSES_JITTER = 0.8;
+export const PULSE_SIDE = 0.045;
+
+/** A pulse of a planet's ring: where it is from its centre (of its radius), as seen; up or down; on the ring's near half. */
+export interface Pulse {
+  x: number;
+  y: number;
+  up: boolean;
+  near: boolean;
+}
+
+/**
+ * The pulses of a planet's ring of them: one in each cell of a grid round it, strayed from its place and up or down at
+ * random, as velvet noise's are (the same each time); in its equator, seen as the planet is, its tilt and its pitch.
+ */
+export function ringPulses(world: World): Pulse[] {
+  const { tilt, pitch = 0 } = looks[world];
+  const next = random(0xe421);
+  const pulses: Pulse[] = [];
+  for (let around = 0; around < PULSES_AROUND; around++)
+    for (let across = 0; across < PULSES_ACROSS; across++) {
+      const angle = ((around + 0.5 + (next() - 0.5) * PULSES_JITTER) / PULSES_AROUND) * 2 * Math.PI;
+      const radius = PULSES_FROM + ((across + 0.5 + (next() - 0.5) * PULSES_JITTER) / PULSES_ACROSS) * (PULSES_TO - PULSES_FROM);
+      const up = next() < 0.5;
+      const [sideways, down] = [radius * Math.cos(angle), radius * Math.sin(angle) * Math.sin(pitch)];
+      pulses.push({
+        x: sideways * Math.cos(tilt) + down * Math.sin(tilt),
+        y: -sideways * Math.sin(tilt) + down * Math.cos(tilt),
+        up,
+        near: Math.sin(angle) > 0,
+      });
+    }
+  return pulses;
 }

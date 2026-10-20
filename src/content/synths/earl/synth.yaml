@@ -3,8 +3,8 @@ version: 1.0.0
 formats: [CLAP, VST3, LV2, Standalone]
 platforms: [Linux]
 order: 1
-# Its planet on the synths' page: the first synth, a world of seas, land and clouds
-planet: ocean
+# Its planet on the synths' page: its own (src/space.ts), its logo's sun striped with waves and ringed with velvet noise
+planet: earl
 # The systems the framework builds for; none has a file yet
 downloads:
   - { os: windows, arch: x64 }
