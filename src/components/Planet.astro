@@ -2,12 +2,14 @@
 /**
  * A planet, as EARL's Starship skin draws a node of its graph (drawWorld() and drawNodeSymbol() in the framework): its
  * picture (src/space.ts, made at build time), lit from the top left, or uncharted, seen against the light; a ringed
- * one's ring behind it and in front of it: the skin's band of dust, or pulses up and down (EARL's velvet noise). Round
- * its SVG's centre, its disc's radius ROOM of its units (a ringed one's smaller, its ring within REACH), its
- * atmosphere's glow round it; its CSS gives it its size. With `sight`, the ring of a sight round it, which the skin draws under the mouse: unseen until its parent's CSS
- * shows its `.sight`.
+ * one's ring behind it and in front of it: the skin's band of dust, or pulses up and down (EARL's velvet noise). A
+ * synth's own is in pieces: its inside (`.core`), and over it its chunks (`.chunk`, each a piece of the picture of
+ * them, its middle in its `data-x` and `data-y`), which its parent's CSS can move apart. Round its SVG's centre, its
+ * disc's radius ROOM of its units (a ringed one's smaller, its ring within REACH), its atmosphere's glow round it; its
+ * CSS gives it its size. With `sight`, the ring of a sight round it, which the skin draws under the mouse: unseen until
+ * its parent's CSS shows its `.sight`.
  */
-import { planetPicture, PULSE_SIDE, PULSES_TO, ringOf, ringPulses, WORLD_DISC, type World } from '@/space';
+import { chunkLayout, chunksPicture, planetPicture, PULSE_SIDE, PULSES_TO, ringOf, ringPulses, WORLD_DISC, type World } from '@/space';
 
 interface Props {
   world: World;
@@ -28,6 +30,10 @@ const ring = ringOf(world);
 const ringReach = ring === 'dust' ? 1.85 * 1.09 + 0.05 : ring === 'pulses' ? PULSES_TO + PULSE_SIDE : 1;
 const RADIUS = Math.min(ROOM, REACH / ringReach);
 const picture = RADIUS / WORLD_DISC;
+
+// A synth's chunks, each where its piece of the planet's picture is, cut from the picture of them
+const layout = chunkLayout(world);
+const units = layout ? picture / layout.side : 1;
 
 // A ring of dust, seen tilted: its band and the bright line round it, each half an ellipse behind the planet and half
 // in front (the skin's drawRing(), its sizes of the planet's radius)
@@ -56,11 +62,44 @@ const quarters = [0, 90, 180, 270];
 ---
 
 <svg class:list={['planet', className]} viewBox={`${-SIDE / 2} ${-SIDE / 2} ${SIDE} ${SIDE}`} aria-hidden="true">
-  {ring === 'dust' && dust(true).map(({ class: kind, d, width }) => <path class:list={['ring', kind]} d={d} stroke-width={width} transform={`rotate(${RING_TILT})`} />)}
-  {pulsesOn(false).map(({ up, x, y }) => <rect class:list={['pulse', 'far', { up }]} x={x} y={y} width={PULSE} height={PULSE} />)}
-  <image href={planetPicture(world, uncharted)} x={-picture / 2} y={-picture / 2} width={picture} height={picture} />
-  {ring === 'dust' && dust(false).map(({ class: kind, d, width }) => <path class:list={['ring', kind]} d={d} stroke-width={width} transform={`rotate(${RING_TILT})`} />)}
-  {pulsesOn(true).map(({ up, x, y }) => <rect class:list={['pulse', { up }]} x={x} y={y} width={PULSE} height={PULSE} />)}
+  {
+    [true, false].map((far) => (
+      <>
+        {!far &&
+          (layout ? (
+            <>
+              <image class="core" href={planetPicture(world)} x={-picture / 2} y={-picture / 2} width={picture} height={picture} />
+              {layout.chunks.map(({ x, y, width, height, atlasX, atlasY, middle }) => (
+                <g class="chunk" data-chunk data-x={(middle[0] * RADIUS).toFixed(1)} data-y={(middle[1] * RADIUS).toFixed(1)}>
+                  <g class="drift">
+                    <svg
+                      x={(-picture / 2 + x * units).toFixed(2)}
+                      y={(-picture / 2 + y * units).toFixed(2)}
+                      width={(width * units).toFixed(2)}
+                      height={(height * units).toFixed(2)}
+                      viewBox={`${atlasX} ${atlasY} ${width} ${height}`}
+                      preserveAspectRatio="none"
+                    >
+                      <image href={chunksPicture(world)} width={layout.width} height={layout.height} />
+                    </svg>
+                  </g>
+                </g>
+              ))}
+            </>
+          ) : (
+            <image class="whole" href={planetPicture(world, uncharted)} x={-picture / 2} y={-picture / 2} width={picture} height={picture} />
+          ))}
+        {ring && (
+          <g class="ring">
+            {ring === 'dust' && dust(far).map(({ class: kind, d, width }) => <path class={kind} d={d} stroke-width={width} transform={`rotate(${RING_TILT})`} />)}
+            {pulsesOn(!far).map(({ up, x, y }) => (
+              <rect class:list={['pulse', { far, up }]} x={x} y={y} width={PULSE} height={PULSE} />
+            ))}
+          </g>
+        )}
+      </>
+    ))
+  }
   {
     sight && (
       <g class="sight">
@@ -83,8 +122,17 @@ const quarters = [0, 90, 180, 270];
     overflow: visible;
   }
 
+  /* What moves when a synth's planet opens (SynthGraph): each round its own middle */
+  .core,
+  .chunk,
+  .drift {
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
   /* The skin's ring's colours: part of the planet, as its picture's are */
-  .ring {
+  .band,
+  .line {
     fill: none;
   }
 

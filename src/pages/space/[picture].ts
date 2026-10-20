@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import sharp from 'sharp';
-import { makeNebula, makeStars, makeWorld, planetPicture, skinOf, type Tile, type World } from '@/space';
+import { chunksPicture, makeNebula, makeStars, makeSynthWorld, makeWorld, planetPicture, skinOf, type Tile, type World } from '@/space';
 import { unchartedWorlds } from '@/synths';
 import palette from '@/styles/palette.css?raw';
 
@@ -15,36 +15,50 @@ const pictures = {
   'nebula.webp': { type: 'image/webp', make: () => encode(makeNebula(8)).webp({ quality: 80 }).toBuffer() },
 };
 
-/** A planet's picture to make: its kind, whether it's uncharted, and the window it's made of, if it's a synth's. */
+/**
+ * A planet's picture to make: its kind, whether it's uncharted, and, a synth's, the window it's made of and which of its
+ * layers it is (its inside, or its chunks).
+ */
 interface Planet {
   world: World;
   uncharted: boolean;
   window?: string;
+  layer?: 'core' | 'chunks';
 }
 
 // The planets (Planet), lossy too: the synths' and the uncharted ones' kinds only, as each takes a moment to make. The
 // cockpit's light round their far edge is the palette's accent, as the skin's is its own cyan. A synth's is made of its
 // window in its planet's skin, its picture where `npm run screenshots` puts it: skins/<skin>.png in its folder, at a
-// width enough for the planet
+// width enough for the planet; it's made once for both its layers
 const accent = Number.parseInt(/--accent:\s*#([0-9a-f]{6})/i.exec(palette)?.[1] ?? 'a57edb', 16);
 const WINDOW_WIDTH = 1200;
-const nameOf = ({ world, uncharted }: Planet) => planetPicture(world, uncharted).replace('/space/', '');
+const nameOf = ({ world, uncharted, layer }: Planet) => (layer === 'chunks' ? chunksPicture(world) : planetPicture(world, uncharted)).replace('/space/', '');
 const windowOf = (world: World, synthFile?: string) => {
   const skin = skinOf(world);
   if (!skin) return undefined;
   if (!synthFile) throw new Error(`The planet "${world}" is made of a synth's window, but its synth has no folder`);
   return `${synthFile.slice(0, synthFile.lastIndexOf('/'))}/skins/${skin.toLowerCase().replaceAll(' ', '-')}.png`;
 };
-const makePlanet = async ({ world, uncharted, window }: Planet) => {
-  const picture =
-    window && (await sharp(window).resize({ width: WINDOW_WIDTH }).removeAlpha().raw().toBuffer({ resolveWithObject: true }));
-  const made = makeWorld(world, accent, uncharted, picture ? { ...picture.info, pixels: picture.data } : undefined);
-  return encode(made).webp({ quality: 85, alphaQuality: 90 }).toBuffer();
+const synthWorlds = new Map<string, ReturnType<typeof makeSynthWorld>>();
+const makePlanet = async ({ world, uncharted, window, layer }: Planet) => {
+  const options = { quality: 85, alphaQuality: 90 };
+  if (!window) return encode(makeWorld(world, accent, uncharted)).webp(options).toBuffer();
+  if (!synthWorlds.has(window)) {
+    const { data, info } = await sharp(window).resize({ width: WINDOW_WIDTH }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+    synthWorlds.set(window, makeSynthWorld(world, accent, { ...info, pixels: data }));
+  }
+  const { core, chunks } = synthWorlds.get(window)!;
+  if (layer === 'core') return encode(core).webp(options).toBuffer();
+  return sharp(chunks.pixels, { raw: { width: chunks.width, height: chunks.height, channels: 4 } }).webp(options).toBuffer();
 };
 
 export async function getStaticPaths() {
   const planets: Planet[] = [
-    ...(await getCollection('synths')).map(({ data, filePath }) => ({ world: data.planet, uncharted: false, window: windowOf(data.planet, filePath) })),
+    ...(await getCollection('synths')).flatMap(({ data, filePath }) => {
+      const window = windowOf(data.planet, filePath);
+      const planet = { world: data.planet, uncharted: false, window };
+      return window ? [{ ...planet, layer: 'core' as const }, { ...planet, layer: 'chunks' as const }] : [planet];
+    }),
     ...unchartedWorlds.map((world) => ({ world, uncharted: true })),
   ];
   return [

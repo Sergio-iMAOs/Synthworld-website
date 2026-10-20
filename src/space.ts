@@ -317,8 +317,12 @@ export const ringOf = (world: World) => looks[world].ring;
 /** The skin of the window a synth's planet is made of; none for the skin's kinds. */
 export const skinOf = (world: World) => (isSynthWorld(world) ? synthLooks[world].skin : undefined);
 
-/** A planet's picture's address (src/pages/space/[picture].ts): lit by the sun, or uncharted, against the light. */
+/**
+ * A planet's picture's address (src/pages/space/[picture].ts): lit by the sun, or uncharted, against the light. A
+ * synth's is its inside, its chunks in a picture of their own.
+ */
 export const planetPicture = (world: World, uncharted = false) => `/space/${uncharted ? 'uncharted' : 'world'}-${world}.webp`;
+export const chunksPicture = (world: World) => `/space/world-${world}-chunks.webp`;
 
 /** A crater: its centre on the sphere, and 1 - cos(its angular radius). */
 interface Crater {
@@ -422,124 +426,45 @@ function getGround(world: SkinWorld, p: Vec3, craters: Crater[]): Ground {
   }
 }
 
-/** A picture a planet is made of (a synth's window): its size, and its pixels, so many channels each (red, green, blue). */
-export interface Picture {
-  width: number;
-  height: number;
-  channels: number;
-  pixels: Uint8Array;
-}
-
-/**
- * A synth's planet's chunks: so many; the crevices between them so wide (radians), each shaded so far in from its edge,
- * as if it stood out of them; how much of its window each shows (of the window's width, per radian of the planet), how
- * far each is turned at most (radians), and how much lighter or darker it is at most
- */
-const CHUNKS = 14;
-const CHUNK_CREVICE = 0.014;
-const CHUNK_SHADE = 0.07;
-const CHUNK_SHOWS = 0.17;
-const CHUNK_TURN = 0.18;
-const CHUNK_TONE = 0.06;
-
-/**
- * A synth's planet's ground: chunks of its `window` put together into a sphere, crevices between them where a `light`
- * glows from inside. Each chunk is a flat piece of the window, upright as it is on screen and turned a little; the
- * parts of it its look names are on the chunks nearest `front` (the planet's point most in view and in the light).
- */
-function chunksOf(world: SynthWorld, window: Picture, light: Vec3, front: Vec3) {
-  const { parts } = synthLooks[world];
-  const next = random(0xc4a2c + worlds.indexOf(world));
-
-  // Their middles, evenly round the sphere (a Fibonacci spiral's points), each strayed a little; the nearest the front first
-  const middles = Array.from({ length: CHUNKS }, (_, index) => {
-    const y = 1 - (2 * (index + 0.5)) / CHUNKS;
-    const ring = Math.sqrt(1 - y * y);
-    const angle = index * Math.PI * (3 - Math.sqrt(5));
-    const stray: Vec3 = [(next() - 0.5) * 0.25, (next() - 0.5) * 0.25, (next() - 0.5) * 0.25];
-    return normalise(add([ring * Math.cos(angle), y, ring * Math.sin(angle)], stray));
-  }).sort((a, b) => dot(b, front) - dot(a, front));
-
-  // Each's piece of the window: where its middle is in it, its right and its down on the sphere, its turn and its tone
-  const chunks = middles.map((middle, index) => {
-    const right = cross(middle, [0, -1, 0]);
-    const east = Math.hypot(...right) > 1e-3 ? normalise(right) : ([1, 0, 0] as Vec3);
-    const [u, v] = parts[index] ?? [0.15 + next() * 0.7, 0.2 + next() * 0.6];
-    const turn = (next() - 0.5) * 2 * CHUNK_TURN;
-    return { middle, east, south: cross(middle, east), u, v, cos: Math.cos(turn), sin: Math.sin(turn), tone: 1 + (next() - 0.5) * 2 * CHUNK_TONE };
-  });
-
-  // The window at a point, between its pixels, its edges going on past them
-  const { width, height, channels, pixels } = window;
-  const pixel = (x: number, y: number): Vec3 => {
-    const at = (Math.min(height - 1, Math.max(0, y)) * width + Math.min(width - 1, Math.max(0, x))) * channels;
-    return [pixels[at] / 255, pixels[at + 1] / 255, pixels[at + 2] / 255];
-  };
-  const sample = (x: number, y: number) => {
-    const [fx, fy] = [Math.floor(x), Math.floor(y)];
-    const [tx, ty] = [x - fx, y - fy];
-    return mix(mix(pixel(fx, fy), pixel(fx + 1, fy), tx), mix(pixel(fx, fy + 1), pixel(fx + 1, fy + 1), tx), ty);
-  };
-  const shows = CHUNK_SHOWS * width;
-
-  return (p: Vec3): Ground => {
-    // The nearest chunk, and how far `p` is from the edge it shares with the next nearest
-    let [first, second] = dot(p, chunks[0].middle) > dot(p, chunks[1].middle) ? [chunks[0], chunks[1]] : [chunks[1], chunks[0]];
-    for (const chunk of chunks.slice(2)) {
-      const near = dot(p, chunk.middle);
-      if (near > dot(p, first.middle)) [first, second] = [chunk, first];
-      else if (near > dot(p, second.middle)) second = chunk;
-    }
-    const between = add(first.middle, scale(second.middle, -1));
-    const edge = (dot(p, first.middle) - dot(p, second.middle)) / Math.hypot(...between);
-
-    // Its piece of the window, shaded towards its edge; in a crevice, dark, lit from inside
-    const [a, b] = [dot(p, first.east), dot(p, first.south)];
-    const x = first.u * width + (a * first.cos - b * first.sin) * shows;
-    const y = first.v * height + (a * first.sin + b * first.cos) * shows;
-    const raised = 0.8 + 0.2 * smoothstep(CHUNK_CREVICE, CHUNK_CREVICE + CHUNK_SHADE, edge);
-    const crevice = 1 - smoothstep(CHUNK_CREVICE * 0.6, CHUNK_CREVICE, edge);
-    return { colour: mix(scale(sample(x, y), first.tone * raised), rgb(0x120c1a), crevice), glow: scale(light, 0.8 * crevice * crevice) };
-  };
-}
-
 /** The sun: from the top left and in front, as the skin's; for an uncharted planet, from the top left and behind it. */
 const SUNLIGHT = normalise([-0.62, -0.5, 0.6]);
 const BACKLIGHT = normalise([-0.6, -0.45, -0.66]);
 
 /**
- * A planet of `world`'s kind: its disc lit from the top left, a cockpit's light (`rim`, 0xrrggbb) round its far edge,
- * its atmosphere glowing round it; see-through beyond. An `uncharted` one is seen against the light: only a crescent
- * of it is lit, at its edge towards the light. A synth's is made of its `window` (in its look's skin), the cockpit's
- * light glowing between its chunks.
+ * How a kind of planet is seen: a point seen on its disc (towards us) as a point of its sphere, turned by its tilt and
+ * its pole leant towards us by its pitch; and back.
  */
-export function makeWorld(world: World, rim: number, uncharted = false, window?: Picture): Tile {
-  const look = looks[world];
-  const craters = makeCraters(look.craters, 0xc0ffee + worlds.indexOf(world));
-  const side = isSynthWorld(world) ? SYNTH_WORLD_SIDE : WORLD_SIDE;
-  const tile = blank(side, look.atmosphere);
+function viewOf({ tilt, pitch = 0 }: WorldLook) {
+  const [cosTilt, sinTilt] = [Math.cos(tilt), Math.sin(tilt)];
+  const [cosPitch, sinPitch] = [Math.cos(pitch), Math.sin(pitch)];
+  return {
+    onSphere: ([nx, ny, z]: Vec3): Vec3 => {
+      const [sideways, down] = [nx * cosTilt - ny * sinTilt, nx * sinTilt + ny * cosTilt];
+      return [sideways, down * cosPitch - z * sinPitch, down * sinPitch + z * cosPitch];
+    },
+    onDisc: ([sideways, y, z]: Vec3): Vec3 => {
+      const down = y * cosPitch + z * sinPitch;
+      return [sideways * cosTilt + down * sinTilt, -sideways * sinTilt + down * cosTilt, -y * sinPitch + z * cosPitch];
+    },
+  };
+}
 
+/**
+ * A pixel of a planet's picture: on its disc, where (`normal`, towards us), and how much of it the disc covers; how
+ * much of its atmosphere's glow there is round the disc there; and how much it's on the light's side (-1 to 1).
+ */
+interface DiscPixel {
+  normal: Vec3;
+  cover: number;
+  halo: number;
+  towardLight: number;
+}
+
+/** Each pixel of a planet's picture `side` wide, lit by `light`. */
+function eachPixel(side: number, look: WorldLook, light: Vec3, at: (x: number, y: number, pixel: DiscPixel) => void) {
   const centre = side * 0.5;
   const radius = side * WORLD_DISC;
-  const light = uncharted ? BACKLIGHT : SUNLIGHT;
   const lightAcross = Math.hypot(light[0], light[1]);
-  const [cosTilt, sinTilt] = [Math.cos(look.tilt), Math.sin(look.tilt)];
-  const [cosPitch, sinPitch] = [Math.cos(look.pitch ?? 0), Math.sin(look.pitch ?? 0)];
-  const cockpit = rgb(rim);
-  const halfway = normalise(add(light, [0, 0, 1]));
-
-  // A point seen on the disc (towards us) as a point of the sphere: turned by its tilt, its pole leant towards us by
-  // its pitch; what's there
-  const onSphere = ([nx, ny, z]: Vec3): Vec3 => {
-    const [sideways, down] = [nx * cosTilt - ny * sinTilt, nx * sinTilt + ny * cosTilt];
-    return [sideways, down * cosPitch - z * sinPitch, down * sinPitch + z * cosPitch];
-  };
-  let groundAt: (p: Vec3) => Ground;
-  if (isSynthWorld(world)) {
-    if (!window) throw new Error(`The planet "${world}" is made of its synth's window, which it wasn't given`);
-    groundAt = chunksOf(world, window, cockpit, onSphere(normalise(add(SUNLIGHT, [0, 0, 1.5]))));
-  } else groundAt = (p) => getGround(world, p, craters);
-
   for (let y = 0; y < side; y++)
     for (let x = 0; x < side; x++) {
       const nx = (x + 0.5 - centre) / radius;
@@ -551,35 +476,298 @@ export function makeWorld(world: World, rim: number, uncharted = false, window?:
       const litSide = 0.5 + 0.5 * towardLight;
       const reach = clamp01(1 - (distance - 1) / WORLD_HALO);
       const halo = distance >= 1 ? look.haze * reach * reach * (WORLD_HALO_DARK + (1 - WORLD_HALO_DARK) * litSide) : 0;
-
       const cover = clamp01((1 - distance) * radius + 0.5);
-      if (cover <= 0) {
-        setPixel(tile, x, y, look.atmosphere, halo);
-        continue;
-      }
-
-      // Its ground
-      const z = Math.sqrt(Math.max(0, 1 - distance * distance));
-      const normal: Vec3 = [nx, ny, z];
-      const ground = groundAt(onSphere(normal));
-
-      // Lit by the sun, the night side dark
-      const lit = smoothstep(WORLD_TERMINATOR_FROM, WORLD_TERMINATOR_TO, dot(normal, light));
-      let colour = scale(ground.colour, WORLD_AMBIENT + (1 - WORLD_AMBIENT) * lit);
-
-      // Its atmosphere thicker towards its edge, the sun glinting on its seas
-      colour = mix(colour, look.atmosphere, clamp01((1 - z) ** WORLD_EDGE_POWER * look.haze * (0.2 + 0.8 * lit)));
-      if (ground.shine) colour = add(colour, scale([1, 1, 1], ground.shine * Math.max(0, dot(normal, halfway)) ** WORLD_SHININESS));
-
-      // Its own light, then the cockpit's round its far edge
-      if (ground.glow) colour = add(colour, ground.glow);
-      colour = add(colour, scale(cockpit, WORLD_RIM * (1 - z) ** WORLD_RIM_POWER * clamp01(-towardLight)));
-
-      // Over its atmosphere's glow at its edge
-      const alpha = cover + (1 - cover) * halo;
-      setPixel(tile, x, y, scale(add(scale(colour, cover), scale(look.atmosphere, halo * (1 - cover))), 1 / alpha), alpha);
+      const normal: Vec3 = [nx, ny, Math.sqrt(Math.max(0, 1 - distance * distance))];
+      at(x, y, { normal, cover, halo, towardLight });
     }
+}
+
+/**
+ * A planet's colour at a point of its disc: its ground lit by the sun (as it slants there: `shading`, towards us), the
+ * night side dark; its atmosphere thicker towards its edge, the sun glinting on it; its own light, then the cockpit's
+ * round its far edge.
+ */
+function shade(ground: Ground, { normal, towardLight }: DiscPixel, shading: Vec3, look: WorldLook, light: Vec3, cockpit: Vec3) {
+  const z = normal[2];
+  const lit = smoothstep(WORLD_TERMINATOR_FROM, WORLD_TERMINATOR_TO, dot(shading, light));
+  let colour = scale(ground.colour, WORLD_AMBIENT + (1 - WORLD_AMBIENT) * lit);
+  colour = mix(colour, look.atmosphere, clamp01((1 - z) ** WORLD_EDGE_POWER * look.haze * (0.2 + 0.8 * lit)));
+  if (ground.shine) {
+    const halfway = normalise(add(light, [0, 0, 1]));
+    colour = add(colour, scale([1, 1, 1], ground.shine * Math.max(0, dot(shading, halfway)) ** WORLD_SHININESS));
+  }
+  if (ground.glow) colour = add(colour, ground.glow);
+  return add(colour, scale(cockpit, WORLD_RIM * (1 - z) ** WORLD_RIM_POWER * clamp01(-towardLight)));
+}
+
+/** Writes a pixel of a disc that covers so much of it, over its atmosphere's glow at its edge. */
+function setDiscPixel(tile: Tile, x: number, y: number, colour: Vec3, { cover, halo }: DiscPixel, atmosphere: Vec3) {
+  const alpha = cover + (1 - cover) * halo;
+  if (alpha > 0) setPixel(tile, x, y, scale(add(scale(colour, cover), scale(atmosphere, halo * (1 - cover))), 1 / alpha), alpha);
+}
+
+/**
+ * A planet of one of the skin's kinds: its disc lit from the top left, a cockpit's light (`rim`, 0xrrggbb) round its
+ * far edge, its atmosphere glowing round it; see-through beyond. An `uncharted` one is seen against the light: only a
+ * crescent of it is lit, at its edge towards the light. (A synth's own is makeSynthWorld()'s.)
+ */
+export function makeWorld(world: World, rim: number, uncharted = false): Tile {
+  if (isSynthWorld(world)) throw new Error(`The planet "${world}" is a synth's: makeSynthWorld() makes it`);
+  const look = looks[world];
+  const craters = makeCraters(look.craters, 0xc0ffee + worlds.indexOf(world));
+  const tile = blank(WORLD_SIDE, look.atmosphere);
+  const light = uncharted ? BACKLIGHT : SUNLIGHT;
+  const { onSphere } = viewOf(look);
+  eachPixel(WORLD_SIDE, look, light, (x, y, pixel) => {
+    const colour = pixel.cover > 0 ? shade(getGround(world, onSphere(pixel.normal), craters), pixel, pixel.normal, look, light, rgb(rim)) : look.atmosphere;
+    setDiscPixel(tile, x, y, colour, pixel, look.atmosphere);
+  });
   return tile;
+}
+
+/** A picture a planet is made of (a synth's window): its size, and its pixels, so many channels each (red, green, blue). */
+export interface Picture {
+  width: number;
+  height: number;
+  channels: number;
+  pixels: Uint8Array;
+}
+
+/**
+ * A synth's planet's chunks: so many; how much of its window each shows (of the window's width, per radian of the
+ * planet), how far each is turned at most (radians), and how much lighter or darker it is at most. Between them, a
+ * crack so wide (radians), the planet's inside's light spilling so much onto their edges, fading so fast. Each is a
+ * plate, its edges bevelled so far in and so steeply, what's dark in its piece of the window standing out of it so
+ * high (of the planet's radius), casting a shadow so far (in the window's pixels) and so dark
+ */
+const CHUNKS = 14;
+const CHUNK_SHOWS = 0.17;
+const CHUNK_TURN = 0.18;
+const CHUNK_TONE = 0.06;
+const CHUNK_CRACK = 0.018;
+const CHUNK_SPILL = 0.55;
+const CHUNK_SPILL_REACH = 0.02;
+const CHUNK_BEVEL = 0.035;
+const CHUNK_BEVEL_SLOPE = 1.2;
+const CHUNK_RELIEF = 0.009;
+const CHUNK_SHADOW_REACH = 3;
+const CHUNK_SHADOW = 0.4;
+
+/** A chunk of a synth's planet: its middle on the sphere, its right and its down there, and its piece of the window. */
+interface Chunk {
+  middle: Vec3;
+  east: Vec3;
+  south: Vec3;
+  u: number;
+  v: number;
+  cos: number;
+  sin: number;
+  tone: number;
+}
+
+/**
+ * A synth's planet's chunks, the same each time: their middles evenly round the sphere (a Fibonacci spiral's points),
+ * each strayed a little, the nearest its front first (its point most in view and in the light); each a flat piece of
+ * the window, upright as it is on screen and turned a little, the parts of it its look names on the first ones.
+ */
+function chunksOf(world: SynthWorld): Chunk[] {
+  const look = synthLooks[world];
+  const front = viewOf(look).onSphere(normalise(add(SUNLIGHT, [0, 0, 1.5])));
+  const next = random(0xc4a2c + worlds.indexOf(world));
+  const middles = Array.from({ length: CHUNKS }, (_, index) => {
+    const y = 1 - (2 * (index + 0.5)) / CHUNKS;
+    const ring = Math.sqrt(1 - y * y);
+    const angle = index * Math.PI * (3 - Math.sqrt(5));
+    const stray: Vec3 = [(next() - 0.5) * 0.25, (next() - 0.5) * 0.25, (next() - 0.5) * 0.25];
+    return normalise(add([ring * Math.cos(angle), y, ring * Math.sin(angle)], stray));
+  }).sort((a, b) => dot(b, front) - dot(a, front));
+  return middles.map((middle, index) => {
+    const right = cross(middle, [0, -1, 0]);
+    const east = Math.hypot(...right) > 1e-3 ? normalise(right) : ([1, 0, 0] as Vec3);
+    const [u, v] = look.parts[index] ?? [0.15 + next() * 0.7, 0.2 + next() * 0.6];
+    const turn = (next() - 0.5) * 2 * CHUNK_TURN;
+    return { middle, east, south: cross(middle, east), u, v, cos: Math.cos(turn), sin: Math.sin(turn), tone: 1 + (next() - 0.5) * 2 * CHUNK_TONE };
+  });
+}
+
+/** The chunk a point of the sphere is on (and its index), the next nearest, and how far the point is from the edge between them (radians). */
+function chunkAt(chunks: Chunk[], p: Vec3) {
+  let [first, second] = dot(p, chunks[0].middle) > dot(p, chunks[1].middle) ? [0, 1] : [1, 0];
+  for (let index = 2; index < chunks.length; index++) {
+    const near = dot(p, chunks[index].middle);
+    if (near > dot(p, chunks[first].middle)) [first, second] = [index, first];
+    else if (near > dot(p, chunks[second].middle)) second = index;
+  }
+  const [a, b] = [chunks[first].middle, chunks[second].middle];
+  const edge = (dot(p, a) - dot(p, b)) / Math.hypot(...add(a, scale(b, -1)));
+  return { index: first, chunk: chunks[first], next: chunks[second], edge };
+}
+
+/**
+ * A chunk as a page places it: which of the planet's it is, its piece of the planet's picture (in its pixels), where
+ * that is in the picture of the chunks, and its middle on the disc (from its centre, of its radius).
+ */
+export interface ChunkPlace {
+  chunk: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  atlasX: number;
+  atlasY: number;
+  middle: [number, number];
+}
+
+/** Where a synth's planet's chunks in sight are: in its picture (`side` wide), and in theirs (so wide and high). */
+export interface ChunkLayout {
+  side: number;
+  width: number;
+  height: number;
+  chunks: ChunkPlace[];
+}
+
+/** How finely the chunks' places are found (pixels), how much wider than found each is, and the room between them in their picture. */
+const LAYOUT_STEP = 4;
+const LAYOUT_MARGIN = 6;
+const LAYOUT_GAP = 2;
+
+const layouts = new Map<World, ChunkLayout>();
+
+/**
+ * Where a synth's planet's chunks in sight are, the same each time (a page places them by it, src/pages/space/
+ * makes their picture by it); none for the skin's kinds. Each's box is found on a coarser grid than the picture's, so
+ * a little wider; in their picture, they're side by side, row after row.
+ */
+export function chunkLayout(world: World): ChunkLayout | undefined {
+  if (!isSynthWorld(world)) return undefined;
+  const known = layouts.get(world);
+  if (known) return known;
+
+  const chunks = chunksOf(world);
+  const { onSphere } = viewOf(synthLooks[world]);
+  const side = SYNTH_WORLD_SIDE;
+  const [centre, radius] = [side * 0.5, side * WORLD_DISC];
+  const boxes = chunks.map(() => ({ left: side, top: side, right: 0, bottom: 0, x: 0, y: 0, count: 0 }));
+  for (let y = 0; y < side; y += LAYOUT_STEP)
+    for (let x = 0; x < side; x += LAYOUT_STEP) {
+      const [nx, ny] = [(x + LAYOUT_STEP / 2 - centre) / radius, (y + LAYOUT_STEP / 2 - centre) / radius];
+      if (nx * nx + ny * ny >= 1) continue;
+      const box = boxes[chunkAt(chunks, onSphere([nx, ny, Math.sqrt(1 - nx * nx - ny * ny)])).index];
+      Object.assign(box, { left: Math.min(box.left, x), top: Math.min(box.top, y), right: Math.max(box.right, x + LAYOUT_STEP), bottom: Math.max(box.bottom, y + LAYOUT_STEP) });
+      box.x += nx;
+      box.y += ny;
+      box.count++;
+    }
+
+  const places: ChunkPlace[] = [];
+  let [atlasX, atlasY, row, width] = [0, 0, 0, 0];
+  for (const [chunk, box] of boxes.entries()) {
+    if (box.count === 0) continue;
+    const [x, y] = [Math.max(0, box.left - LAYOUT_MARGIN), Math.max(0, box.top - LAYOUT_MARGIN)];
+    const [w, h] = [Math.min(side, box.right + LAYOUT_MARGIN) - x, Math.min(side, box.bottom + LAYOUT_MARGIN) - y];
+    if (atlasX > 0 && atlasX + w > side) [atlasX, atlasY, row] = [0, atlasY + row + LAYOUT_GAP, 0];
+    places.push({ chunk, x, y, width: w, height: h, atlasX, atlasY, middle: [box.x / box.count, box.y / box.count] });
+    [atlasX, row, width] = [atlasX + w + LAYOUT_GAP, Math.max(row, h), Math.max(width, atlasX + w)];
+  }
+  const layout = { side, width, height: atlasY + row, chunks: places };
+  layouts.set(world, layout);
+  return layout;
+}
+
+/** A picture of so many pixels by so many, each red, green, blue and alpha. */
+export interface Atlas {
+  width: number;
+  height: number;
+  pixels: Uint8Array;
+}
+
+/**
+ * A synth's planet, in layers. Its inside (`core`): the light it's full of, the atmosphere glowing round it. Over it,
+ * its chunks (`chunks`, in one picture, each where chunkLayout() says): its `window`'s pieces, each a raised plate,
+ * what's dark in it standing out of it, its edges bevelled down into the cracks between them, where the inside's
+ * light shows and spills onto them; lit by the sun from the top left, the cockpit's light (`rim`) round the far edge.
+ */
+export function makeSynthWorld(world: World, rim: number, window: Picture): { core: Tile; chunks: Atlas } {
+  if (!isSynthWorld(world)) throw new Error(`The planet "${world}" is one of the skin's: makeWorld() makes it`);
+  const look = synthLooks[world];
+  const chunks = chunksOf(world);
+  const layout = chunkLayout(world)!;
+  const { onSphere, onDisc } = viewOf(look);
+  const sun = onSphere(SUNLIGHT);
+  const side = layout.side;
+  const cockpit = rgb(rim);
+  const core = blank(side, look.atmosphere);
+  const atlas = { width: layout.width, height: layout.height, pixels: new Uint8Array(layout.width * layout.height * 4) };
+  const placeOf = chunks.map((_, index) => layout.chunks.find((place) => place.chunk === index));
+
+  // The window between its pixels (its edges going on past them), and its height: what's dark in it standing out
+  const { width, height, channels, pixels } = window;
+  const pixel = (x: number, y: number): Vec3 => {
+    const at = (Math.min(height - 1, Math.max(0, y)) * width + Math.min(width - 1, Math.max(0, x))) * channels;
+    return [pixels[at] / 255, pixels[at + 1] / 255, pixels[at + 2] / 255];
+  };
+  const between = <T,>(get: (x: number, y: number) => T, blend: (a: T, b: T, t: number) => T) => (x: number, y: number) => {
+    const [fx, fy] = [Math.floor(x), Math.floor(y)];
+    const [tx, ty] = [x - fx, y - fy];
+    return blend(blend(get(fx, fy), get(fx + 1, fy), tx), blend(get(fx, fy + 1), get(fx + 1, fy + 1), tx), ty);
+  };
+  const sample = between(pixel, mix);
+  const heights = new Float32Array(width * height);
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++) {
+      let dark = 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) dark += 1 - dot(pixel(x + dx, y + dy), [0.3, 0.59, 0.11]);
+      heights[y * width + x] = smoothstep(0.3, 0.8, dark / 9);
+    }
+  const heightAt = between(
+    (x, y) => heights[Math.min(height - 1, Math.max(0, y)) * width + Math.min(width - 1, Math.max(0, x))],
+    (a, b, t) => a + (b - a) * t,
+  );
+  const shows = CHUNK_SHOWS * width;
+
+  eachPixel(side, look, SUNLIGHT, (x, y, pixel) => {
+    // The inside: light, whiter towards its middle
+    const inside = mix(cockpit, [1, 1, 1], 0.25 + 0.45 * pixel.normal[2]);
+    setDiscPixel(core, x, y, pixel.cover > 0 ? inside : look.atmosphere, pixel, look.atmosphere);
+    if (pixel.cover <= 0) return;
+
+    // The chunk there, its piece of the window, and how far into it from the crack
+    const p = onSphere(pixel.normal);
+    const { index, chunk, next, edge } = chunkAt(chunks, p);
+    const crack = 1 - smoothstep(CHUNK_CRACK * 0.5, CHUNK_CRACK, edge);
+    const place = placeOf[index];
+    if (crack >= 1 || !place || x < place.x || y < place.y || x >= place.x + place.width || y >= place.y + place.height) return;
+    const [a, b] = [dot(p, chunk.east), dot(p, chunk.south)];
+    const [wx, wy] = [chunk.u * width + (a * chunk.cos - b * chunk.sin) * shows, chunk.v * height + (a * chunk.sin + b * chunk.cos) * shows];
+    const inward = Math.max(0, edge - CHUNK_CRACK);
+
+    // Its slant there: its window's relief, and its bevel, down towards the crack
+    const [hx, hy] = [(heightAt(wx + 1, wy) - heightAt(wx - 1, wy)) / 2, (heightAt(wx, wy + 1) - heightAt(wx, wy - 1)) / 2];
+    const uphill = add(scale(chunk.east, shows * (hx * chunk.cos + hy * chunk.sin)), scale(chunk.south, shows * (-hx * chunk.sin + hy * chunk.cos)));
+    const toCrack = add(next.middle, scale(chunk.middle, -1));
+    const outward = normalise(add(toCrack, scale(p, -dot(toCrack, p))));
+    const bevel = CHUNK_BEVEL_SLOPE * (1 - clamp01(inward / CHUNK_BEVEL)) ** 2;
+    const slant = normalise(add(add(p, scale(uphill, -CHUNK_RELIEF)), scale(outward, bevel)));
+
+    // What stands out of it towards the sun shades it: the sun's way along it, in the window
+    const sunAlong = add(sun, scale(p, -dot(sun, p)));
+    const [se, ss] = [dot(sunAlong, chunk.east), dot(sunAlong, chunk.south)];
+    const [sx, sy] = [se * chunk.cos - ss * chunk.sin, se * chunk.sin + ss * chunk.cos];
+    const reach = CHUNK_SHADOW_REACH / (Math.hypot(sx, sy) || 1);
+    const shadow = CHUNK_SHADOW * clamp01((heightAt(wx + sx * reach, wy + sy * reach) - heightAt(wx, wy)) * 1.5);
+
+    const ground: Ground = {
+      colour: scale(sample(wx, wy), chunk.tone * (1 - shadow)),
+      glow: scale(cockpit, CHUNK_SPILL * Math.exp(-inward / CHUNK_SPILL_REACH)),
+      shine: 0.1 + 0.35 * heightAt(wx, wy),
+    };
+    const colour = shade(ground, pixel, onDisc(slant), look, SUNLIGHT, cockpit);
+
+    // Into its place in the chunks' picture, as much of it as isn't crack
+    const at = ((y - place.y + place.atlasY) * atlas.width + (x - place.x + place.atlasX)) * 4;
+    atlas.pixels.set([...colour.map((c) => Math.round(clamp01(c) * 255)), Math.round(clamp01(pixel.cover * (1 - crack)) * 255)], at);
+  });
+  return { core, chunks: atlas };
 }
 
 /**

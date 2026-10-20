@@ -68,7 +68,7 @@ const pictureOf = (synth: Synth) => nightAndDayOf(synth)[0]?.night ?? synth.data
 const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted-${index + 1}`, place: places[synths.length + index] }));
 ---
 
-<section class="synth-graph" aria-labelledby="synths-title" data-synth-graph>
+<section class="synth-graph" aria-labelledby="synths-title" data-synth-graph data-planet-x={PLANET.x} data-planet-y={PLANET.y}>
   {/* The graph's layout from the start, before its script has loaded: without the script, there's none */}
   <script is:inline>
     document.currentScript.parentElement.classList.add('enhanced');
@@ -680,8 +680,10 @@ const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted
   }
 
   /*
-   * In the graph, a pane is the node expanded: it grows out of the planet, which goes, over what's round it; the node
-   * keeps its top left, as an expanded node of the graph does. Closed, it's unseen and can't be reached (inert)
+   * In the graph, a pane is the node expanded: it comes out of its planet's middle, over what's round it; the node keeps
+   * its top left, as an expanded node of the graph does. Closed, it's unseen and can't be reached (inert). An uncharted
+   * planet goes as it comes; a synth's opens along its cracks: its name, its sight and its ring go, and its chunks and
+   * the light inside it (or, unless the visitor asked for less motion, as below)
    */
   .enhanced .pane {
     position: absolute;
@@ -712,7 +714,7 @@ const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted
     transition: opacity 0.25s;
   }
 
-  .enhanced .expanded .toggle {
+  .enhanced .expanded.uncharted .toggle {
     visibility: hidden;
     opacity: 0;
     transition:
@@ -720,23 +722,39 @@ const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted
       visibility 0s 0.3s;
   }
 
+  .enhanced .expanded:not(.uncharted) .toggle {
+    pointer-events: none;
+  }
+
+  .toggle::before,
+  .toggle .name,
+  .toggle :global(:is(.ring, .core, .chunk)) {
+    transition: opacity 0.3s;
+  }
+
+  .expanded:not(.uncharted) .toggle::before,
+  .expanded:not(.uncharted) .toggle .name,
+  .expanded .toggle :global(:is(.ring, .core, .chunk)) {
+    opacity: 0;
+  }
+
   @media (prefers-reduced-motion: no-preference) {
     .enhanced .pane {
-      scale: 0.4;
+      scale: 0.15;
       transition:
-        opacity 0.25s,
-        scale 0.35s cubic-bezier(0.2, 0.8, 0.3, 1),
-        visibility 0s 0.35s;
+        opacity 0.3s,
+        scale 0.45s cubic-bezier(0.2, 0.8, 0.3, 1),
+        visibility 0s 0.45s;
     }
 
     .enhanced .expanded .pane {
       scale: 1;
       transition:
-        opacity 0.25s,
-        scale 0.35s cubic-bezier(0.2, 0.8, 0.3, 1);
+        opacity 0.35s 0.12s,
+        scale 0.55s cubic-bezier(0.2, 0.8, 0.3, 1) 0.12s;
     }
 
-    .enhanced .expanded .toggle {
+    .enhanced .expanded.uncharted .toggle {
       scale: 0.6;
       transition:
         opacity 0.2s,
@@ -748,6 +766,54 @@ const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted
       transition:
         opacity 0.25s,
         scale 0.35s cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+
+    /*
+     * Opening, a synth's planet's chunks fly apart from its cracks (each where the script sends it: --to-x and --to-y
+     * from where it is, turned by --turn, as opaque as --stay: a few float round the pane, slowly drifting, the others
+     * go), and the light inside it flares as the pane comes out of it. Closing, once the pane is back in, they come
+     * back together round it
+     */
+    .toggle :global(.chunk) {
+      transition:
+        translate 0.6s cubic-bezier(0.5, 0, 0.2, 1) 0.2s,
+        rotate 0.6s cubic-bezier(0.5, 0, 0.2, 1) 0.2s,
+        opacity 0.35s 0.2s;
+    }
+
+    .expanded .toggle :global(.chunk) {
+      translate: calc(var(--to-x, 0) * 1px) calc(var(--to-y, 0) * 1px);
+      rotate: calc(var(--turn, 0) * 1deg);
+      opacity: var(--stay, 0);
+      transition:
+        translate 0.9s cubic-bezier(0.15, 0.75, 0.3, 1),
+        rotate 0.9s cubic-bezier(0.15, 0.75, 0.3, 1),
+        opacity 0.6s 0.25s;
+    }
+
+    .toggle :global(.core) {
+      transition:
+        opacity 0.3s 0.15s,
+        scale 0.45s 0.15s;
+    }
+
+    .expanded .toggle :global(.core) {
+      scale: 1.3;
+      transition:
+        opacity 0.6s 0.2s,
+        scale 0.6s cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+
+    .expanded .toggle :global(.floating .drift) {
+      animation: drift 7s ease-in-out infinite alternate;
+      animation-delay: var(--delay, 0s);
+    }
+  }
+
+  @keyframes drift {
+    to {
+      translate: 0 -6px;
+      rotate: 3deg;
     }
   }
 
@@ -958,6 +1024,23 @@ const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted
   const FAINT_COURSES = 3;
   const FAINT_PAUSE = 2800;
   const FAINT_MOVE = 3200;
+
+  /**
+   * Where a synth's planet's chunks go as it opens: a few float round its pane, a little out from its edges (where, of
+   * its width and height), each the chunk going most that way, turned so much at most (degrees); the others fly so far
+   * away, turned so much at most, and go
+   */
+  const FLOATS = [
+    [-0.07, 0.1],
+    [1.06, 0.2],
+    [-0.06, 0.62],
+    [1.07, 0.76],
+    [0.3, 1.04],
+    [0.82, -0.05],
+  ];
+  const FLOAT_TURN = 14;
+  const FLY = 420;
+  const FLY_TURN = 50;
 
   interface Point {
     x: number;
@@ -1425,9 +1508,43 @@ const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted
     // --- A planet expanded into its pane, one at a time; the view moved to it ---
 
     let open: HTMLElement | null = null;
+    // Where its chunks go as a synth's planet opens, from where they are round its centre (in the node's box)
+    const planet = { x: Number(graph.dataset.planetX), y: Number(graph.dataset.planetY) };
+    const scatter = (node: HTMLElement) => {
+      const pane = paneOf(node);
+      const free = [...toggleOf(node).querySelectorAll<SVGGElement>('[data-chunk]')].map((chunk) => ({
+        chunk,
+        x: Number(chunk.dataset.x),
+        y: Number(chunk.dataset.y),
+      }));
+      const send = ({ chunk }: (typeof free)[number], to: Point, turn: number, stay: boolean) => {
+        chunk.style.setProperty('--to-x', to.x.toFixed(1));
+        chunk.style.setProperty('--to-y', to.y.toFixed(1));
+        chunk.style.setProperty('--turn', turn.toFixed(1));
+        chunk.style.setProperty('--stay', stay ? '1' : '0');
+        chunk.style.setProperty('--delay', `${(-Math.random() * 7).toFixed(2)}s`);
+        chunk.classList.toggle('floating', stay);
+      };
+      const away = (angle: number, { x, y }: Point) => Math.abs(Math.atan2(Math.sin(Math.atan2(y, x) - angle), Math.cos(Math.atan2(y, x) - angle)));
+      for (const [across, down] of FLOATS) {
+        if (free.length === 0) break;
+        const spot = { x: across * pane.offsetWidth - planet.x, y: down * pane.offsetHeight - planet.y };
+        const angle = Math.atan2(spot.y, spot.x);
+        const chosen = free.reduce((best, chunk) => (away(angle, chunk) < away(angle, best) ? chunk : best));
+        free.splice(free.indexOf(chosen), 1);
+        send(chosen, { x: spot.x - chosen.x, y: spot.y - chosen.y }, (Math.random() - 0.5) * 2 * FLOAT_TURN, true);
+      }
+      for (const chunk of free) {
+        const length = Math.hypot(chunk.x, chunk.y) || 1;
+        const far = FLY * (0.8 + Math.random() * 0.5);
+        send(chunk, { x: (chunk.x / length) * far, y: (chunk.y / length) * far }, (Math.random() - 0.5) * 2 * FLY_TURN, false);
+      }
+    };
+
     const expand = (node: HTMLElement) => {
       if (open && open !== node) collapse(open, false);
       open = node;
+      scatter(node);
       node.classList.add('expanded');
       graph.classList.add('used');
       toggleOf(node).setAttribute('aria-expanded', 'true');
