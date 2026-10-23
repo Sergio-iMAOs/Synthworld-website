@@ -1,0 +1,34 @@
+---
+import { Image } from 'astro:assets';
+import { langOf } from '@/i18n';
+import type { Project } from '@/projects';
+
+interface Props {
+  item: Project['data']['media'][number];
+  /** How wide it's shown, for the browser to pick the image's size (`sizes`). */
+  sizes: string;
+  /** With its caption under it, where the text places it. */
+  captioned?: boolean;
+}
+
+const { item, sizes, captioned = false } = Astro.props;
+const lang = langOf(Astro.url);
+const caption = captioned ? item.caption?.[lang] : undefined;
+---
+
+<figure>
+  {
+    'image' in item ? (
+      <Image class="frame" src={item.image} alt={item.alt[lang]} widths={[480, 960, 1600, 2400]} sizes={sizes} />
+    ) : (
+      <video class="frame" src={item.video} width={item.width} height={item.height} aria-label={item.alt[lang]} autoplay loop muted playsinline />
+    )
+  }
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+  img {
+    width: 100%;
+  }
+</style>

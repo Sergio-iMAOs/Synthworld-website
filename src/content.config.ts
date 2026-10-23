@@ -107,8 +107,10 @@ const projects = defineCollection({
     base: './src/content/projects',
     generateId: ({ entry }) => entry.split('/')[0],
   }),
-  schema: ({ image }) =>
-    z.object({
+  schema: ({ image }) => {
+    /** What every picture of its page has, an image or a video: its place in its texts, and what it shows. */
+    const placed = { id: z.string().optional(), alt: inEveryLanguage, caption: inEveryLanguage.optional() };
+    return z.object({
       name: z.string(),
       /** The years it was made in. Without `to`, only one. */
       from: z.number(),
@@ -121,16 +123,22 @@ const projects = defineCollection({
       page: z.boolean().default(true),
       /** A video, by its YouTube id. */
       youtube: z.string().optional(),
-      /** Its page's pictures, in order: images from its folder, or silent video loops (in public/portfolio/<project>/). */
+      /**
+       * Its page's pictures, in order: images (a path from its folder), or silent video loops (in public/, as
+       * "/portfolio/<project>/file.mp4"). Its texts place one with an `id` with <!-- media: <id> -->, or several in a
+       * row with <!-- media: <id>, <id> -->; one they don't place is shown after them. A `caption` is shown under it
+       * where it's placed.
+       */
       media: z
         .array(
           z.union([
-            z.object({ image: image(), alt: inEveryLanguage }),
-            z.object({ video: z.string(), width: z.number(), height: z.number(), alt: inEveryLanguage }),
+            z.object({ image: image(), ...placed }),
+            z.object({ video: z.string(), width: z.number(), height: z.number(), ...placed }),
           ]),
         )
         .default([]),
-    }),
+    });
+  },
 });
 
 /** A project's texts in one language: "<project>/<language>". */

@@ -1,22 +1,95 @@
-name: Synthworld
+name: SynthWorld
 from: 2026
 to: today
 order: 1
-cover: ./cover.png
+# Its pictures are EARL's, the first synth made with it, from its page (src/content/synths/earl, public/loops/earl):
+# retaken with them by `npm run screenshots`
+cover: ../../synths/earl/screenshots/home-night.png
+# en.md and es.md place each one with <!-- media: <id> -->
 media:
-  - video: /portfolio/synthworld/modulation.mp4
-    width: 1200
-    height: 600
+  - id: window
+    image: ../../synths/earl/screenshots/home-night.png
     alt:
-      en: A synthesiser made with Synthworld being played while modulations are added in its matrix
-      es: Un sintetizador hecho con Synthworld sonando mientras se añaden modulaciones en su matriz
-  - video: /portfolio/synthworld/routing.mp4
-    width: 1280
-    height: 720
+      en: "EARL's Synth page: a wavetable oscillator, a granular one playing a sample and a third oscillator showing its unison, the velvet noise and the sub-oscillator at the top; a filter and the voice's saturator under them; an envelope, an LFO and the velocity at the bottom, over the macros"
+      es: "La página Synth de EARL: un oscilador de tablas de ondas, uno granular tocando una muestra y un tercer oscilador mostrando su unísono, el ruido velvet y el suboscilador arriba; un filtro y el saturador de la voz debajo; una envolvente, un LFO y la velocidad abajo, sobre las macros"
+    caption:
+      en: "EARL, the first synthesiser made with SynthWorld."
+      es: "EARL, el primer sintetizador hecho con SynthWorld."
+  - id: wavetable
+    video: /loops/earl/wavetable.mp4
+    width: 882
+    height: 842
     alt:
-      en: The routing graph, with oscillators, gains and a filter being rewired
-      es: El grafo de enrutamiento, con osciladores, ganancias y un filtro que se recablean
-  - image: ./ui.png
+      en: "A wavetable oscillator's panel, its frames drawn one behind the other as its position knob is turned"
+      es: "El panel de un oscilador de tablas de ondas, con sus fotogramas dibujados uno detrás de otro mientras se gira su perilla de posición"
+    caption:
+      en: "A wavetable oscillator."
+      es: "Un oscilador de tablas de ondas."
+  - id: granular
+    video: /loops/earl/granular.mp4
+    width: 882
+    height: 842
     alt:
-      en: The interface of a synthesiser made with Synthworld, with its oscillator, filter, envelopes, LFOs and modulation matrix
-      es: La interfaz de un sintetizador hecho con Synthworld, con su oscilador, filtro, envolventes, LFO y matriz de modulación
+      en: "The granular's panel: a sample's waveform with the part its grains are taken from lit, moving as its controls are turned"
+      es: "El panel del granular: la forma de onda de un sample con la parte de la que toma sus granos iluminada, que se mueve al girar sus controles"
+    caption:
+      en: "A granular."
+      es: "Un granular."
+  - id: noise
+    video: /loops/earl/noise.mp4
+    width: 912
+    height: 842
+    alt:
+      en: "The coloured noise's panel going through its colours, and the sub-oscillator under it"
+      es: "El panel del ruido de color pasando por sus colores, y el suboscilador debajo"
+    caption:
+      en: "A coloured noise and a sub-oscillator."
+      es: "Un ruido de color y un suboscilador."
+  - id: mod-matrix
+    image: ../../synths/earl/screenshots/mod-matrix.png
+    alt:
+      en: "The voice's modulation matrix: a row for each modulation, the Amp Envelope on the VCA's gain, LFOs on a wavetable's position, pan and pitch, the mod wheel on another modulation's amount, each with its amount and its curve"
+      es: "La matriz de modulación de la voz: una fila por modulación, la Amp Envelope sobre la ganancia del VCA, LFO sobre la posición, el paneo y la afinación de una tabla de ondas, la rueda de modulación sobre la cantidad de otra modulación, cada una con su cantidad y su curva"
+    caption:
+      en: "The modulation matrix: each modulation with its amount and its curve, even of another one."
+      es: "La matriz de modulación: cada modulación con su cantidad y su curva, incluso de otra."
+  - id: graph
+    image: ../../synths/earl/screenshots/graph.png
+    alt:
+      en: "EARL's graph with every processor on: the notes' processors on the left; the voice's oscillators, noise and sub-oscillator cabled into four filters, then the saturator and the VCA, its LFOs, envelopes and what you play under them; and the effects in a chain on the right"
+      es: "El grafo de EARL con todos los procesadores encendidos: los procesadores de las notas a la izquierda; los osciladores, el ruido y el suboscilador de la voz cableados a cuatro filtros, luego el saturador y el VCA, y debajo sus LFO, envolventes y lo que tocas; y los efectos en cadena a la derecha"
+    caption:
+      en: "The graph: the notes, each voice and the effects, left to right."
+      es: "El grafo: las notas, cada voz y los efectos, de izquierda a derecha."
+  - id: sw-light
+    image: ../../synths/earl/skins/sw-light.png
+    alt:
+      en: "EARL's Synth page in the SW Light skin: pale grey panels, dark text and knobs, its waves and switches in violet"
+      es: "La página Synth de EARL con la skin SW Light: paneles gris claro, textos y perillas oscuros, sus ondas e interruptores en violeta"
+    caption:
+      en: "SW Light, SynthWorld's own."
+      es: "SW Light, la de SynthWorld."
+  - id: deep-sea
+    image: ../../synths/earl/skins/deep-sea.png
+    alt:
+      en: "EARL's Synth page in the Deep Sea skin: navy blue panels, its waves, envelopes and switches in bright blue, their points in amber"
+      es: "La página Synth de EARL con la skin Deep Sea: paneles azul marino, sus ondas, envolventes e interruptores en azul vivo y sus puntos en ámbar"
+    caption:
+      en: "Deep Sea, EARL's own."
+      es: "Deep Sea, la de EARL."
+  - id: riso
+    image: ../../synths/earl/skins/riso.png
+    alt:
+      en: "EARL's Synth page in the Riso skin: cards of speckled cream paper outlined in black ink, mustard knobs ringed with inked rays, its waves shaded in vermilion"
+      es: "La página Synth de EARL con la skin Riso: tarjetas de papel crema moteado perfiladas en tinta negra, perillas mostaza rodeadas de rayos entintados, sus ondas sombreadas en bermellón"
+    caption:
+      en: "Riso, EARL's own: a riso poster, with shapes of its own."
+      es: "Riso, la de EARL: un póster de risografía, con formas propias."
+  - id: starship
+    image: ../../synths/earl/skins/starship.png
+    alt:
+      en: "EARL's Synth page in the Starship skin: screens of dark glass with cut corners outlined in cyan light, dials lit up to their values"
+      es: "La página Synth de EARL con la skin Starship: pantallas de cristal oscuro con las esquinas cortadas y perfiladas en luz cian, diales iluminados hasta su valor"
+    caption:
+      en: "Starship, EARL's own: a starship's cockpit."
+      es: "Starship, la de EARL: la cabina de una nave."

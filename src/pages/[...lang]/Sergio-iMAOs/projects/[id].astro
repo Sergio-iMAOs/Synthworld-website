@@ -1,12 +1,11 @@
 ---
-import { Image } from 'astro:assets';
-import { render } from 'astro:content';
 import ProjectCard from '@/components/ProjectCard.astro';
+import ProjectMedia from '@/components/ProjectMedia.astro';
 import Portfolio from '@/layouts/Portfolio.astro';
 import { defaultLang, langOf, languages, type Lang } from '@/i18n';
 import { portfolioTextsOf } from '@/i18n/portfolio';
 import { youtubePlayer } from '@/music';
-import { getProjects, yearsOf } from '@/projects';
+import { getProjects, yearsOf, type Project } from '@/projects';
 
 // Every project that has a page, once per language
 export async function getStaticPaths() {
@@ -21,43 +20,97 @@ const t = portfolioTextsOf(lang);
 const projects = await getProjects(lang);
 const project = projects.find(({ id }) => id === Astro.params.id)!;
 const { data, text } = project;
-const { Content } = await render(text);
 const others = projects.filter(({ id, data }) => id !== project.id && data.page);
+
+type Media = Project['data']['media'][number];
+
+// The text, cut into its sections at its headings, and each section where it places pictures (<!-- media: <id>, <id> -->):
+// its HTML and the pictures it places there, in turn
+const html = text.rendered?.html;
+if (html === undefined) throw new Error(`The text "${text.id}" isn't rendered`);
+const mediaOf = (id: string) => {
+  const item = data.media.find((item) => item.id === id);
+  if (!item) throw new Error(`The text "${text.id}" places a picture "${id}" that project.yaml doesn't have`);
+  return item;
+};
+const sections = html
+  .split(/(?=<h2\b)/)
+  .filter((section) => section.trim())
+  .map((section) =>
+    section
+      .split(/<!--\s*media:\s*([\w\s,-]+?)\s*-->/)
+      .map((part, index) => (index % 2 === 0 ? part : part.split(/\s*,\s*/).map(mediaOf))),
+  );
+const placed = sections.flat().filter((part): part is Media[] => Array.isArray(part)).flat();
+const unplaced = data.media.filter((item) => !placed.includes(item));
+
+const ratioOf = (item: Media) => ('image' in item ? item.image.width / item.image.height : item.width / item.height);
+/** A section's one picture shown beside its text: one that's placed alone in it and isn't much wider than high. */
+const besideIn = (parts: (string | Media[])[]) => {
+  const groups = parts.filter((part): part is Media[] => Array.isArray(part));
+  return groups.length === 1 && groups[0].length === 1 && ratioOf(groups[0][0]) < 1.4 ? groups[0][0] : undefined;
+};
+/** Pictures placed together: so many to a row (four in two rows of two). */
+const columnsOf = (count: number) => (count === 4 ? 2 : Math.min(count, 3));
 ---
 
 <Portfolio title={data.name} description={text.data.summary}>
-  <section class="section">
+  <section class="section head">
     <div class="wrap">
       <p class="label">{yearsOf(data, t.today)}</p>
       <h1>{data.name}</h1>
       <p class="lead">{text.data.summary}</p>
-    </div>
-  </section>
-  <div class="wrap">
-    {data.youtube && <iframe class="frame wide video" title={data.name} src={youtubePlayer(data.youtube)} loading="lazy" allow="autoplay; picture-in-picture" allowfullscreen />}
-    <div class="prose">
-      <Content />
       {
         text.data.link && (
-          <p>
-            <a href={text.data.link.url}>{text.data.link.label} →</a>
+          <p class="link">
+            <a class="button" href={text.data.link.url}>
+              {text.data.link.label} →
+            </a>
           </p>
         )
       }
     </div>
-    <ul class="list media">
+  </section>
+  <div class="wrap">
+    {data.youtube && <iframe class="frame wide video" title={data.name} src={youtubePlayer(data.youtube)} loading="lazy" allow="autoplay; picture-in-picture" allowfullscreen />}
+    <div class="story">
       {
-        data.media.map((item) => (
-          <li>
-            {'image' in item ? (
-              <Image class="frame" src={item.image} alt={item.alt[lang]} widths={[480, 960, 1600]} sizes="(min-width: 48rem) 30rem, 100vw" />
-            ) : (
-              <video class="frame" src={item.video} width={item.width} height={item.height} aria-label={item.alt[lang]} autoplay loop muted playsinline />
-            )}
-          </li>
-        ))
+        sections.map((parts) => {
+          const beside = besideIn(parts);
+          return beside ? (
+            <section class="beside">
+              <div class="prose" set:html={parts.filter((part) => typeof part === 'string').join('')} />
+              <ProjectMedia item={beside} sizes="(min-width: 48rem) 24rem, 100vw" captioned />
+            </section>
+          ) : (
+            <section>
+              {parts.map((part) =>
+                typeof part === 'string' ? (
+                  part.trim() && <div class="prose" set:html={part} />
+                ) : (
+                  <div class="row" style={`--columns: ${columnsOf(part.length)}`}>
+                    {part.map((item) => (
+                      <ProjectMedia item={item} sizes={`(min-width: 62rem) ${Math.round(58 / columnsOf(part.length))}rem, ${part.length > 1 ? '(min-width: 40rem) 50vw, ' : ''}100vw`} captioned />
+                    ))}
+                  </div>
+                ),
+              )}
+            </section>
+          );
+        })
       }
-    </ul>
+    </div>
+    {
+      unplaced.length > 0 && (
+        <ul class="list media">
+          {unplaced.map((item) => (
+            <li>
+              <ProjectMedia item={item} sizes="(min-width: 48rem) 30rem, 100vw" />
+            </li>
+          ))}
+        </ul>
+      )
+    }
     <section class="rule others">
       <h2>{t.projects.others}</h2>
       <ul class="list">
@@ -74,8 +127,62 @@ const others = projects.filter(({ id, data }) => id !== project.id && data.page)
 </Portfolio>
 
 <style>
+  .head {
+    padding-bottom: clamp(1.5rem, 4vw, 3rem);
+  }
+
+  .link {
+    margin-top: 2rem;
+  }
+
   .video {
     margin-bottom: 2.5rem;
+  }
+
+  /* Its sections: the text in its column, its pictures across the page */
+  .story > section + section {
+    margin-top: clamp(2.5rem, 6vw, 4rem);
+  }
+
+  .story .prose > :global(:first-child) {
+    margin-top: 0;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+    gap: 1.5rem 1rem;
+    margin-block: 2rem 2.5rem;
+  }
+
+  .row:last-child {
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 40rem) {
+    .row {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  /* A section's one picture beside its text, when it's narrow enough */
+  @media (min-width: 48rem) {
+    .beside {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 24rem;
+      gap: 3rem;
+      align-items: start;
+    }
+  }
+
+  .beside > :global(figure) {
+    margin-top: 1.5rem;
+  }
+
+  @media (min-width: 48rem) {
+    .beside > :global(figure) {
+      margin-top: 0;
+    }
   }
 
   .media {
@@ -92,10 +199,6 @@ const others = projects.filter(({ id, data }) => id !== project.id && data.page)
   /* One picture alone takes the whole width */
   .media li:only-child {
     column-span: all;
-  }
-
-  .media img {
-    width: 100%;
   }
 
   .others {

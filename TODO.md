@@ -16,8 +16,6 @@ Web version to demo it
 
 ## Portfolio
 
-Update the Synthworld project in the Portfolio. Add a button that leads to Synthworld landing page in the beginning of the page. Regenerate the pictures (or use some from the synth page). Improve the layout of pictures and text
-
 Adjust pictures size. Some of them have unnecesarily high resolution, which takes space
 
 Update my email when I have the domain
