@@ -5,9 +5,6 @@ import { langOf, langPaths, pathIn } from '@/i18n';
 import { portfolioTextsOf } from '@/i18n/portfolio';
 import { soundcloudPlayer, works, youtubePlayer } from '@/music';
 import { site } from '@/site';
-import temblor from '@/assets/portfolio/temblor-t10.jpg';
-import tlm from '@/assets/portfolio/tlm-102.jpg';
-import hs8 from '@/assets/portfolio/hs8.jpg';
 
 export const getStaticPaths = langPaths;
 
@@ -18,12 +15,6 @@ const t = all.music;
 const groups = [
   { title: t.selected, works: works.filter((work) => work.selected) },
   { title: t.all, works: works.filter((work) => !work.selected) },
-];
-
-const studio = [
-  { name: 'PreSonus Temblor T10', image: temblor },
-  { name: 'Neumann TLM 102', image: tlm },
-  { name: 'Yamaha HS8', image: hs8 },
 ];
 ---
 
@@ -70,21 +61,6 @@ const studio = [
     ))
   }
   <section class="wrap group">
-    <h2 class="rule">{t.studio}</h2>
-    <ul class="list studio">
-      {
-        studio.map(({ name, image }) => (
-          <li>
-            <figure>
-              <Image class="frame" src={image} alt="" widths={[400, 600]} sizes="(min-width: 48rem) 20rem, 100vw" />
-              <figcaption>{name}</figcaption>
-            </figure>
-          </li>
-        ))
-      }
-    </ul>
-  </section>
-  <section class="wrap group">
     <div class="rule prose">
       <h2>{t.collaborate.title}</h2>
       <p>{t.collaborate.text}</p>
@@ -111,18 +87,6 @@ const studio = [
   .credit {
     margin: 0.75rem 0 0;
     font-size: 0.9rem;
-  }
-
-  .studio {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-    gap: 1.5rem;
-  }
-
-  .studio img {
-    width: 100%;
-    aspect-ratio: 1;
-    object-fit: cover;
   }
 
   @media (min-width: 48rem) {

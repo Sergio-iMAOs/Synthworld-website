@@ -17,7 +17,6 @@ const en = {
     kinds: { soundtrack: 'Soundtrack', soundtrackAlbum: 'Soundtrack album', album: 'Album' },
     credits: { viaje: 'Guitar and vocals recording, mixing and mastering by Jose Muñoz at' },
     coverOf: 'Cover of',
-    studio: 'The studio',
     collaborate: {
       title: 'Open for collaborations',
       text: "I'm always excited to connect with other artists. I'm open to fresh ideas and meaningful collaborations. Let's build something new!",
@@ -36,7 +35,7 @@ const en = {
     top: 'Top selection',
     notes: {
       berklee: 'The book that opened jazz, theory and harmony to me, and got me composing and learning new instruments.',
-      roads: 'My way into sound design, and the book that led me to audio DSP.',
+      roads: 'My way into audio engineering, and the book that led me to audio DSP.',
     },
     groups: { sound: 'Music and sound', code: 'Programming', people: 'People', mind: 'Mind and consciousness' },
     editions: { second: 'Second edition', anniversary25: '25th anniversary edition' },
@@ -54,18 +53,18 @@ const en = {
     sevilla: [
       'In 2021, I moved to Sevilla, Spain, where I lived intermittently for three years. During that time, I started a project called La Onda, bringing together artists from various disciplines to organize events that celebrated all forms of art. These ranged from open-air gatherings with workshops and performances to multiple days camping festivals filled with creative activities.',
       "The main goal was to build a supportive artist community and network, and it worked. La Onda became one of the city's key artistic projects and a hub for creatives. Although based in Sevilla, we organized events across Spain.",
-      'At the same time, I began studying music production and sound design, primarily through books. One key resource was The Computer Music Tutorial by Curtis Roads, which eventually led me to explore audio DSP.',
+      'At the same time, I began studying music production and sound theory, primarily through books. One key resource was The Computer Music Tutorial by Curtis Roads, which eventually led me to explore audio DSP.',
     ],
     abroad: [
       'Between 2023 and 2024, after traveling through and exploring many European cities, I settled in Zürich, Switzerland for six months. There, I continued expanding my artistic network while working as a sound engineer in various venues and as a stagehand for large-scale, high-production shows across the country.',
       'In the summer of 2025, I took part in Waking Life Festival in Portugal, co-running a live music and jam session stage as both organizer and sound engineer.',
-      "Afterwards, I moved to Helsinki, Finland to begin a Master’s in Acoustics and Audio Technology at Aalto University. There, I started working as an acoustics research assistant at Aalto Acoustics Lab in Ville Pulkki's research group.",
+      "Through all these years, I kept studying sound, audio and acoustics, going ever deeper into them. I developed a strong passion for synthesisers and their design, and started coding my own plugins, which led me to pursue a professional career in audio engineering.",
+      "So I moved to Helsinki, Finland, to begin a Master’s in Acoustics and Audio Technology at Aalto University. There, I started working as an acoustics research assistant at Aalto Acoustics Lab, in Ville Pulkki's research group, while I keep working on my own audio projects and making synthesisers.",
     ],
     photos: {
       live: { caption: 'Playing live, 2015', alt: 'Sergio playing electric bass on stage with a band' },
       laOnda: { caption: 'A La Onda event', alt: 'A crowd at night in front of a small lit stage under a canopy' },
       lab: { caption: 'At Aalto Acoustics Lab', alt: 'Sergio standing in an anechoic chamber next to a column of loudspeakers' },
-      keyboard: { alt: 'A keyboard in the dark, lit in red' },
     },
     studies: {
       title: 'Academic studies',
@@ -122,7 +121,6 @@ const es: typeof en = {
     kinds: { soundtrack: 'Banda sonora', soundtrackAlbum: 'Álbum de banda sonora', album: 'Álbum' },
     credits: { viaje: 'Grabación de guitarra y voces, mezcla y mastering de Jose Muñoz en' },
     coverOf: 'Portada de',
-    studio: 'El estudio',
     collaborate: {
       title: 'Abierto a colaboraciones',
       text: 'Siempre me ilusiona conectar con otros artistas. Estoy abierto a ideas frescas y a colaboraciones con sentido. ¡Construyamos algo nuevo!',
@@ -141,7 +139,7 @@ const es: typeof en = {
     top: 'Selección principal',
     notes: {
       berklee: 'El libro que me abrió el jazz, la teoría y la armonía, y que me llevó a componer y a aprender nuevos instrumentos.',
-      roads: 'Mi entrada al diseño de sonido, y el libro que me llevó al DSP de audio.',
+      roads: 'Mi entrada a la ingeniería de audio, y el libro que me llevó al DSP de audio.',
     },
     groups: { sound: 'Música y sonido', code: 'Programación', people: 'Personas', mind: 'Mente y consciencia' },
     editions: { second: 'Segunda edición', anniversary25: 'Edición del 25.º aniversario' },
@@ -159,18 +157,18 @@ const es: typeof en = {
     sevilla: [
       'En 2021 me mudé a Sevilla, España, donde viví de forma intermitente durante tres años. En ese tiempo puse en marcha un proyecto llamado La Onda, que reunía a artistas de varias disciplinas para organizar eventos que celebraban todas las formas de arte: desde encuentros al aire libre con talleres y actuaciones hasta festivales de acampada de varios días llenos de actividades creativas.',
       'El objetivo principal era construir una comunidad y una red de artistas que se apoyaran, y funcionó. La Onda se convirtió en uno de los proyectos artísticos clave de la ciudad y en un punto de encuentro para creativos. Aunque teníamos la base en Sevilla, organizamos eventos por toda España.',
-      'Al mismo tiempo empecé a estudiar producción musical y diseño de sonido, sobre todo con libros. Uno fundamental fue The Computer Music Tutorial, de Curtis Roads, que acabó llevándome a explorar el DSP de audio.',
+      'Al mismo tiempo empecé a estudiar producción musical y teoría del sonido, sobre todo con libros. Uno fundamental fue The Computer Music Tutorial, de Curtis Roads, que acabó llevándome a explorar el DSP de audio.',
     ],
     abroad: [
       'Entre 2023 y 2024, después de viajar por muchas ciudades europeas y explorarlas, me instalé seis meses en Zúrich, Suiza. Allí seguí ampliando mi red artística mientras trabajaba como técnico de sonido en varias salas y como auxiliar de escenario en espectáculos de gran formato y gran producción por todo el país.',
       'En el verano de 2025 participé en el Waking Life Festival, en Portugal, donde codirigí un escenario de música en directo y jam sessions como organizador y como técnico de sonido.',
-      'Después me mudé a Helsinki, Finlandia, para empezar un máster en Acústica y Tecnología de Audio en la Universidad Aalto. Allí empecé a trabajar como asistente de investigación en acústica en el Aalto Acoustics Lab, en el grupo de investigación de Ville Pulkki.',
+      'Durante todos estos años seguí estudiando el sonido, el audio y la acústica, adentrándome cada vez más en ellos. Desarrollé una gran pasión por los sintetizadores y su diseño, y empecé a programar mis propios plugins, lo que me llevó a dedicarme profesionalmente a la ingeniería de audio.',
+      'Así que me mudé a Helsinki, Finlandia, para empezar un máster en Acústica y Tecnología de Audio en la Universidad Aalto. Allí empecé a trabajar como asistente de investigación en acústica en el Aalto Acoustics Lab, en el grupo de investigación de Ville Pulkki, mientras sigo trabajando en mis propios proyectos de audio y haciendo sintetizadores.',
     ],
     photos: {
       live: { caption: 'Tocando en directo, 2015', alt: 'Sergio tocando el bajo eléctrico en un escenario con una banda' },
       laOnda: { caption: 'Un evento de La Onda', alt: 'Público de noche frente a un pequeño escenario iluminado bajo un toldo' },
       lab: { caption: 'En el Aalto Acoustics Lab', alt: 'Sergio de pie en una cámara anecoica junto a una columna de altavoces' },
-      keyboard: { alt: 'Un teclado en la oscuridad, iluminado en rojo' },
     },
     studies: {
       title: 'Formación académica',

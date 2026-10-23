@@ -7,7 +7,6 @@ import emotionalIntelligence from '@/assets/portfolio/books/emotional-intelligen
 import makingEmbeddedSystems from '@/assets/portfolio/books/making-embedded-systems.jpg';
 import effectiveModernCpp from '@/assets/portfolio/books/effective-modern-cpp.jpg';
 import manAndHisSymbols from '@/assets/portfolio/books/man-and-his-symbols.jpg';
-import lsdMyProblemChild from '@/assets/portfolio/books/lsd-my-problem-child.jpg';
 import island from '@/assets/portfolio/books/island.jpg';
 
 /** A book of the portfolio's books page, in its latest edition. What its group, its edition and a top book's note say are texts of src/i18n/portfolio.ts. */
@@ -109,16 +108,6 @@ export const books: Book[] = [
     group: 'mind',
     url: 'https://www.penguinrandomhouse.com/books/isbn/9780593499993/',
     cover: manAndHisSymbols,
-  },
-  {
-    title: 'LSD: My Problem Child',
-    subtitle: 'Insights/Outlooks',
-    authors: ['Albert Hofmann'],
-    publisher: 'Oxford University Press',
-    year: 2019,
-    group: 'mind',
-    url: 'https://global.oup.com/academic/product/lsd-my-problem-child-9780198840206',
-    cover: lsdMyProblemChild,
   },
   {
     title: 'Island',

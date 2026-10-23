@@ -6,7 +6,6 @@ import { portfolioTextsOf } from '@/i18n/portfolio';
 import live from '@/assets/portfolio/live-2015.jpg';
 import laOnda from '@/assets/portfolio/la-onda.jpg';
 import lab from '@/assets/portfolio/aalto-lab.jpg';
-import keyboard from '@/assets/portfolio/keyboard.jpg';
 
 export const getStaticPaths = langPaths;
 
@@ -45,28 +44,25 @@ const chapters = [
         </div>
       ))
     }
-    <div class="chapter">
-      <div>
-        {
-          [t.studies, t.work].map(({ title, items }) => (
-            <section class="record">
-              <h2 class="rule">{title}</h2>
-              <ul class="list">
-                {items.map(({ years, what, where }) => (
-                  <li>
-                    <span class="label">{years}</span>
-                    <span>
-                      <strong>{what}</strong>
-                      <span class="quiet">{where}</span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))
-        }
-      </div>
-      <Image class="frame tall" src={keyboard} alt={t.photos.keyboard.alt} widths={[480, 960]} sizes="(min-width: 48rem) 22rem, 100vw" />
+    <div class="records">
+      {
+        [t.studies, t.work].map(({ title, items }) => (
+          <section class="record">
+            <h2 class="rule">{title}</h2>
+            <ul class="list">
+              {items.map(({ years, what, where }) => (
+                <li>
+                  <span class="label">{years}</span>
+                  <span>
+                    <strong>{what}</strong>
+                    <span class="quiet">{where}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))
+      }
     </div>
     <section class="record publications">
       <h2 class="rule">{t.publications.title}</h2>
@@ -100,11 +96,6 @@ const chapters = [
     width: 100%;
   }
 
-  .tall {
-    aspect-ratio: 4 / 5;
-    object-fit: cover;
-  }
-
   @media (min-width: 48rem) {
     .chapter {
       grid-template-columns: 1fr 22rem;
@@ -112,6 +103,7 @@ const chapters = [
     }
   }
 
+  .records,
   .publications {
     margin-bottom: 3rem;
   }

@@ -4,6 +4,8 @@ Optimize performance
 
 ## EARL
 
+EARL page: When the first main image of EARL is shown (comming out of the exploding planet), add an animated light/aura that emanates from behind EARL to improve its presentation.
+
 Add EARL's user manual?
 
 Music samples section
@@ -17,11 +19,7 @@ Web version to demo it
 ## Portfolio
 Adjust pictures size. Some of them have unnecesarily high resolution, which takes space
 
-Portfolio Music section Remove "The studio" Section
-
-Portfolio About section: Remove the keyboard picture
-
-Portfolio Landing page: Replace about picture to aalto_lab_2 (crop accordingly). You can modify the file itself, it's not the original
+Update the Synthworld project in the Portfolio. Add a button that leads to Synthworld landing page in the beginning of the page. Regenerate the pictures (or use some from the page)
 
 Update my email when I have the domain
 
