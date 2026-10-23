@@ -4,6 +4,7 @@ import computerMusicTutorial from '@/assets/portfolio/books/computer-music-tutor
 import soundReinforcementHandbook from '@/assets/portfolio/books/sound-reinforcement-handbook.jpg';
 import peopleSkills from '@/assets/portfolio/books/people-skills.jpg';
 import emotionalIntelligence from '@/assets/portfolio/books/emotional-intelligence.jpg';
+import whatEveryBodyIsSaying from '@/assets/portfolio/books/what-every-body-is-saying.jpg';
 import makingEmbeddedSystems from '@/assets/portfolio/books/making-embedded-systems.jpg';
 import effectiveModernCpp from '@/assets/portfolio/books/effective-modern-cpp.jpg';
 import manAndHisSymbols from '@/assets/portfolio/books/man-and-his-symbols.jpg';
@@ -99,6 +100,16 @@ export const books: Book[] = [
     group: 'people',
     url: 'https://www.penguinrandomhouse.com/books/69105/emotional-intelligence-by-daniel-goleman/',
     cover: emotionalIntelligence,
+  },
+  {
+    title: 'What Every BODY Is Saying',
+    subtitle: "An Ex-FBI Agent's Guide to Speed-Reading People",
+    authors: ['Joe Navarro', 'Marvin Karlins'],
+    publisher: 'William Morrow',
+    year: 2008,
+    group: 'people',
+    url: 'https://www.harpercollins.com/products/what-every-body-is-saying-joe-navarromarvin-karlins',
+    cover: whatEveryBodyIsSaying,
   },
   {
     title: 'Man and His Symbols',
