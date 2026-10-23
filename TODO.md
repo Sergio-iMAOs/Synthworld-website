@@ -4,8 +4,6 @@ Optimize performance
 
 ## EARL
 
-EARL page: When the first main image of EARL is shown (comming out of the exploding planet), add an animated light/aura that emanates from behind EARL to improve its presentation.
-
 Add EARL's user manual?
 
 Music samples section

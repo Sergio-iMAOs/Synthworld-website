@@ -172,6 +172,7 @@ const streaks = Array.from({ length: 110 }, (_, index) => {
         {
           picture && (
             <figure class="emerge" data-emerge>
+              <span class="aura" aria-hidden="true"></span>
               <span class="sight">
                 <Image src={picture.image} alt={picture.alt[lang]} widths={[800, 1200, 1600, 2400]} sizes="(min-width: 68rem) 64rem, 100vw" loading="eager" />
               </span>
@@ -637,6 +638,69 @@ const streaks = Array.from({ length: 110 }, (_, index) => {
     pointer-events: none;
   }
 
+  /*
+   * Its aura: light streaming out from behind it, rays of violet and yellow fading out into space, and a glow round
+   * it. Unless the visitor asked for less motion, the rays turn slowly and the glow breathes
+   */
+  .aura {
+    position: absolute;
+    inset: -45% -24%;
+    z-index: -1;
+    mask-image: radial-gradient(closest-side, #000 40%, rgb(0 0 0 / 0.45) 75%, transparent);
+    pointer-events: none;
+  }
+
+  /* Square, and wider than the aura's diagonal, so that it still covers it as it turns */
+  .aura::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 125%;
+    aspect-ratio: 1;
+    translate: -50% -50%;
+    background:
+      repeating-conic-gradient(from 7deg, transparent 0 3deg, color-mix(in srgb, var(--accent) 75%, transparent) 6deg, transparent 9deg 15deg),
+      repeating-conic-gradient(from 40deg, transparent 0 8deg, color-mix(in srgb, var(--highlight) 45%, transparent) 10.5deg, transparent 13deg 23deg);
+    mask-image: radial-gradient(closest-side, transparent 12%, #000 30%);
+  }
+
+  .aura::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(30% 32% at 34% 32%, color-mix(in srgb, var(--highlight) 35%, transparent), transparent),
+      radial-gradient(closest-side, color-mix(in srgb, var(--accent) 70%, transparent) 40%, color-mix(in srgb, var(--accent) 25%, transparent) 65%, transparent);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .aura::before {
+      animation: aura-turn 140s linear infinite;
+    }
+
+    .aura::after {
+      animation: breathe 7s ease-in-out infinite alternate;
+    }
+  }
+
+  @keyframes aura-turn {
+    to {
+      rotate: 1turn;
+    }
+  }
+
+  @keyframes breathe {
+    from {
+      opacity: 0.55;
+      scale: 0.94;
+    }
+    to {
+      opacity: 1;
+      scale: 1.06;
+    }
+  }
+
   .sight {
     position: relative;
     display: block;
@@ -782,6 +846,12 @@ const streaks = Array.from({ length: 110 }, (_, index) => {
 
     .enhanced .emerge::after {
       scale: calc(1 + var(--flare, 0) * 0.5);
+    }
+
+    /* Its aura lights up as it comes out, the rays spreading out once it's nearly out */
+    .enhanced .aura {
+      opacity: clamp(0, var(--emerge, 0) * 2.5 - 1.2, 1);
+      scale: calc(0.7 + 0.3 * clamp(0, var(--emerge, 0) * 2 - 1, 1));
     }
 
     .enhanced .opened .emerge {
