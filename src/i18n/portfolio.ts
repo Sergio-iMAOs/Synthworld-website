@@ -31,7 +31,7 @@ const en = {
   },
   books: {
     title: 'Books',
-    lead: "Books I've read, liked and recommend.",
+    lead: 'Textbooks are an important part of my life. To me, a good book is the best teacher you can have: it breaks down barriers to knowledge, and lets you develop advanced skills on your own, without depending on an academic institution, which can be hard or even impossible to access.',
     top: 'Top selection',
     notes: {
       berklee: 'The book that opened jazz, theory and harmony to me, and got me composing and learning new instruments.',
@@ -135,7 +135,7 @@ const es: typeof en = {
   },
   books: {
     title: 'Libros',
-    lead: 'Libros que he leído, me han gustado y recomiendo.',
+    lead: 'Los libros de texto son una parte importante de mi vida. Para mí, un buen libro es el mejor maestro que se puede tener: derriba barreras en el acceso al conocimiento y permite desarrollar habilidades avanzadas por uno mismo, sin depender de una institución académica, a la que a veces es difícil, o incluso imposible, acceder.',
     top: 'Selección principal',
     notes: {
       berklee: 'El libro que me abrió el jazz, la teoría y la armonía, y que me llevó a componer y a aprender nuevos instrumentos.',
