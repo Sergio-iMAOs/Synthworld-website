@@ -1,0 +1,24 @@
+name: DSP 408
+from: 2026
+to: today
+order: 2
+# The app's own screenshots, in demo mode with its example set-up (`dsp408-app --demo --example --page <page>`)
+cover: ./outputs.png
+# en.md and es.md place each one with <!-- media: <id> -->
+media:
+  - id: outputs
+    image: ./outputs.png
+    alt:
+      en: "The app's Outputs page for a woofer: its EQ curve with its nine bands, its high-pass and its low-pass, and under it its crossover, its FIR, its limiter and its sources"
+      es: "La página Outputs de la aplicación para un woofer: su curva de ecualización con sus nueve bandas, su paso alto y su paso bajo, y debajo su crossover, su FIR, su limitador y sus fuentes"
+    caption:
+      en: "An output: its EQ, crossover, FIR and limiter."
+      es: "Una salida: su ecualización, su crossover, su FIR y su limitador."
+  - id: mixer
+    image: ./mixer.png
+    alt:
+      en: "The Mixer page: the curves of an input and of an output at the top, and each input's and output's fader and level meter under them"
+      es: "La página Mixer: las curvas de una entrada y de una salida arriba, y debajo el fader y el medidor de nivel de cada entrada y salida"
+    caption:
+      en: "The mixer, on the emulated unit."
+      es: "El mezclador, sobre la unidad emulada."

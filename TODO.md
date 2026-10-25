@@ -7,9 +7,8 @@ Optimize performance
 Add EARL's user manual?
 
 Music samples section
-Turn images into animations.
 
-Web version to demo it
+Web version to demo it?
 
 ## About page
 

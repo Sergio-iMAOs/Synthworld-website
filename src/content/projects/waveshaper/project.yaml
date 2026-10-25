@@ -1,6 +1,6 @@
 name: Waveshaper
 from: 2026
-order: 4
+order: 5
 cover: ./cover.jpg
 media:
   - video: /portfolio/waveshaper/waveshaper.mp4

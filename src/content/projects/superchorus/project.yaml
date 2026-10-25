@@ -1,6 +1,6 @@
 name: SuperChorus
 from: 2026
-order: 3
+order: 4
 cover: ./cover.png
 media:
   - video: /portfolio/superchorus/superchorus.mp4

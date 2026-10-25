@@ -1,7 +1,7 @@
 name: SoundSystem
 from: 2023
 to: 2024
-order: 6
+order: 7
 cover: ./cover.jpg
 media:
   - image: ./1.jpg
