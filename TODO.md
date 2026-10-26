@@ -4,6 +4,8 @@ Optimize performance
 
 ## EARL
 
+Add EARL beta download
+
 Add EARL's user manual?
 
 Music samples section

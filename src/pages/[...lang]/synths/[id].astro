@@ -131,7 +131,7 @@ const streaks = Array.from({ length: 110 }, (_, index) => {
                 </svg>
               </div>
               <div class="halo" aria-hidden="true"></div>
-              <div class="rays" aria-hidden="true"></div>
+              <div class="rays" style="--rays: url('/space/rays.webp')" aria-hidden="true"></div>
               <div class="flash" aria-hidden="true"></div>
               <div class="arrive">
                 <div class="float">
@@ -817,15 +817,15 @@ const streaks = Array.from({ length: 110 }, (_, index) => {
       opacity: calc(1 - var(--emerge, 0) * 0.6);
     }
 
-    /* The light bursting out of it: rays of uneven width, turning as it opens */
+    /*
+     * The light bursting out of it: rays of uneven width, turning as it opens. A picture of them (src/pages/space/), as
+     * a browser turns and grows one smoothly, but not gradients faded by a mask
+     */
     .enhanced .rays {
       display: block;
       position: absolute;
       inset: -120%;
-      background:
-        repeating-conic-gradient(from 3deg, transparent 0 5deg, color-mix(in srgb, var(--accent) 55%, transparent) 6.5deg, transparent 8deg 13deg),
-        repeating-conic-gradient(from 31deg, transparent 0 9deg, color-mix(in srgb, var(--foreground) 35%, transparent) 10deg, transparent 11deg 19deg);
-      mask-image: radial-gradient(closest-side, #000 15%, rgb(0 0 0 / 0.6) 40%, transparent 80%);
+      background: var(--rays) center / 100% 100% no-repeat;
       opacity: var(--flare, 0);
       rotate: calc(var(--burst, 0) * 25deg);
       scale: calc(0.6 + var(--flare, 0) * 0.6);

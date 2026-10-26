@@ -212,6 +212,60 @@ export function makeNebula(cells = NEBULA_CELLS): Tile {
   return tile;
 }
 
+/**
+ * Rays of light round a middle, as a repeating conic gradient draws them (its angles in degrees, round from the top,
+ * clockwise): from `from`, every `every` degrees, dark until `rise`, its colour at `alpha` at `peak`, dark again from
+ * `fall`.
+ */
+export interface Rays {
+  from: number;
+  every: number;
+  rise: number;
+  peak: number;
+  fall: number;
+  colour: number;
+  alpha: number;
+}
+
+/**
+ * Rays of light (a synth's planet's, as it opens), not the skin's: the site's own, as its CSS drew them, and made a
+ * picture because a browser draws a picture turning and growing much faster than gradients faded by a mask. Its
+ * `rays` one over the other, the first on top, faded out from the middle as `fade` says: its opacity at each distance
+ * from the middle, of half its side, evenly between them.
+ */
+export function makeRays(side: number, rays: Rays[], fade: [number, number][]): Tile {
+  const tile = blank(side, [0, 0, 0]);
+  const colours = rays.map(({ colour }) => rgb(colour));
+  const faded = (distance: number) => {
+    const next = fade.findIndex(([at]) => at > distance);
+    if (next === 0) return fade[0][1];
+    if (next < 0) return fade[fade.length - 1][1];
+    const [[from, a], [to, b]] = [fade[next - 1], fade[next]];
+    return a + ((b - a) * (distance - from)) / (to - from);
+  };
+  const lightOf = ({ from, every, rise, peak, fall, alpha }: Rays, angle: number) => {
+    const at = (((angle - from) % 360) + 360) % 360 % every;
+    if (at <= rise || at >= fall) return 0;
+    return alpha * (at < peak ? (at - rise) / (peak - rise) : (fall - at) / (fall - peak));
+  };
+
+  for (let y = 0; y < side; y++)
+    for (let x = 0; x < side; x++) {
+      const [dx, dy] = [x + 0.5 - side / 2, y + 0.5 - side / 2];
+      const angle = (Math.atan2(dx, -dy) * 180) / Math.PI;
+      // Each one over the ones under it, its colour weighed by its light
+      let [colour, light]: [Vec3, number] = [[0, 0, 0], 0];
+      for (let index = rays.length - 1; index >= 0; index--) {
+        const alpha = lightOf(rays[index], angle);
+        colour = add(scale(colours[index], alpha), scale(colour, 1 - alpha));
+        light = alpha + light * (1 - alpha);
+      }
+      const opacity = light * faded(Math.hypot(dx, dy) / (side / 2));
+      if (opacity > 0) setPixel(tile, x, y, scale(colour, 1 / light), opacity);
+    }
+  return tile;
+}
+
 /** The kinds of planet the skin draws a graph's nodes as, each telling what its processor is (its World). */
 const skinWorlds = [
   /** Seas, land and clouds: a source */
