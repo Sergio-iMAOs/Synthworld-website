@@ -4,6 +4,8 @@ Optimize performance
 
 ## EARL
 
+Update EARL images since there has been UI changes in EARL
+
 Add EARL beta download
 
 Add EARL's user manual?

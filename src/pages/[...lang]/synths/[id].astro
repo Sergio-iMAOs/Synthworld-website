@@ -749,6 +749,8 @@ const streaks = Array.from({ length: 110 }, (_, index) => {
       top: 0;
       height: 100svh;
       overflow: clip;
+      /* But not its window's aura, which reaches under it: its rays aren't cut as it scrolls away */
+      overflow-clip-margin: 50svh;
     }
 
     .enhanced .hero {
