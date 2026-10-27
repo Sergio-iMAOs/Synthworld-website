@@ -78,7 +78,7 @@ const en = {
       title: 'Work experience',
       items: [
         { years: '2026 – Today', what: 'Acoustics research assistant', where: 'Aalto Acoustics Lab (Espoo, Finland)' },
-        { years: '2023 – 2026', what: 'Live sound engineer', where: 'Freelancer' },
+        { years: '2023 – 2025', what: 'Live sound engineer', where: 'Freelancer' },
         { years: '2021 – 2025', what: 'Event organiser', where: 'La Onda (Spain), freelancer' },
         { years: '2023 – 2024', what: 'Stagehand', where: 'EPOS (Switzerland), Nomadworks (Switzerland)' },
         { years: '2021', what: 'Computer science research assistant', where: 'Universidad de Valladolid (Valladolid, Spain)' },
@@ -182,7 +182,7 @@ const es: typeof en = {
       title: 'Experiencia laboral',
       items: [
         { years: '2026 – Hoy', what: 'Asistente de investigación en acústica', where: 'Aalto Acoustics Lab (Espoo, Finlandia)' },
-        { years: '2023 – 2026', what: 'Técnico de sonido en directo', where: 'Autónomo' },
+        { years: '2023 – 2025', what: 'Técnico de sonido en directo', where: 'Autónomo' },
         { years: '2021 – 2025', what: 'Organizador de eventos', where: 'La Onda (España), autónomo' },
         { years: '2023 – 2024', what: 'Auxiliar de escenario', where: 'EPOS (Suiza), Nomadworks (Suiza)' },
         { years: '2021', what: 'Asistente de investigación en informática', where: 'Universidad de Valladolid (Valladolid, España)' },
