@@ -71,17 +71,17 @@ const en = {
       items: [
         { years: '2025 – Today', what: 'Master’s in Acoustics and Audio Technology', where: 'Aalto University (Espoo, Finland)' },
         { years: '2022 – 2023', what: 'Digital Mixing and Music Production', where: 'ProAudio School (Sevilla, Spain)' },
-        { years: '2018 – 2021', what: 'Bachelor’s in Computer Science', where: 'Universidad de Valladolid (Valladolid, Spain)' },
+        { years: '2018 – 2022', what: 'Bachelor’s in Computer Science', where: 'Universidad de Valladolid (Valladolid, Spain)' },
       ],
     },
     work: {
       title: 'Work experience',
       items: [
         { years: '2026 – Today', what: 'Acoustics research assistant', where: 'Aalto Acoustics Lab (Espoo, Finland)' },
-        { years: '2021 – 2026', what: 'Live sound engineer', where: 'Freelancer' },
+        { years: '2023 – 2026', what: 'Live sound engineer', where: 'Freelancer' },
         { years: '2021 – 2025', what: 'Event organiser', where: 'La Onda (Spain), freelancer' },
         { years: '2023 – 2024', what: 'Stagehand', where: 'EPOS (Switzerland), Nomadworks (Switzerland)' },
-        { years: '2020', what: 'Computer science research assistant', where: 'Universidad de Valladolid (Valladolid, Spain)' },
+        { years: '2021', what: 'Computer science research assistant', where: 'Universidad de Valladolid (Valladolid, Spain)' },
         { years: '2018 – 2023', what: 'Music teacher', where: 'Freelancer' },
         { years: '2017 – 2024', what: 'Professional musician', where: 'Ralea Orchestra (Spain), freelancer' },
       ],
@@ -175,17 +175,17 @@ const es: typeof en = {
       items: [
         { years: '2025 – Hoy', what: 'Máster en Acústica y Tecnología de Audio', where: 'Universidad Aalto (Espoo, Finlandia)' },
         { years: '2022 – 2023', what: 'Mezcla digital y producción musical', where: 'ProAudio School (Sevilla, España)' },
-        { years: '2018 – 2021', what: 'Grado en Ingeniería Informática', where: 'Universidad de Valladolid (Valladolid, España)' },
+        { years: '2018 – 2022', what: 'Grado en Ingeniería Informática', where: 'Universidad de Valladolid (Valladolid, España)' },
       ],
     },
     work: {
       title: 'Experiencia laboral',
       items: [
         { years: '2026 – Hoy', what: 'Asistente de investigación en acústica', where: 'Aalto Acoustics Lab (Espoo, Finlandia)' },
-        { years: '2021 – 2026', what: 'Técnico de sonido en directo', where: 'Autónomo' },
+        { years: '2023 – 2026', what: 'Técnico de sonido en directo', where: 'Autónomo' },
         { years: '2021 – 2025', what: 'Organizador de eventos', where: 'La Onda (España), autónomo' },
         { years: '2023 – 2024', what: 'Auxiliar de escenario', where: 'EPOS (Suiza), Nomadworks (Suiza)' },
-        { years: '2020', what: 'Asistente de investigación en informática', where: 'Universidad de Valladolid (Valladolid, España)' },
+        { years: '2021', what: 'Asistente de investigación en informática', where: 'Universidad de Valladolid (Valladolid, España)' },
         { years: '2018 – 2023', what: 'Profesor de música', where: 'Autónomo' },
         { years: '2017 – 2024', what: 'Músico profesional', where: 'Orquesta Ralea (España), autónomo' },
       ],
