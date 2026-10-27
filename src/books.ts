@@ -9,6 +9,7 @@ import makingEmbeddedSystems from '@/assets/portfolio/books/making-embedded-syst
 import effectiveModernCpp from '@/assets/portfolio/books/effective-modern-cpp.jpg';
 import manAndHisSymbols from '@/assets/portfolio/books/man-and-his-symbols.jpg';
 import island from '@/assets/portfolio/books/island.jpg';
+import newHistoryOfWesternPhilosophy from '@/assets/portfolio/books/new-history-of-western-philosophy.jpg';
 
 /** A book of the portfolio's books page, in its latest edition. What its group, its edition and a top book's note say are texts of src/i18n/portfolio.ts. */
 export interface Book {
@@ -128,5 +129,14 @@ export const books: Book[] = [
     group: 'mind',
     url: 'https://www.harpercollins.com/products/island-aldous-huxley',
     cover: island,
+  },
+  {
+    title: 'A New History of Western Philosophy',
+    authors: ['Anthony Kenny'],
+    publisher: 'Oxford University Press',
+    year: 2012,
+    group: 'mind',
+    url: 'https://global.oup.com/academic/product/a-new-history-of-western-philosophy-9780199656493',
+    cover: newHistoryOfWesternPhilosophy,
   },
 ];
