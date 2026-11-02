@@ -13,6 +13,17 @@
       }
     },
     {
+      "name": "Dev server (portfolio)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run dev",
+      "serverReadyAction": {
+        "pattern": "http://localhost:([0-9]+)",
+        "uriFormat": "http://localhost:%s/Sergio-iMAOs/",
+        "action": "openExternally"
+      }
+    },
+    {
       "name": "Preview build",
       "type": "node-terminal",
       "request": "launch",
