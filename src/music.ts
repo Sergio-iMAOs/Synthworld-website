@@ -20,9 +20,9 @@ export interface Work {
 }
 
 export const works: Work[] = [
+  { title: 'Puzzle', year: 2026, soundcloud: 'https://api.soundcloud.com/tracks/soundcloud:tracks:2378027120?secret_token=s-FXW2b6wKg3O' },
   { title: 'Stride', year: 2026, soundcloud: 'https://api.soundcloud.com/tracks/soundcloud:tracks:2368990001?secret_token=s-1MbZfTXfTVO', selected: true },
   { title: 'Parallel Sages', year: 2025, soundcloud: 'https://api.soundcloud.com/tracks/soundcloud:tracks:2193674587?secret_token=s-GU8gunAS2tr', selected: true },
-  { title: 'Approaching', year: 2024, youtube: '9EsuJTxRDwU', selected: true },
   {
     title: 'Concept Passages',
     year: 2025,
@@ -31,6 +31,7 @@ export const works: Work[] = [
     playlist: true,
     cover: conceptPassages,
   },
+  { title: 'Approaching', year: 2024, youtube: '9EsuJTxRDwU' },
   { title: 'Annabelle', year: 2024, soundcloud: 'https://api.soundcloud.com/tracks/soundcloud:tracks:2126573586?secret_token=s-GUDniBZIYbE' },
   { title: 'Diario de Sueños', year: 2024, kind: 'soundtrack', youtube: '6T6ZJf00DtQ' },
   {
