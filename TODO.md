@@ -19,6 +19,8 @@ Web version to demo it?
 
 ## Portfolio
 
+Add Helixx to Portfolio projects. Year 2026
+
 Adjust pictures size. Some of them have unnecesarily high resolution, which takes space
 
 Update my email when I have the domain
