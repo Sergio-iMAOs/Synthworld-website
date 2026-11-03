@@ -12,7 +12,7 @@ import SynthGet from '@/components/SynthGet.astro';
 import SynthScreenshot from '@/components/SynthScreenshot.astro';
 import VelvetNoise from '@/components/VelvetNoise.astro';
 import { langOf, langPaths, textsOf } from '@/i18n';
-import { getSynths, nightAndDayOf } from '@/synths';
+import { getEffects, getSynths, nightAndDayOf } from '@/synths';
 
 export async function getStaticPaths() {
   const synths = await getCollection('synths');
@@ -22,10 +22,10 @@ export async function getStaticPaths() {
 const lang = langOf(Astro.url);
 const t = textsOf(lang).synths;
 const synths = await getSynths(lang);
-const synth = synths.find(({ id }) => id === Astro.params.id)!;
+const synth = [...synths, ...(await getEffects(lang))].find(({ id }) => id === Astro.params.id)!;
 const { data, text } = synth;
 const pairs = nightAndDayOf(synth);
-const tags = [`v${data.version}`, data.paid ? data.paid.price : t.free, ...data.formats, ...data.platforms];
+const tags = [`v${data.version}`, data.paid ? data.paid.price : t.free, ...(data.repository ? [t.openSource] : []), ...data.formats, ...data.platforms];
 // Its window as it comes out of its planet: by day, as on the home page, in SW Light like its page's other pictures; its
 // own for it, or its SynthWorld's own light skin's, or else its cover
 const picture = data.home?.day ?? pairs[0]?.day ?? data.cover;
@@ -120,7 +120,7 @@ const streaks = Array.from({ length: 110 }, (_, index) => {
     <section class="stage" data-stage>
       <div class="frame" data-frame>
         <div class="hero">
-          <p class="kicker fades">{synths[0] === synth ? t.first : t.another}</p>
+          <p class="kicker fades">{data.effect ? t.effect : synths[0] === synth ? t.first : t.another}</p>
 
           <div class="slot" data-slot>
             {/* Its planet in two layers: its inside and its ring behind its window, its chunks in front of it */}
@@ -171,7 +171,7 @@ const streaks = Array.from({ length: 110 }, (_, index) => {
 
         {
           picture && (
-            <figure class="emerge" data-emerge>
+            <figure class="emerge" style={`--aspect: ${(picture.image.width / picture.image.height).toFixed(3)}`} data-emerge>
               <span class="aura" aria-hidden="true"></span>
               <span class="sight">
                 <Image src={picture.image} alt={picture.alt[lang]} widths={[800, 1200, 1600, 2400]} sizes="(min-width: 68rem) 64rem, 100vw" loading="eager" />
@@ -768,9 +768,10 @@ const streaks = Array.from({ length: 110 }, (_, index) => {
       visibility: hidden;
     }
 
-    /* Where the view is small, what it's made for is left for the end of the page, so that the rest fits */
+    /* Where the view is small, what it's made for and its code are left for the end of the page, so that the rest fits */
     @media (max-width: 36rem), (max-height: 42rem) {
-      .enhanced .below .tags {
+      .enhanced .below .tags,
+      .enhanced .below :global(.source) {
         display: none;
       }
     }
@@ -838,7 +839,7 @@ const streaks = Array.from({ length: 110 }, (_, index) => {
       z-index: 2;
       top: calc(var(--header) + (100% - var(--header)) / 2);
       left: 50%;
-      width: min(64rem, 100% - 2 * var(--gutter), (100svh - var(--header) - 6rem) * 1.95);
+      width: min(64rem, 100% - 2 * var(--gutter), (100svh - var(--header) - 6rem) * var(--aspect));
       margin: 0;
       translate: -50% -50%;
       transform: perspective(70rem) rotateX(calc((1 - var(--emerge, 0)) * 40deg)) scale(calc(0.04 + 0.96 * var(--emerge, 0)));

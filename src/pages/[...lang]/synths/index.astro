@@ -3,16 +3,17 @@ import Base from '@/layouts/Base.astro';
 import Space from '@/components/Space.astro';
 import SynthGraph from '@/components/SynthGraph.astro';
 import { langOf, langPaths, textsOf } from '@/i18n';
-import { getSynths } from '@/synths';
+import { getEffects, getSynths } from '@/synths';
 
 export const getStaticPaths = langPaths;
 
 const lang = langOf(Astro.url);
 const t = textsOf(lang).synths;
 const synths = await getSynths(lang);
+const effects = await getEffects(lang);
 ---
 
 <Base title={t.title} description={t.lead}>
   <Space pannedBy="graph" />
-  <SynthGraph synths={synths} />
+  <SynthGraph synths={synths} effects={effects} />
 </Base>

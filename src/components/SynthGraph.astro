@@ -3,9 +3,10 @@
  * The synths as a synth's graph in space, as EARL's Starship skin draws its graph (EarlStarshipSkin in the framework):
  * each synth a node, a planet (Planet) under its name in the corners of a sight that lights up under the mouse, and
  * SynthWorld's planet a beam of light into it, its cable's way the graph's; the synths still to come, uncharted planets
- * seen against the light, which nothing reaches yet. As in the graph, the view is dragged around and zoomed (the wheel,
- * two fingers, its buttons), a star chart's marks follow it, and the space behind it (Space, `pannedBy` the graph)
- * drifts as it's panned. A click on a planet expands it into a pane of glass with what the synth is and where to get it
+ * seen against the light, which nothing reaches yet; and the effects, smaller nodes, each an asteroid drifting by, which
+ * no beam reaches, as they aren't made with SynthWorld's engine, and which opens as a synth's planet does. As in the
+ * graph, the view is dragged around and zoomed (the wheel, two fingers, its buttons), a star chart's marks follow it, and
+ * the space behind it (Space, `pannedBy` the graph) drifts as it's panned. A click on a planet expands it into a pane of glass with what the synth is and where to get it
  * (one at a time); going on to the synth's page from there, a ship flies to its planet from outside the view. The view
  * starts zoomed out, then zooms in to the first synth. Far behind, the faint nodes of another graph are connected,
  * disconnected, moved and modulated, now and then.
@@ -23,12 +24,13 @@ import logo from '@/assets/synthworld/logo.png';
 
 interface Props {
   synths: Synth[];
+  effects: Synth[];
 }
 
 const lang = langOf(Astro.url);
 const t = textsOf(lang);
 const g = t.synths.graph;
-const { synths } = Astro.props;
+const { synths, effects } = Astro.props;
 
 interface Point {
   x: number;
@@ -39,6 +41,9 @@ interface Point {
 // 236: its name along its top, its planet under it, a ring round it included). A beam comes into its left edge, level
 // with its planet's centre
 const PLANET: Point = { x: 120, y: 132 };
+// An effect's asteroid's (its box 150 by 134), and how big its picture is of a planet's
+const ASTEROID: Point = { x: 75, y: 82 };
+const ASTEROID_SIZE = 0.75;
 
 // The planets' centres: SynthWorld's at the origin (its logo as wide as a node's box, its planet's disc 78 round its
 // centre), its beams leaving the right edge of its disc; then the synths', in their order, and the uncharted ones. Only
@@ -51,7 +56,10 @@ const places: Point[] = [
 ];
 const planets = synths.length + unchartedWorlds.length;
 if (planets > places.length) throw new Error(`The synths' graph has places for ${places.length} planets, not ${planets}`);
-const boxAt = ({ x, y }: Point) => `left: ${x - PLANET.x}px; top: ${y - PLANET.y}px`;
+// The asteroids' centres, out of the beams' way
+const asteroidPlaces: Point[] = [{ x: 262, y: 262 }];
+if (effects.length > asteroidPlaces.length) throw new Error(`The synths' graph has places for ${asteroidPlaces.length} asteroids, not ${effects.length}`);
+const boxAt = ({ x, y }: Point, centre = PLANET) => `left: ${x - centre.x}px; top: ${y - centre.y}px`;
 
 /** A beam from SynthWorld's planet into a node: its way, as the graph's cables go (SWSkin::buildSignalCablePath()), and its head. */
 const beamTo = (place: Point) => {
@@ -67,10 +75,14 @@ const beamTo = (place: Point) => {
 // its cover
 const pictureOf = (synth: Synth) =>
   synth.data.home?.day ?? synth.data.skins.find(({ name }) => name === 'SW Light') ?? synth.data.cover;
+const nodes = [
+  ...synths.map((synth, index) => ({ synth, place: places[index], centre: PLANET, unit: 1 })),
+  ...effects.map((synth, index) => ({ synth, place: asteroidPlaces[index], centre: ASTEROID, unit: ASTEROID_SIZE })),
+];
 const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted-${index + 1}`, place: places[synths.length + index] }));
 ---
 
-<section class="synth-graph" aria-labelledby="synths-title" data-synth-graph data-planet-x={PLANET.x} data-planet-y={PLANET.y}>
+<section class="synth-graph" aria-labelledby="synths-title" data-synth-graph>
   {/* The graph's layout from the start, before its script has loaded: without the script, there's none */}
   <script is:inline>
     document.currentScript.parentElement.classList.add('enhanced');
@@ -116,12 +128,23 @@ const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted
 
       <ul class="planets">
         {
-          synths.map((synth, index) => {
+          nodes.map(({ synth, place, centre, unit }, index) => {
             const { id, data, text } = synth;
             const picture = pictureOf(synth);
             const pane = `planet-${id}`;
             return (
-              <li class="node" style={boxAt(places[index])} data-node data-box data-x={places[index].x} data-y={places[index].y} data-first={index === 0 ? '' : undefined}>
+              <li
+                class:list={['node', { effect: data.effect }]}
+                style={boxAt(place, centre)}
+                data-node
+                data-box
+                data-x={place.x}
+                data-y={place.y}
+                data-planet-x={centre.x}
+                data-planet-y={centre.y}
+                data-unit={unit}
+                data-first={index === 0 ? '' : undefined}
+              >
                 <button type="button" class="toggle box" aria-expanded="false" aria-controls={pane} data-toggle>
                   <span class="name">{data.name}</span>
                   <Planet class="globe" world={data.planet} sight />
@@ -143,6 +166,7 @@ const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted
                   <ul class="tags">
                     <li>v{data.version}</li>
                     <li>{data.paid ? data.paid.price : t.synths.free}</li>
+                    {data.repository && <li>{t.synths.openSource}</li>}
                     {data.formats.map((format) => (
                       <li>{format}</li>
                     ))}
@@ -161,7 +185,7 @@ const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted
         }
         {
           uncharted.map(({ world, id, place }) => (
-            <li class="node uncharted" style={boxAt(place)} data-node data-box data-x={place.x} data-y={place.y}>
+            <li class="node uncharted" style={boxAt(place)} data-node data-box data-x={place.x} data-y={place.y} data-planet-x={PLANET.x} data-planet-y={PLANET.y} data-unit="1">
               <button type="button" class="toggle box" aria-expanded="false" aria-controls={id} data-toggle>
                 <span class="name">{g.uncharted}</span>
                 <Planet class="globe" world={world} uncharted sight />
@@ -510,6 +534,26 @@ const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted
     height: 187.5px;
   }
 
+  /* An effect's node: smaller than a synth's, its asteroid under its name */
+  .enhanced .node.effect,
+  .effect .box {
+    width: 150px;
+    height: 134px;
+  }
+
+  .effect .box :global(.globe) {
+    left: 4.69px;
+    top: 11.69px;
+    width: 140.625px;
+    height: 140.625px;
+  }
+
+  .effect .box .name {
+    left: 8px;
+    right: 8px;
+    font-size: 0.7rem;
+  }
+
   /* SynthWorld's planet: its logo, its planet's centre where a node's is; the way back to the home page */
   .engine {
     text-decoration: none;
@@ -715,6 +759,10 @@ const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted
     transition:
       opacity 0.25s,
       visibility 0s 0.35s;
+  }
+
+  .enhanced .effect .pane {
+    transform-origin: 75px 82px;
   }
 
   .enhanced .expanded {
@@ -988,6 +1036,11 @@ const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted
 
   .synth-graph:not(.enhanced) :is(.chart, .links, .engine, .toggle, .close, .trail, .ship, .veil) {
     display: none;
+  }
+
+  /* The effects after the synths still to come */
+  .synth-graph:not(.enhanced) .effect {
+    order: 1;
   }
 
   .synth-graph:not(.enhanced) .planets {
@@ -1525,10 +1578,12 @@ const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted
     // --- A planet expanded into its pane, one at a time; the view moved to it ---
 
     let open: HTMLElement | null = null;
-    // Where its chunks go as a synth's planet opens, from where they are round its centre (in the node's box)
-    const planet = { x: Number(graph.dataset.planetX), y: Number(graph.dataset.planetY) };
+    // Where its chunks go as a synth's planet opens, from where they are round its centre (in the node's box), in its
+    // picture's units (an asteroid's are smaller than the graph's)
     const scatter = (node: HTMLElement) => {
       const pane = paneOf(node);
+      const unit = Number(node.dataset.unit);
+      const planet = { x: Number(node.dataset.planetX), y: Number(node.dataset.planetY) };
       const free = [...toggleOf(node).querySelectorAll<SVGGElement>('[data-chunk]')].map((chunk) => ({
         chunk,
         x: Number(chunk.dataset.x),
@@ -1545,7 +1600,7 @@ const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted
       const away = (angle: number, { x, y }: Point) => Math.abs(Math.atan2(Math.sin(Math.atan2(y, x) - angle), Math.cos(Math.atan2(y, x) - angle)));
       for (const [across, down] of FLOATS) {
         if (free.length === 0) break;
-        const spot = { x: across * pane.offsetWidth - planet.x, y: down * pane.offsetHeight - planet.y };
+        const spot = { x: (across * pane.offsetWidth - planet.x) / unit, y: (down * pane.offsetHeight - planet.y) / unit };
         const angle = Math.atan2(spot.y, spot.x);
         const chosen = free.reduce((best, chunk) => (away(angle, chunk) < away(angle, best) ? chunk : best));
         free.splice(free.indexOf(chosen), 1);
@@ -1553,7 +1608,7 @@ const uncharted = unchartedWorlds.map((world, index) => ({ world, id: `uncharted
       }
       for (const chunk of free) {
         const length = Math.hypot(chunk.x, chunk.y) || 1;
-        const far = FLY * (0.8 + Math.random() * 0.5);
+        const far = (FLY / unit) * (0.8 + Math.random() * 0.5);
         send(chunk, { x: (chunk.x / length) * far, y: (chunk.y / length) * far }, (Math.random() - 0.5) * 2 * FLY_TURN, false);
       }
     };

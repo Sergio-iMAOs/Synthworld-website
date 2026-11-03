@@ -5,7 +5,7 @@ import type { World } from '@/space';
 /** The synths still to come, on the synths' page after the others: an uncharted planet each, of these kinds. */
 export const unchartedWorlds: World[] = ['giant', 'ice'];
 
-/** A synth with its texts in one language. */
+/** A synth with its texts in one language, or an effect (`data.effect`), which is the same but for where it's listed. */
 export interface Synth {
   id: string;
   data: CollectionEntry<'synths'>['data'];
@@ -38,15 +38,21 @@ export function nightAndDayOf({ id, data }: Synth): NightAndDay[] {
   ];
 }
 
-/** The synths in the order they're shown, with their texts in a language (in English where it's missing). */
-export async function getSynths(lang: Lang): Promise<Synth[]> {
-  const synths = (await getCollection('synths')).sort((a, b) => a.data.order - b.data.order);
+/** What's in src/content/synths, effects or not, in the order it's shown, with its texts in a language (in English where it's missing). */
+async function getEntries(lang: Lang, effects: boolean): Promise<Synth[]> {
+  const entries = (await getCollection('synths', ({ data }) => data.effect === effects)).sort((a, b) => a.data.order - b.data.order);
 
   return Promise.all(
-    synths.map(async ({ id, data }) => {
+    entries.map(async ({ id, data }) => {
       const text = (await getEntry('synthTexts', `${id}/${lang}`)) ?? (await getEntry('synthTexts', `${id}/${defaultLang}`));
       if (!text) throw new Error(`The synth "${id}" has no ${defaultLang}.md`);
       return { id, data, text };
     }),
   );
 }
+
+/** The synths in the order they're shown, with their texts in a language. */
+export const getSynths = (lang: Lang) => getEntries(lang, false);
+
+/** The effects: SynthWorld is about its synths, so they're only asteroids on the synths' page, with a page each. */
+export const getEffects = (lang: Lang) => getEntries(lang, true);

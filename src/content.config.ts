@@ -25,10 +25,17 @@ const synths = defineCollection({
       /** Where it's shown in the list of synths (lowest first). */
       order: z.number().default(0),
       /**
+       * An effect, not a synth: on the synths' page it's a small node, an asteroid, and it isn't in the home page's
+       * synths (`getEffects()`, not `getSynths()`). It has a synth's page and fields all the same.
+       */
+      effect: z.boolean().default(false),
+      /**
        * Its planet on the synths' page (`worlds` in src/space.ts): its own, made of chunks of its window, or until it
-       * has one, one of the kinds EARL's Starship skin draws a graph's nodes as.
+       * has one, one of the kinds EARL's Starship skin draws a graph's nodes as. An effect's is its own asteroid.
        */
       planet: z.enum(worlds),
+      /** Where its code is, if it's open source: offered next to its download. */
+      repository: z.url().optional(),
       /** A paid synth's price as it's shown ("49 €") and where it's bought; a synth without `paid` is free. */
       paid: z.object({ price: z.string(), buyUrl: z.url().optional() }).optional(),
       /**

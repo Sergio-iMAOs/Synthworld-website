@@ -39,6 +39,8 @@ scripts/                 sync-framework.mjs: what `npm run sync` runs
 
 Add a folder to `src/content/synths/` with its `synth.yaml`, `en.md` and `es.md` (copy `earl/`): it gets its page and its place in the lists, in both languages. The fields of `synth.yaml` are described in `src/content.config.ts`.
 
+An effect is the same with `effect: true` (copy `helixx/`): it gets a page, and an asteroid on the synths' page instead of a planet, but it isn't listed with the synths.
+
 - `downloads` are the files anyone can have: a free synth itself, or a paid synth's demo.
 - A paid synth also has `paid`: its price and where it's bought. Its files are never put in this repository.
 - `audio` are sound examples, their files in `public/demos/<synth>/`; `videos` are YouTube ids.

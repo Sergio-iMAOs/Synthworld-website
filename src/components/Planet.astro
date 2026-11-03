@@ -3,8 +3,9 @@
  * A planet, as EARL's Starship skin draws a node of its graph (drawWorld() and drawNodeSymbol() in the framework): its
  * picture (src/space.ts, made at build time), lit from the top left, or uncharted, seen against the light; a ringed
  * one's ring behind it and in front of it: the skin's band of dust, or pulses up and down (EARL's velvet noise). A
- * synth's own is in pieces: its inside (`.core`), and over it its chunks (`.chunk`, each a piece of the picture of
- * them, its middle in its `data-x` and `data-y`), which its parent's CSS can move apart. Round its SVG's centre, its
+ * synth's own, or an effect's asteroid, is in pieces: its inside (`.core`), and over it its chunks (`.chunk`, each a
+ * piece of the picture of them, its middle in its `data-x` and `data-y`), which its parent's CSS can move apart. An
+ * asteroid isn't round, but it's within a planet's disc. Round its SVG's centre, its
  * disc's radius ROOM of its units (a ringed one's smaller, its ring within REACH), its atmosphere's glow round it; its
  * CSS gives it its size. With `sight`, the ring of a sight round it, which the skin draws under the mouse: unseen until
  * its parent's CSS shows its `.sight`. Each pulse of a ring of them has a number of its own between 0 and 1 (`--n`, the
@@ -32,7 +33,7 @@ const ringReach = ring === 'dust' ? 1.85 * 1.09 + 0.05 : ring === 'pulses' ? PUL
 const RADIUS = Math.min(ROOM, REACH / ringReach);
 const picture = RADIUS / WORLD_DISC;
 
-// A synth's chunks, each where its piece of the planet's picture is, cut from the picture of them
+// A synth's or an asteroid's chunks, each where its piece of the planet's picture is, cut from the picture of them
 const layout = chunkLayout(world);
 const units = layout ? picture / layout.side : 1;
 

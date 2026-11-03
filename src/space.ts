@@ -291,10 +291,15 @@ type SkinWorld = (typeof skinWorlds)[number];
 const synthWorlds = ['earl'] as const;
 type SynthWorld = (typeof synthWorlds)[number];
 
-/** The kinds of planet: the skin's, then each synth's own. */
-export const worlds = [...skinWorlds, ...synthWorlds] as const;
+/** Each effect's own, smaller than a planet and not round: an asteroid made of what it does (asteroidLooks). */
+const asteroids = ['helixx'] as const;
+type Asteroid = (typeof asteroids)[number];
+
+/** The kinds of planet: the skin's, then each synth's own, then the effects' asteroids. */
+export const worlds = [...skinWorlds, ...synthWorlds, ...asteroids] as const;
 export type World = (typeof worlds)[number];
 const isSynthWorld = (world: World): world is SynthWorld => (synthWorlds as readonly World[]).includes(world);
+const isAsteroid = (world: World): world is Asteroid => (asteroids as readonly World[]).includes(world);
 
 /**
  * A planet's ring, drawn round its picture (Planet): the skin's, a band of dust; or pulses, as a velvet noise's
@@ -353,8 +358,41 @@ const synthLooks: Record<SynthWorld, SynthWorldLook> = {
   },
 };
 
+/**
+ * What's more to an asteroid: how far it reaches along each of its axes (of a planet's radius), its longest first; how
+ * much narrower its neck is, between its two lobes; how many flat faces it's been broken into, how far its lumps stand
+ * out of them and its craters sink into them (of its reach); and its strata from the lowest up, each a channel of what
+ * it works on, at its pitch (of the lowest's).
+ */
+interface AsteroidLook extends WorldLook {
+  reach: Vec3;
+  neck: number;
+  faces: number;
+  lumps: number;
+  dents: number;
+  strata: number[];
+}
+
+const asteroidLooks: Record<Asteroid, AsteroidLook> = {
+  // Helixx's: a stratum for each string of a hexaphonic guitar, at its open note (E, A, D, G, B and E)
+  helixx: {
+    atmosphere: rgb(0xb894f0),
+    haze: 0,
+    tilt: 0.34,
+    pitch: 0.16,
+    craters: 12,
+    reach: [1.1, 0.72, 0.78],
+    neck: 0.3,
+    faces: 18,
+    lumps: 0.2,
+    dents: 0.16,
+    strata: [1, 1.335, 1.782, 2.378, 2.997, 4],
+  },
+};
+
 const looks: Record<World, WorldLook> = {
   ...synthLooks,
+  ...asteroidLooks,
   ocean: { atmosphere: rgb(0x63d2ff), haze: 0.9, tilt: -0.35, craters: 0 },
   giant: { atmosphere: rgb(0xffd08f), haze: 0.55, tilt: -0.25, craters: 0 },
   rust: { atmosphere: rgb(0xff8f6b), haze: 0.35, tilt: 0.2, craters: 14 },
@@ -373,7 +411,7 @@ export const skinOf = (world: World) => (isSynthWorld(world) ? synthLooks[world]
 
 /**
  * A planet's picture's address (src/pages/space/[picture].ts): lit by the sun, or uncharted, against the light. A
- * synth's is its inside, its chunks in a picture of their own.
+ * synth's or an asteroid's is its inside, its chunks in a picture of their own.
  */
 export const planetPicture = (world: World, uncharted = false) => `/space/${uncharted ? 'uncharted' : 'world'}-${world}.webp`;
 export const chunksPicture = (world: World) => `/space/world-${world}-chunks.webp`;
@@ -566,7 +604,7 @@ function setDiscPixel(tile: Tile, x: number, y: number, colour: Vec3, { cover, h
  * crescent of it is lit, at its edge towards the light. (A synth's own is makeSynthWorld()'s.)
  */
 export function makeWorld(world: World, rim: number, uncharted = false): Tile {
-  if (isSynthWorld(world)) throw new Error(`The planet "${world}" is a synth's: makeSynthWorld() makes it`);
+  if (isSynthWorld(world) || isAsteroid(world)) throw new Error(`The planet "${world}" is in pieces: makeSynthWorld() or makeAsteroid() makes it`);
   const look = looks[world];
   const craters = makeCraters(look.craters, 0xc0ffee + worlds.indexOf(world));
   const tile = blank(WORLD_SIDE, look.atmosphere);
@@ -657,6 +695,13 @@ function chunkAt(chunks: Chunk[], p: Vec3) {
   return { index: first, chunk: chunks[first], next: chunks[second], edge };
 }
 
+/** How many chunks a synth's planet has, and which is seen at a point of its disc. */
+function synthChunkSeen(world: SynthWorld): [number, (nx: number, ny: number) => number | undefined] {
+  const chunks = chunksOf(world);
+  const { onSphere } = viewOf(synthLooks[world]);
+  return [chunks.length, (nx, ny) => (nx * nx + ny * ny < 1 ? chunkAt(chunks, onSphere([nx, ny, Math.sqrt(1 - nx * nx - ny * ny)])).index : undefined)];
+}
+
 /**
  * A chunk as a page places it: which of the planet's it is, its piece of the planet's picture (in its pixels), where
  * that is in the picture of the chunks, and its middle on the disc (from its centre, of its radius).
@@ -672,7 +717,7 @@ export interface ChunkPlace {
   middle: [number, number];
 }
 
-/** Where a synth's planet's chunks in sight are: in its picture (`side` wide), and in theirs (so wide and high). */
+/** Where a planet's chunks in sight are: in its picture (`side` wide), and in theirs (so wide and high). */
 export interface ChunkLayout {
   side: number;
   width: number;
@@ -688,25 +733,26 @@ const LAYOUT_GAP = 2;
 const layouts = new Map<World, ChunkLayout>();
 
 /**
- * Where a synth's planet's chunks in sight are, the same each time (a page places them by it, src/pages/space/
- * makes their picture by it); none for the skin's kinds. Each's box is found on a coarser grid than the picture's, so
+ * Where a synth's planet's or an asteroid's chunks in sight are, the same each time (a page places them by it,
+ * src/pages/space/ makes their picture by it); none for the skin's kinds. Each's box is found on a coarser grid than the picture's, so
  * a little wider; in their picture, they're side by side, row after row.
  */
 export function chunkLayout(world: World): ChunkLayout | undefined {
-  if (!isSynthWorld(world)) return undefined;
+  if (!isSynthWorld(world) && !isAsteroid(world)) return undefined;
   const known = layouts.get(world);
   if (known) return known;
 
-  const chunks = chunksOf(world);
-  const { onSphere } = viewOf(synthLooks[world]);
+  // Which chunk is seen at a point of its disc, if any
+  const [count, chunkSeen] = isSynthWorld(world) ? synthChunkSeen(world) : asteroidChunkSeen(world);
   const side = SYNTH_WORLD_SIDE;
   const [centre, radius] = [side * 0.5, side * WORLD_DISC];
-  const boxes = chunks.map(() => ({ left: side, top: side, right: 0, bottom: 0, x: 0, y: 0, count: 0 }));
+  const boxes = Array.from({ length: count }, () => ({ left: side, top: side, right: 0, bottom: 0, x: 0, y: 0, count: 0 }));
   for (let y = 0; y < side; y += LAYOUT_STEP)
     for (let x = 0; x < side; x += LAYOUT_STEP) {
       const [nx, ny] = [(x + LAYOUT_STEP / 2 - centre) / radius, (y + LAYOUT_STEP / 2 - centre) / radius];
-      if (nx * nx + ny * ny >= 1) continue;
-      const box = boxes[chunkAt(chunks, onSphere([nx, ny, Math.sqrt(1 - nx * nx - ny * ny)])).index];
+      const seen = chunkSeen(nx, ny);
+      if (seen === undefined) continue;
+      const box = boxes[seen];
       Object.assign(box, { left: Math.min(box.left, x), top: Math.min(box.top, y), right: Math.max(box.right, x + LAYOUT_STEP), bottom: Math.max(box.bottom, y + LAYOUT_STEP) });
       box.x += nx;
       box.y += ny;
@@ -821,6 +867,307 @@ export function makeSynthWorld(world: World, rim: number, window: Picture): { co
     const at = ((y - place.y + place.atlasY) * atlas.width + (x - place.x + place.atlasX)) * 4;
     atlas.pixels.set([...colour.map((c) => Math.round(clamp01(c) * 255)), Math.round(clamp01(pixel.cover * (1 - crack)) * 255)], at);
   });
+  return { core, chunks: atlas };
+}
+
+/**
+ * An asteroid's surface: how finely how far out it is is kept (each way round its long way, half that the other), how
+ * finely it's looked for along a line of sight, and closer between the last two steps; how close together its lumps
+ * are; and how far from a point a slant is measured
+ */
+const ASTEROID_GRID = 360;
+const ASTEROID_STEPS = 40;
+const ASTEROID_CLOSER = 6;
+const ASTEROID_LUMPS = 1.7;
+const ASTEROID_SLANT = 0.012;
+/**
+ * Its flat faces: how far from its middle the nearest can be, how much further the others are, how sharply they
+ * meet, and how far it reaches between them
+ */
+const ASTEROID_FACE_FROM = 0.7;
+const ASTEROID_FACE_SPREAD = 0.36;
+const ASTEROID_FACE_SHARPNESS = 16;
+const ASTEROID_FACE_TOP = 1.08;
+/** Its neck: where it is along its long way, off its middle so that its lobes aren't alike, and how wide */
+const ASTEROID_NECK_AT = 0.16;
+const ASTEROID_NECK_WIDTH = 0.34;
+
+/** A piece of an asteroid seen on it: its point (on its axes, before it's stretched), and the normal there, towards us. */
+interface AsteroidPoint {
+  q: Vec3;
+  normal: Vec3;
+}
+
+/** An asteroid's shape: the point seen at a point of its disc, if it's there; and a direction on its axes, towards us. */
+interface AsteroidShape {
+  at(nx: number, ny: number): AsteroidPoint | undefined;
+  onDisc(direction: Vec3): Vec3;
+}
+
+const shapes = new Map<Asteroid, AsteroidShape>();
+
+/**
+ * An asteroid's shape: lumpy, dented by its craters, stretched along its axes; where a line of sight at a point of its
+ * disc first meets it. Its surface's height each way is worked out once and kept, as it's looked for many times over.
+ */
+function shapeOf(world: Asteroid): AsteroidShape {
+  const known = shapes.get(world);
+  if (known) return known;
+
+  const look = asteroidLooks[world];
+  const { onSphere, onDisc } = viewOf(look);
+  const seed = 0xa57e + worlds.indexOf(world);
+  const craters = makeCraters(look.craters, 0xc0ffee + worlds.indexOf(world));
+  const next = random(seed);
+  const faces = Array.from({ length: look.faces }, () => {
+    const [z, angle] = [next() * 2 - 1, next() * 2 * Math.PI];
+    const ring = Math.sqrt(1 - z * z);
+    return { facing: [ring * Math.cos(angle), ring * Math.sin(angle), z] as Vec3, at: ASTEROID_FACE_FROM + next() * ASTEROID_FACE_SPREAD };
+  });
+  const [wide, high] = [ASTEROID_GRID, ASTEROID_GRID / 2];
+  const heights = new Float32Array((wide + 1) * (high + 1));
+  for (let row = 0; row <= high; row++)
+    for (let column = 0; column <= wide; column++) {
+      const [polar, around] = [(row / high) * Math.PI, (column / wide) * 2 * Math.PI];
+      const direction: Vec3 = [Math.sin(polar) * Math.sin(around), Math.cos(polar), Math.sin(polar) * Math.cos(around)];
+      const bowls = craters.reduce((sum, { centre, reach }) => sum + (1 - smoothstep(0, reach * 1.2, 1 - dot(direction, centre))) * (0.4 + reach * 12), 0);
+      // The nearest of its faces, each way: rounded off where they meet
+      const nearness = faces.reduce((sum, { facing, at }) => sum + (Math.max(0, dot(direction, facing)) / at) ** ASTEROID_FACE_SHARPNESS, ASTEROID_FACE_TOP ** -ASTEROID_FACE_SHARPNESS);
+      const cut = nearness ** (-1 / ASTEROID_FACE_SHARPNESS);
+      const neck = 1 - look.neck * Math.exp(-(((direction[0] - ASTEROID_NECK_AT) / ASTEROID_NECK_WIDTH) ** 2));
+      heights[row * (wide + 1) + column] = cut * neck * (1 + look.lumps * (2 * fbm(scale(direction, ASTEROID_LUMPS), seed, 4) - 1) - look.dents * bowls);
+    }
+  const heightTowards = ([x, y, z]: Vec3) => {
+    const [row, column] = [(Math.acos(Math.max(-1, Math.min(1, y))) / Math.PI) * high, ((Math.atan2(x, z) / (2 * Math.PI) + 1) % 1) * wide];
+    const [r, c] = [Math.min(high - 1, Math.floor(row)), Math.min(wide - 1, Math.floor(column))];
+    const [tr, tc] = [row - r, column - c];
+    const at = (r: number, c: number) => heights[r * (wide + 1) + c];
+    const [top, bottom] = [at(r, c) + (at(r, c + 1) - at(r, c)) * tc, at(r + 1, c) + (at(r + 1, c + 1) - at(r + 1, c)) * tc];
+    return top + (bottom - top) * tr;
+  };
+
+  // Above zero, outside it; `q` is a point on its axes, before it's stretched
+  const outside = (q: Vec3) => {
+    const length = Math.sqrt(dot(q, q));
+    return length - heightTowards(scale(q, 1 / length));
+  };
+  const onAxes = (p: Vec3): Vec3 => [p[0] / look.reach[0], p[1] / look.reach[1], p[2] / look.reach[2]];
+  const front = Math.max(...look.reach) * (1 + look.lumps);
+
+  const shape: AsteroidShape = {
+    at(nx, ny) {
+      const point = (z: number) => onAxes(onSphere([nx, ny, z]));
+      const step = (2 * front) / ASTEROID_STEPS;
+      for (let z = front; z > -front; z -= step) {
+        if (outside(point(z - step)) > 0) continue;
+        let [near, far] = [z, z - step];
+        for (let closer = 0; closer < ASTEROID_CLOSER; closer++) {
+          const middle = (near + far) / 2;
+          if (outside(point(middle)) > 0) near = middle;
+          else far = middle;
+        }
+        const q = point(far);
+        const here = outside(q);
+        const slope = [0, 1, 2].map((axis) => {
+          const moved: Vec3 = [...q];
+          moved[axis] += ASTEROID_SLANT;
+          return (outside(moved) - here) / look.reach[axis];
+        }) as Vec3;
+        return { q, normal: onDisc(normalise(slope)) };
+      }
+      return undefined;
+    },
+    onDisc,
+  };
+  shapes.set(world, shape);
+  return shape;
+}
+
+/**
+ * How an asteroid breaks: its strata reach so far out along their stack (a little uneven), each in so many pieces
+ * round it; between them, a crack so wide (of its reach), a seam between strata wider, the light inside it spilling so
+ * much onto their edges, fading so fast; each piece's edges bevelled so far in and so steeply
+ */
+const STRATA_REACH = 1.02;
+const STRATA_UNEVEN = 0.3;
+const STRATUM_PIECES = 4;
+const PIECE_UNEVEN = 0.6;
+const STRATUM_SEAM = 0.007;
+const PIECE_CRACK = 0.004;
+const ROCK_SPILL = 0.3;
+const ROCK_SPILL_REACH = 0.006;
+const ROCK_BEVEL = 0.022;
+const ROCK_BEVEL_SLOPE = 0.8;
+
+/** Where a point of an asteroid is in its strata. */
+interface StratumPoint {
+  /** Its stratum, from the lowest up, and which of its pieces it's on: a chunk */
+  stratum: number;
+  chunk: number;
+  /** How far from its stratum's middle, -1 at its top to 1 at its bottom; how far along the asteroid, -1 to 1 or so */
+  across: number;
+  along: number;
+  /** How far from the nearest crack (of its reach), and which way that is: along its stack, or round it */
+  edge: number;
+  towards: Vec3;
+}
+
+/** A point of an asteroid (on its axes, before it's stretched) in its strata: cut flat across its stack, then round it. */
+function stratumAt(q: Vec3, look: AsteroidLook, seed: number): StratumPoint {
+  const strata = look.strata.length;
+  const thickness = (2 * STRATA_REACH) / strata;
+
+  // Its strata's edges wander, and each's cracks are where they are for it
+  const wander = fbm(scale(q, 1.6), seed + 1, 3) - 0.5;
+  const height = (STRATA_REACH - q[1] + STRATA_UNEVEN * wander) / thickness;
+  const stratum = Math.min(strata - 1, Math.max(0, Math.floor(height)));
+  const within = height - stratum;
+  const around = Math.atan2(q[0], q[2]);
+  const ring = Math.hypot(q[0], q[2]);
+
+  const shift = latticeValue(stratum, 3, 7, seed) * STRATUM_PIECES;
+  const wandered = ((around + PIECE_UNEVEN * (fbm(scale(q, 2.3), seed + 2, 3) - 0.5)) / (2 * Math.PI) + 1) * STRATUM_PIECES + shift;
+  const piece = Math.floor(wandered);
+  const along = wandered - piece;
+
+  const seam = [stratum > 0 ? within : Infinity, stratum < strata - 1 ? 1 - within : Infinity];
+  const toSeam = Math.min(...seam) * thickness * look.reach[1] - STRATUM_SEAM;
+  const toCrack = Math.min(along, 1 - along) * ((2 * Math.PI) / STRATUM_PIECES) * ring - PIECE_CRACK;
+  const up: Vec3 = [0, seam[0] < seam[1] ? 1 : -1, 0];
+  const round: Vec3 = [(along < 0.5 ? -1 : 1) * Math.cos(around), 0, (along < 0.5 ? 1 : -1) * Math.sin(around)];
+
+  return {
+    stratum,
+    chunk: stratum * STRATUM_PIECES + (piece % STRATUM_PIECES),
+    across: 1 - within * 2,
+    along: q[0],
+    edge: Math.min(toSeam, toCrack),
+    towards: toSeam < toCrack ? up : round,
+  };
+}
+
+/** How many chunks an asteroid has, and which is seen at a point of its disc. */
+function asteroidChunkSeen(world: Asteroid): [number, (nx: number, ny: number) => number | undefined] {
+  const look = asteroidLooks[world];
+  const shape = shapeOf(world);
+  const seed = worlds.indexOf(world);
+  return [
+    look.strata.length * STRATUM_PIECES,
+    (nx, ny) => {
+      const point = shape.at(nx, ny);
+      return point && stratumAt(point.q, look, seed).chunk;
+    },
+  ];
+}
+
+/**
+ * What each stratum of an asteroid carries: frequency modulation, drawn. A wave along it, so many cycles from its
+ * middle to its end at the lowest stratum's pitch, so high of its stratum, its modulator a cycle for so many of its own
+ * (a stratum's pitch moves both, as Helixx's modulators follow what they're on), so deep; a line so wide, glowing so
+ * far (of its reach)
+ */
+const WAVE_CYCLES = 4;
+const WAVE_HEIGHT = 0.46;
+const WAVE_MODULATOR = 4.5;
+const WAVE_INDEX = 3;
+const WAVE_LINE = 0.0045;
+const WAVE_GLOW = 0.011;
+const WAVE_LOOK = 30;
+const WAVE_LOOK_STEP = 0.0011;
+
+/** The rock's colours, its waves', and how much each piece is lighter or darker */
+const ROCK = [0x1f1b25, 0x3d3746, 0x6a6172, 0xa79cae].map(rgb);
+const WAVE_COLOUR = rgb(0xff9d2e);
+const WAVE_HOT = rgb(0xffe6b8);
+const ROCK_TONE = 0.1;
+
+/** How far a point is from the wave on its stratum, of the asteroid's reach: the nearest of it, looked for to each side. */
+function fromWave({ stratum, across, along }: StratumPoint, look: AsteroidLook) {
+  const half = (STRATA_REACH / look.strata.length) * look.reach[1];
+  const carrier = 2 * Math.PI * WAVE_CYCLES * look.strata[stratum];
+  const height = (x: number) => WAVE_HEIGHT * Math.sin(carrier * x + WAVE_INDEX * Math.sin((carrier * x) / WAVE_MODULATOR + stratum * 1.7));
+  let nearest = Infinity;
+  for (let sample = -WAVE_LOOK; sample <= WAVE_LOOK; sample++) {
+    const aside = sample * WAVE_LOOK_STEP;
+    nearest = Math.min(nearest, Math.hypot(aside * look.reach[0], (across - height(along + aside)) * half));
+  }
+  return nearest;
+}
+
+/**
+ * An asteroid, in layers, as a synth's planet is. Its inside (`core`): the light it's full of. Over it, its chunks
+ * (`chunks`, in one picture, each where chunkLayout() says): the pieces of its strata, dark rock, bevelled down into
+ * the seams between them, where the inside's light shows, each stratum carrying its wave; lit by the sun from the top
+ * left, the cockpit's light (`rim`) round its far edge.
+ */
+export function makeAsteroid(world: World, rim: number): { core: Tile; chunks: Atlas } {
+  if (!isAsteroid(world)) throw new Error(`"${world}" isn't an asteroid`);
+  const look = asteroidLooks[world];
+  const shape = shapeOf(world);
+  const layout = chunkLayout(world)!;
+  const side = layout.side;
+  const [centre, radius] = [side * 0.5, side * WORLD_DISC];
+  const cockpit = rgb(rim);
+  const seed = worlds.indexOf(world);
+  const craters = makeCraters(look.craters, 0xc0ffee + seed);
+  const lightAcross = Math.hypot(SUNLIGHT[0], SUNLIGHT[1]);
+  const placeOf = new Map(layout.chunks.map((place) => [place.chunk, place]));
+
+  // What's on it first, to soften its outline: a pixel's cover is how much of what's round it is rock
+  const seen: (AsteroidPoint | undefined)[] = [];
+  for (let y = 0; y < side; y++) for (let x = 0; x < side; x++) seen.push(shape.at((x + 0.5 - centre) / radius, (y + 0.5 - centre) / radius));
+  const coverOf = (x: number, y: number) => {
+    let rock = 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (seen[(y + dy) * side + x + dx]) rock++;
+    return rock / 9;
+  };
+
+  const core = blank(side, look.atmosphere);
+  const atlas = { width: layout.width, height: layout.height, pixels: new Uint8Array(layout.width * layout.height * 4) };
+  for (let y = 1; y < side - 1; y++)
+    for (let x = 1; x < side - 1; x++) {
+      const point = seen[y * side + x];
+      if (!point) continue;
+      const { q, normal } = point;
+      const cover = coverOf(x, y);
+
+      // The inside: light, whiter towards its middle
+      const inside = mix(cockpit, [1, 1, 1], 0.25 + 0.45 * normal[2]);
+      setPixel(core, x, y, inside, cover);
+
+      const stratum = stratumAt(q, look, seed);
+      const crack = 1 - smoothstep(-0.004, 0.002, stratum.edge);
+      const place = placeOf.get(stratum.chunk);
+      if (crack >= 1 || !place || x < place.x || y < place.y || x >= place.x + place.width || y >= place.y + place.height) continue;
+      const inward = Math.max(0, stratum.edge);
+
+      // Its rock, a little different on each piece, and its slant: bevelled down towards the crack, rough
+      const direction = normalise(q);
+      const tone = 1 + (latticeValue(stratum.chunk, 1, 2, seed) - 0.5) * 2 * ROCK_TONE;
+      const grain = fbm(scale(q, 3.4), seed + 3, 5);
+      const speckle = fbm(scale(q, 14), seed + 4, 3);
+      const rock = ramp(ROCK, (grain - 0.5) * 1.3 + 0.5 + (speckle - 0.5) * 0.4);
+      const bump: Vec3 = [speckle - fbm(scale(add(q, [0.03, 0, 0]), 14), seed + 4, 3), speckle - fbm(scale(add(q, [0, 0.03, 0]), 14), seed + 4, 3), 0];
+      const bevel = ROCK_BEVEL_SLOPE * (1 - clamp01(inward / ROCK_BEVEL)) ** 2;
+      const slant = normalise(add(add(normal, scale(shape.onDisc(stratum.towards), bevel)), scale(bump, 1.4)));
+
+      // Its wave: a line of light, glowing round it
+      const distance = fromWave(stratum, look);
+      const line = 1 - smoothstep(WAVE_LINE * 0.5, WAVE_LINE * 1.6, distance);
+      const wave = add(scale(WAVE_COLOUR, 0.4 * Math.exp(-distance / WAVE_GLOW) + 0.5 * line), scale(WAVE_HOT, 0.65 * line));
+
+      const ground: Ground = {
+        colour: scale(craterise(rock, direction, craters), tone),
+        glow: add(wave, scale(cockpit, ROCK_SPILL * Math.exp(-inward / ROCK_SPILL_REACH))),
+        shine: 0.08,
+      };
+      const towardLight = (x + 0.5 - centre) * SUNLIGHT[0] + (y + 0.5 - centre) * SUNLIGHT[1];
+      const pixel = { normal, cover, halo: 0, towardLight: towardLight / (Math.hypot(x + 0.5 - centre, y + 0.5 - centre) * lightAcross) };
+      const colour = shade(ground, pixel, slant, look, SUNLIGHT, cockpit);
+
+      const at = ((y - place.y + place.atlasY) * atlas.width + (x - place.x + place.atlasX)) * 4;
+      atlas.pixels.set([...colour.map((c) => Math.round(clamp01(c) * 255)), Math.round(clamp01(cover * (1 - crack)) * 255)], at);
+    }
   return { core, chunks: atlas };
 }
 

@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import sharp from 'sharp';
-import { chunksPicture, makeNebula, makeRays, makeStars, makeSynthWorld, makeWorld, planetPicture, skinOf, type Tile, type World } from '@/space';
+import { chunkLayout, chunksPicture, makeAsteroid, makeNebula, makeRays, makeStars, makeSynthWorld, makeWorld, planetPicture, skinOf, type Tile, type World } from '@/space';
 import { unchartedWorlds } from '@/synths';
 import palette from '@/styles/palette.css?raw';
 
@@ -35,8 +35,8 @@ const pictures = {
 };
 
 /**
- * A planet's picture to make: its kind, whether it's uncharted, and, a synth's, the window it's made of and which of its
- * layers it is (its inside, or its chunks).
+ * A planet's picture to make: its kind, whether it's uncharted, and, one in pieces, which of its layers it is (its
+ * inside, or its chunks) and, a synth's, the window it's made of.
  */
 interface Planet {
   world: World;
@@ -45,10 +45,10 @@ interface Planet {
   layer?: 'core' | 'chunks';
 }
 
-// The planets (Planet), lossy too: the synths' and the uncharted ones' kinds only, as each takes a moment to make. The
-// cockpit's light round their far edge is the palette's accent, as the skin's is its own cyan. A synth's is made of its
-// window in its planet's skin, its picture where `npm run screenshots` puts it: skins/<skin>.png in its folder, at a
-// width enough for the planet; it's made once for both its layers
+// The planets (Planet), lossy too: the synths' and the effects' and the uncharted ones' kinds only, as each takes a
+// moment to make. The cockpit's light round their far edge is the palette's accent, as the skin's is its own cyan. A
+// synth's is made of its window in its planet's skin, its picture where `npm run screenshots` puts it: skins/<skin>.png
+// in its folder, at a width enough for the planet; it's made once for both its layers, as an effect's asteroid is
 const accent = paletteColour('accent', 0xa57edb);
 const WINDOW_WIDTH = 1200;
 const nameOf = ({ world, uncharted, layer }: Planet) => (layer === 'chunks' ? chunksPicture(world) : planetPicture(world, uncharted)).replace('/space/', '');
@@ -58,15 +58,17 @@ const windowOf = (world: World, synthFile?: string) => {
   if (!synthFile) throw new Error(`The planet "${world}" is made of a synth's window, but its synth has no folder`);
   return `${synthFile.slice(0, synthFile.lastIndexOf('/'))}/skins/${skin.toLowerCase().replaceAll(' ', '-')}.png`;
 };
-const synthWorlds = new Map<string, ReturnType<typeof makeSynthWorld>>();
+const inPieces = new Map<World, ReturnType<typeof makeSynthWorld>>();
+const makeInPieces = async (world: World, window?: string) => {
+  if (!window) return makeAsteroid(world, accent);
+  const { data, info } = await sharp(window).resize({ width: WINDOW_WIDTH }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+  return makeSynthWorld(world, accent, { ...info, pixels: data });
+};
 const makePlanet = async ({ world, uncharted, window, layer }: Planet) => {
   const options = { quality: 85, alphaQuality: 90 };
-  if (!window) return encode(makeWorld(world, accent, uncharted)).webp(options).toBuffer();
-  if (!synthWorlds.has(window)) {
-    const { data, info } = await sharp(window).resize({ width: WINDOW_WIDTH }).removeAlpha().raw().toBuffer({ resolveWithObject: true });
-    synthWorlds.set(window, makeSynthWorld(world, accent, { ...info, pixels: data }));
-  }
-  const { core, chunks } = synthWorlds.get(window)!;
+  if (!layer) return encode(makeWorld(world, accent, uncharted)).webp(options).toBuffer();
+  if (!inPieces.has(world)) inPieces.set(world, await makeInPieces(world, window));
+  const { core, chunks } = inPieces.get(world)!;
   if (layer === 'core') return encode(core).webp(options).toBuffer();
   return sharp(chunks.pixels, { raw: { width: chunks.width, height: chunks.height, channels: 4 } }).webp(options).toBuffer();
 };
@@ -76,7 +78,7 @@ export async function getStaticPaths() {
     ...(await getCollection('synths')).flatMap(({ data, filePath }) => {
       const window = windowOf(data.planet, filePath);
       const planet = { world: data.planet, uncharted: false, window };
-      return window ? [{ ...planet, layer: 'core' as const }, { ...planet, layer: 'chunks' as const }] : [planet];
+      return chunkLayout(data.planet) ? [{ ...planet, layer: 'core' as const }, { ...planet, layer: 'chunks' as const }] : [planet];
     }),
     ...unchartedWorlds.map((world) => ({ world, uncharted: true })),
   ];

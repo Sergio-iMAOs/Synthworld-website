@@ -1,0 +1,42 @@
+name: Helixx
+version: 0.0.1
+formats: [VST3, Standalone]
+platforms: [Linux]
+order: 1
+# An effect, not a synth: on the synths' page, a small node of its own; nowhere else that lists the synths
+effect: true
+# Its asteroid on the synths' page (src/space.ts), its six strata six strings, each carrying its own FM
+planet: helixx
+repository: https://github.com/Sergio-iMAOs/Helixx
+# The systems it builds for, in its own repository; none has a file yet
+downloads:
+  - { os: windows, arch: x64 }
+  - { os: macos, arch: universal }
+  - { os: linux, arch: x64 }
+# Its header: Helixx's wide logo (HelixxLogo::drawWide() in its repository), in the palette's accent and foreground on a
+# transparent background, trimmed to stand on the horizon the page draws
+logo: ./logo.png
+# docs/helixx-ui.png in its repository, Adaptive FM on a hexaphonic recording, and parts of it. en.md and es.md place
+# each screenshot with <!-- screenshot: <id> -->.
+cover:
+  image: ./screenshots/window.png
+  alt:
+    en: "Helixx's window in the SW Light skin: Adaptive FM with its COARSE FREQ, MOD DEPTH and MOD RANGE sliders on the left, a spectrum with lines marking a string's pitch and sidebands on the right, and a strip of six voices under it, string 5 selected"
+    es: "La ventana de Helixx con la skin SW Light: Adaptive FM con sus deslizadores COARSE FREQ, MOD DEPTH y MOD RANGE a la izquierda, un espectro con líneas que marcan la altura y las bandas laterales de una cuerda a la derecha, y debajo una tira de seis voces, con la cuerda 5 seleccionada"
+screenshots:
+  - id: voices
+    image: ./screenshots/voices.png
+    alt:
+      en: "Helixx's voice strip: an ALL cell, then a cell for each of six strings with its note, frequency and tuning, from C#3 at 139 Hz to C#5 at 556 Hz, string 5 selected"
+      es: "La tira de voces de Helixx: una celda ALL y luego una celda por cada una de las seis cuerdas con su nota, su frecuencia y su afinación, desde C#3 a 139 Hz hasta C#5 a 556 Hz, con la cuerda 5 seleccionada"
+    caption:
+      en: "Six strings, each followed on its own: its note, its frequency and its tuning."
+      es: "Seis cuerdas, cada una seguida por separado: su nota, su frecuencia y su afinación."
+  - id: spectrum
+    image: ./screenshots/spectrum.png
+    alt:
+      en: "Helixx's spectrum for string 5, at G#4: its input as a violet curve and its output as a black one, an orange line at its pitch and thinner ones at its sidebands, and the modulation index, 1.57, in its top corner"
+      es: "El espectro de Helixx para la cuerda 5, en G#4: su entrada como una curva violeta y su salida como una negra, una línea naranja en su altura y otras más finas en sus bandas laterales, y el índice de modulación, 1.57, en su esquina superior"
+    caption:
+      en: "A string's input and output, its pitch and where its sidebands should land."
+      es: "La entrada y la salida de una cuerda, su altura y dónde deberían caer sus bandas laterales."

@@ -2,13 +2,13 @@
 import Base from '@/layouts/Base.astro';
 import SynthGet from '@/components/SynthGet.astro';
 import { langOf, langPaths, pathIn, textsOf } from '@/i18n';
-import { getSynths } from '@/synths';
+import { getEffects, getSynths } from '@/synths';
 
 export const getStaticPaths = langPaths;
 
 const lang = langOf(Astro.url);
 const t = textsOf(lang).download;
-const released = (await getSynths(lang)).filter(({ data }) => data.downloads.some(({ url }) => url) || data.paid?.buyUrl);
+const released = [...(await getSynths(lang)), ...(await getEffects(lang))].filter(({ data }) => data.downloads.some(({ url }) => url) || data.paid?.buyUrl);
 ---
 
 <Base title={t.title} description={t.description}>
