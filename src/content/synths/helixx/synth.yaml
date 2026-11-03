@@ -5,6 +5,8 @@ platforms: [Linux]
 order: 1
 # An effect, not a synth: on the synths' page, a small node of its own; nowhere else that lists the synths
 effect: true
+# Hidden for now: its page is built, but nothing on the synths' site lists it or links to it
+hidden: true
 # Its asteroid on the synths' page (src/space.ts), its six strata six strings, each carrying its own FM
 planet: helixx
 repository: https://github.com/Sergio-iMAOs/Helixx

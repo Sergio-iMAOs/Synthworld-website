@@ -22,7 +22,7 @@ export async function getStaticPaths() {
 const lang = langOf(Astro.url);
 const t = textsOf(lang).synths;
 const synths = await getSynths(lang);
-const synth = [...synths, ...(await getEffects(lang))].find(({ id }) => id === Astro.params.id)!;
+const synth = [...(await getSynths(lang, { hidden: true })), ...(await getEffects(lang, { hidden: true }))].find(({ id }) => id === Astro.params.id)!;
 const { data, text } = synth;
 const pairs = nightAndDayOf(synth);
 const tags = [`v${data.version}`, data.paid ? data.paid.price : t.free, ...(data.repository ? [t.openSource] : []), ...data.formats, ...data.platforms];
@@ -108,7 +108,7 @@ const streaks = Array.from({ length: 110 }, (_, index) => {
 });
 ---
 
-<Base title={data.name} description={text.data.summary}>
+<Base title={data.name} description={text.data.summary} noindex={data.hidden}>
   <Space />
 
   <div class="synth" data-synth>
@@ -120,7 +120,7 @@ const streaks = Array.from({ length: 110 }, (_, index) => {
     <section class="stage" data-stage>
       <div class="frame" data-frame>
         <div class="hero">
-          <p class="kicker fades">{data.effect ? t.effect : synths[0] === synth ? t.first : t.another}</p>
+          <p class="kicker fades">{data.effect ? t.effect : synths[0]?.id === synth.id ? t.first : t.another}</p>
 
           <div class="slot" data-slot>
             {/* Its planet in two layers: its inside and its ring behind its window, its chunks in front of it */}

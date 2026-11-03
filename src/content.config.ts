@@ -30,6 +30,11 @@ const synths = defineCollection({
        */
       effect: z.boolean().default(false),
       /**
+       * Hidden for now: its page is still built, at its address, but kept from search engines, and nothing lists it or
+       * links to it (not the synths' page, the home page or the Download page; a portfolio project still may).
+       */
+      hidden: z.boolean().default(false),
+      /**
        * Its planet on the synths' page (`worlds` in src/space.ts): its own, made of chunks of its window, or until it
        * has one, one of the kinds EARL's Starship skin draws a graph's nodes as. An effect's is its own asteroid.
        */

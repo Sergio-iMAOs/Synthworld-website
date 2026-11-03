@@ -38,9 +38,14 @@ export function nightAndDayOf({ id, data }: Synth): NightAndDay[] {
   ];
 }
 
-/** What's in src/content/synths, effects or not, in the order it's shown, with its texts in a language (in English where it's missing). */
-async function getEntries(lang: Lang, effects: boolean): Promise<Synth[]> {
-  const entries = (await getCollection('synths', ({ data }) => data.effect === effects)).sort((a, b) => a.data.order - b.data.order);
+/**
+ * What's in src/content/synths, effects or not, in the order it's shown, with its texts in a language (in English where
+ * it's missing); the hidden ones (`hidden`) only if asked for.
+ */
+async function getEntries(lang: Lang, effects: boolean, hidden = false): Promise<Synth[]> {
+  const entries = (await getCollection('synths', ({ data }) => data.effect === effects && (hidden || !data.hidden))).sort(
+    (a, b) => a.data.order - b.data.order,
+  );
 
   return Promise.all(
     entries.map(async ({ id, data }) => {
@@ -52,7 +57,7 @@ async function getEntries(lang: Lang, effects: boolean): Promise<Synth[]> {
 }
 
 /** The synths in the order they're shown, with their texts in a language. */
-export const getSynths = (lang: Lang) => getEntries(lang, false);
+export const getSynths = (lang: Lang, { hidden = false } = {}) => getEntries(lang, false, hidden);
 
 /** The effects: SynthWorld is about its synths, so they're only asteroids on the synths' page, with a page each. */
-export const getEffects = (lang: Lang) => getEntries(lang, true);
+export const getEffects = (lang: Lang, { hidden = false } = {}) => getEntries(lang, true, hidden);
