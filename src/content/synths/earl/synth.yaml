@@ -1,16 +1,15 @@
 name: EARL
 version: 1.0.0
 formats: [CLAP, VST3, LV2, Standalone]
-platforms: [Linux]
+platforms: [Windows, macOS, Linux]
 order: 1
 # Its planet on the synths' page: its own (src/space.ts), made of chunks of its window in SW Light, ringed with its velvet noise
 planet: earl
-# The systems the framework builds for; none has a file yet
+# The systems the framework builds for. The beta's files are on Proton Drive, behind a password
 downloads:
-  - { os: windows, arch: x64 }
-  - { os: macos, arch: universal }
-  - { os: linux, arch: x64 }
-  - { os: linux, arch: arm64 }
+  - { os: windows, arch: x64, url: 'https://drive.proton.me/urls/VGDBQG1EHM#oz0NfSaKOYXV' }
+  - { os: macos, arch: universal, url: 'https://drive.proton.me/urls/71KQ036H20#WZS8hBQolXCH' }
+  - { os: linux, arch: x64, url: 'https://drive.proton.me/urls/WZ5P980W1C#LlnpF3tZLfz6' }
 audio: []
 videos: []
 # Its header: the framework's EarlLogo, the sun and the name standing on the horizon the page draws

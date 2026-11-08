@@ -25,7 +25,7 @@ const [first] = systems;
   {
     first && (
       <div class="download" data-download>
-        <a class:list={['main', { unavailable: !first.url }]} href={first.url} data-main>
+        <a class:list={['main', { unavailable: !first.url }]} href={first.url} target="_blank" rel="noopener" data-main>
           <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8.5M4.5 7.5L8 11l3.5-3.5M3 14h10" /></svg>
           <span>
             <strong>{paid ? t.downloadDemo : t.download}</strong>

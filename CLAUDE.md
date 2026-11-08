@@ -6,7 +6,7 @@ This file guides Claude Code (claude.ai/code) when working in this repository.
 
 The website of SynthWorld's synthesizers (EARL is the first): it shows them to musicians and is where they are distributed from.
 
-The synths are made with SynthWorld, a C++20 framework in another repository, usually checked out next to this one at `../Synthworld`. It is the source of truth for anything the site says about the synths: read its `README.md`, `CLAUDE.md` and `docs/` instead of guessing, and don't state features, platforms or formats they don't have. Nothing has been released yet, and only Linux has been built and tested.
+The synths are made with SynthWorld, a C++20 framework in another repository, usually checked out next to this one at `../Synthworld`. It is the source of truth for anything the site says about the synths: read its `README.md`, `CLAUDE.md` and `docs/` instead of guessing, and don't state features, platforms or formats they don't have. Nothing has been released yet; EARL's beta is out for Windows, macOS and Linux (x64).
 
 **The framework is private and isn't being released**: the synths come first. So the site is for the people who play the synths, not for developers. It doesn't link to the framework's repository, and has nothing on making synths with it (its API, its build, its code). It may say what the engine gives the player.
 
@@ -98,7 +98,7 @@ The domain is `synthworldaudio.com` (`site` in `astro.config.mjs`); the site is 
 
 For now the site is on GitHub Pages, from this repository, which is public: `.github/workflows/deploy.yml` builds it and publishes `dist/` on every push to `main`, and `public/CNAME` is the domain. So everything committed here, and everything in `dist/`, is public. GitHub Pages serves only what the build makes: no server configuration, headers or redirects.
 
-It will move to the author's own server, maybe before EARL's release: `dist/` uploaded to it, the DNS pointed at it, and the workflow and `public/CNAME` removed. There, the files to download (free synths, demos) will be at `/downloads/<synth>/<file>`, in a folder outside `dist/` and this repository, so that a deploy doesn't delete them and builds don't carry them. Until then, a free synth's files can be in a GitHub Release, linked from its `downloads`. A closed beta's builds are never put on the site or in the repository.
+It will move to the author's own server, maybe before EARL's release: `dist/` uploaded to it, the DNS pointed at it, and the workflow and `public/CNAME` removed. There, the files to download (free synths, demos) will be at `/downloads/<synth>/<file>`, in a folder outside `dist/` and this repository, so that a deploy doesn't delete them and builds don't carry them. Until then, a free synth's files can be in a GitHub Release, linked from its `downloads`. A beta's builds are never put on the site or in the repository; links to them behind a password (EARL's, on Proton Drive) are fine.
 
 ## Not decided yet
 
